@@ -1,0 +1,205 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows x64
+            runner: windows-latest
+            platform: windows-x64
+            cmake_arch: -A x64
+            hashlink_library: bin/libhl.lib
+            graphics_options: -DLIMEN_BUILD_OPENGL=ON -DLIMEN_BUILD_VULKAN=ON -DLIMEN_BUILD_D3D11=ON -DLIMEN_BUILD_D3D12=ON
+          - name: Windows x64 MinGW
+            runner: windows-latest
+            platform: windows-x64-mingw
+            cmake_arch: -G "MinGW Makefiles"
+            hashlink_library: bin/libhl.dll.a
+            graphics_options: -DLIMEN_BUILD_OPENGL=ON -DLIMEN_BUILD_VULKAN=ON -DLIMEN_BUILD_SHADERC=OFF -DLIMEN_BUILD_D3D11=ON -DLIMEN_BUILD_D3D12=OFF
+          - name: Linux x64
+            runner: ubuntu-latest
+            platform: linux-x64
+            cmake_arch: ""
+            hashlink_library: bin/libhl.so
+            graphics_options: -DLIMEN_BUILD_OPENGL=ON -DLIMEN_BUILD_VULKAN=ON -DLIMEN_BUILD_D3D11=OFF -DLIMEN_BUILD_D3D12=OFF
+          - name: Linux ARM64
+            runner: ubuntu-24.04-arm
+            platform: linux-arm64
+            cmake_arch: ""
+            hashlink_library: bin/libhl.so
+            graphics_options: -DLIMEN_BUILD_OPENGL=ON -DLIMEN_BUILD_VULKAN=ON -DLIMEN_BUILD_D3D11=OFF -DLIMEN_BUILD_D3D12=OFF
+          - name: macOS x64
+            runner: macos-15-intel
+            platform: macos-x64
+            cmake_arch: -DCMAKE_OSX_ARCHITECTURES=x86_64 -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13
+            hashlink_library: bin/libhl.dylib
+            graphics_options: -DLIMEN_BUILD_OPENGL=ON -DLIMEN_BUILD_VULKAN=OFF -DLIMEN_BUILD_D3D11=OFF -DLIMEN_BUILD_D3D12=OFF
+          - name: macOS ARM64
+            runner: macos-latest
+            platform: macos-arm64
+            cmake_arch: -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+            hashlink_library: bin/libhl.dylib
+            graphics_options: -DLIMEN_BUILD_OPENGL=ON -DLIMEN_BUILD_VULKAN=OFF -DLIMEN_BUILD_D3D11=OFF -DLIMEN_BUILD_D3D12=OFF
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout LIMEN
+        uses: actions/checkout@v7
+
+      - name: Checkout NMB HashLink
+        uses: actions/checkout@v7
+        with:
+          repository: NMB-Team/hashlink-nmb
+          ref: master
+          path: hashlink
+
+      - name: Install Linux dependencies
+        if: startsWith(matrix.platform, 'linux-')
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y \
+            libasound2-dev \
+            libaudio-dev \
+            libdbus-1-dev \
+            libdecor-0-dev \
+            libdrm-dev \
+            libegl1-mesa-dev \
+            libgbm-dev \
+            libgl1-mesa-dev \
+            libgles2-mesa-dev \
+            libibus-1.0-dev \
+            libjack-dev \
+            libpipewire-0.3-dev \
+            libpulse-dev \
+            libshaderc-dev \
+            libsndio-dev \
+            libudev-dev \
+            liburing-dev \
+            libvulkan-dev \
+            libwayland-dev \
+            libx11-dev \
+            libxcursor-dev \
+            libxext-dev \
+            libxfixes-dev \
+            libxi-dev \
+            libxkbcommon-dev \
+            libxrandr-dev \
+            libxss-dev \
+            libxtst-dev
+
+      - name: Install Windows dependencies
+        if: startsWith(matrix.platform, 'windows-')
+        run: |
+          choco install vulkan-sdk --no-progress -y
+          VULKAN_SDK="$(powershell -NoProfile -Command "Get-ChildItem 'C:\VulkanSDK' -Directory | Sort-Object Name -Descending | Select-Object -First 1 -ExpandProperty FullName")"
+          echo "VULKAN_SDK=$VULKAN_SDK" >> "$GITHUB_ENV"
+          echo "$VULKAN_SDK/Bin" >> "$GITHUB_PATH"
+
+          if [[ "${{ matrix.platform }}" != "windows-x64-mingw" ]]; then
+            curl -fsSL --retry 3 --retry-delay 5 \
+              -o "$RUNNER_TEMP/dxc.zip" \
+              https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.8.2505.1/dxc_2025_07_14.zip
+            7z x "$RUNNER_TEMP/dxc.zip" -ohashlink/include/dx
+          fi
+
+      - name: Build NMB HashLink library
+        run: |
+          cmake -S hashlink -B hashlink-build \
+            ${{ matrix.cmake_arch }} \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_TESTING=OFF \
+            -DWITH_FMT=OFF \
+            -DWITH_HEAPS=OFF \
+            -DWITH_OPENAL=OFF \
+            -DWITH_SDL=OFF \
+            -DWITH_SQLITE=OFF \
+            -DWITH_SSL=OFF \
+            -DWITH_UI=OFF \
+            -DWITH_UV=OFF \
+            -DWITH_VIDEO=OFF
+          cmake --build hashlink-build --config Release --target libhl --parallel
+
+      - name: Configure LIMEN
+        run: |
+          cmake -S . -B build \
+            ${{ matrix.cmake_arch }} \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DLIMEN_HASHLINK_ROOT="$GITHUB_WORKSPACE/hashlink" \
+            -DLIMEN_HASHLINK_LIBRARY="$GITHUB_WORKSPACE/hashlink-build/${{ matrix.hashlink_library }}" \
+            -DLIMEN_BUILD_TESTS=ON \
+            ${{ matrix.graphics_options }}
+
+      - name: Build LIMEN
+        run: cmake --build build --config Release --parallel
+
+      - name: Test LIMEN
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Install LIMEN
+        run: cmake --install build --config Release --prefix dist
+
+      - name: Upload LIMEN package
+        uses: actions/upload-artifact@v7
+        with:
+          name: limen-${{ matrix.platform }}
+          path: dist/lib
+          if-no-files-found: error
+
+  publish-latest:
+    name: Publish latest release
+    needs: build
+    if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    concurrency: publish-limen-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all packages
+        uses: actions/download-artifact@v8
+        with:
+          pattern: limen-*
+          path: artifacts
+
+      - name: Package release assets
+        run: |
+          mkdir release
+          for artifact in artifacts/limen-*; do
+            platform="${artifact##*/limen-}"
+            if [[ "$platform" == windows-* ]]; then
+              (
+                cd "$artifact"
+                zip -r "$GITHUB_WORKSPACE/release/limen-${platform}.zip" .
+              )
+            else
+              tar -C "$artifact" -czf "release/limen-${platform}.tar.gz" .
+            fi
+          done
+
+      - name: Replace latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
+          gh release create latest release/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --prerelease \
+            --target "$GITHUB_SHA" \
+            --title "LIMEN latest build" \
+            --notes "Automated LIMEN builds from $GITHUB_SHA using NMB-Team/hashlink-nmb."

@@ -1,0 +1,9 @@
+{
+	"name" : "Limen",
+	"license" : "MIT",
+	"contributors" : ["dtwotwo"],
+	"description" : "Сross-platform runtime, input and graphics integration layer.",
+	"version" : "1.0",
+	"classPath": ".",
+	"dependencies": {}
+}

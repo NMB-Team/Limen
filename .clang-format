@@ -1,0 +1,55 @@
+AllowShortFunctionsOnASingleLine: Empty
+BasedOnStyle: LLVM
+
+BreakBeforeBraces: Custom
+BraceWrapping:
+    AfterCaseLabel: false
+    AfterClass: false
+    AfterControlStatement: Never
+    AfterEnum: false
+    AfterFunction: false
+    AfterNamespace: false
+    AfterStruct: false
+    AfterUnion: false
+    BeforeCatch: false
+    BeforeElse: false
+    BeforeLambdaBody: false
+    BeforeWhile: false
+    IndentBraces: false
+    SplitEmptyFunction: false
+    SplitEmptyRecord: false
+    SplitEmptyNamespace: false
+
+ColumnLimit: 250
+MaxEmptyLinesToKeep: 1
+
+BinPackArguments: true
+BinPackParameters: BinPack
+
+AlignEscapedNewlines: Left
+Cpp11BracedListStyle: false
+ContinuationIndentWidth: 4
+IncludeBlocks: Preserve
+IndentAccessModifiers: false
+AccessModifierOffset: -4
+IndentCaseBlocks: true
+IndentCaseLabels: true
+IndentPPDirectives: None
+IndentWidth: 4
+InsertBraces: false
+InsertNewlineAtEOF: true
+NamespaceIndentation: All
+PointerAlignment: Left
+ReferenceAlignment: Left
+RemoveParentheses: Leave
+RemoveSemicolon: false
+SeparateDefinitionBlocks: Leave
+ShortNamespaceLines: 1
+SkipMacroDefinitionBody: false
+SortIncludes: false
+SpaceBeforeParens: ControlStatements
+SpacesInParens: Never
+SpacesInSquareBrackets: false
+Standard: Latest
+TabWidth: 4
+UseTab: ForIndentation

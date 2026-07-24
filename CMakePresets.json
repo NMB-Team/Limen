@@ -1,0 +1,197 @@
+{
+	"version": 6,
+	"cmakeMinimumRequired": {
+		"major": 3,
+		"minor": 24,
+		"patch": 0
+	},
+	"configurePresets": [
+		{
+			"name": "windows-x64",
+			"hidden": true,
+			"generator": "Visual Studio 18 2026",
+			"architecture": "x64",
+			"binaryDir": "${sourceDir}/build/windows-x64"
+		},
+		{
+			"name": "windows-x64-debug",
+			"inherits": "windows-x64",
+			"displayName": "Windows x64 Debug"
+		},
+		{
+			"name": "windows-x64-release",
+			"inherits": "windows-x64",
+			"displayName": "Windows x64 Release"
+		},
+		{
+			"name": "windows-arm64",
+			"hidden": true,
+			"generator": "Visual Studio 18 2026",
+			"architecture": "ARM64",
+			"binaryDir": "${sourceDir}/build/windows-arm64"
+		},
+		{
+			"name": "windows-arm64-debug",
+			"inherits": "windows-arm64",
+			"displayName": "Windows ARM64 Debug"
+		},
+		{
+			"name": "windows-arm64-release",
+			"inherits": "windows-arm64",
+			"displayName": "Windows ARM64 Release"
+		},
+		{
+			"name": "linux",
+			"hidden": true,
+			"generator": "Ninja",
+			"binaryDir": "${sourceDir}/build/linux-${presetName}",
+			"cacheVariables": {
+				"LIMEN_BUILD_D3D11": false,
+				"LIMEN_BUILD_D3D12": false
+			}
+		},
+		{
+			"name": "linux-debug",
+			"inherits": "linux",
+			"displayName": "Linux Debug",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Debug"
+			}
+		},
+		{
+			"name": "linux-release",
+			"inherits": "linux",
+			"displayName": "Linux Release",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Release"
+			}
+		},
+		{
+			"name": "linux-arm64",
+			"hidden": true,
+			"inherits": "linux",
+			"cacheVariables": {
+				"CMAKE_SYSTEM_NAME": "Linux",
+				"CMAKE_SYSTEM_PROCESSOR": "aarch64",
+				"CMAKE_C_COMPILER": "aarch64-linux-gnu-gcc",
+				"CMAKE_CXX_COMPILER": "aarch64-linux-gnu-g++"
+			}
+		},
+		{
+			"name": "linux-arm64-debug",
+			"inherits": "linux-arm64",
+			"displayName": "Linux ARM64 Debug",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Debug"
+			}
+		},
+		{
+			"name": "linux-arm64-release",
+			"inherits": "linux-arm64",
+			"displayName": "Linux ARM64 Release",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Release"
+			}
+		},
+		{
+			"name": "macos",
+			"hidden": true,
+			"generator": "Xcode",
+			"binaryDir": "${sourceDir}/build/macos-${presetName}",
+			"cacheVariables": {
+				"LIMEN_BUILD_D3D11": false,
+				"LIMEN_BUILD_D3D12": false
+			}
+		},
+		{
+			"name": "macos-arm64-debug",
+			"inherits": "macos",
+			"displayName": "macOS arm64 Debug",
+			"cacheVariables": {
+				"CMAKE_OSX_ARCHITECTURES": "arm64"
+			}
+		},
+		{
+			"name": "macos-arm64-release",
+			"inherits": "macos",
+			"displayName": "macOS arm64 Release",
+			"cacheVariables": {
+				"CMAKE_OSX_ARCHITECTURES": "arm64"
+			}
+		},
+		{
+			"name": "macos-x64-debug",
+			"inherits": "macos",
+			"displayName": "macOS x64 Debug",
+			"cacheVariables": {
+				"CMAKE_OSX_ARCHITECTURES": "x86_64"
+			}
+		},
+		{
+			"name": "macos-x64-release",
+			"inherits": "macos",
+			"displayName": "macOS x64 Release",
+			"cacheVariables": {
+				"CMAKE_OSX_ARCHITECTURES": "x86_64"
+			}
+		}
+	],
+	"buildPresets": [
+		{
+			"name": "windows-x64-debug",
+			"configurePreset": "windows-x64-debug",
+			"configuration": "Debug"
+		},
+		{
+			"name": "windows-x64-release",
+			"configurePreset": "windows-x64-release",
+			"configuration": "Release"
+		},
+		{
+			"name": "windows-arm64-debug",
+			"configurePreset": "windows-arm64-debug",
+			"configuration": "Debug"
+		},
+		{
+			"name": "windows-arm64-release",
+			"configurePreset": "windows-arm64-release",
+			"configuration": "Release"
+		},
+		{
+			"name": "linux-debug",
+			"configurePreset": "linux-debug"
+		},
+		{
+			"name": "linux-release",
+			"configurePreset": "linux-release"
+		},
+		{
+			"name": "linux-arm64-debug",
+			"configurePreset": "linux-arm64-debug"
+		},
+		{
+			"name": "linux-arm64-release",
+			"configurePreset": "linux-arm64-release"
+		},
+		{
+			"name": "macos-arm64-debug",
+			"configurePreset": "macos-arm64-debug",
+			"configuration": "Debug"
+		},
+		{
+			"name": "macos-arm64-release",
+			"configurePreset": "macos-arm64-release",
+			"configuration": "Release"
+		},
+		{
+			"name": "macos-x64-debug",
+			"configurePreset": "macos-x64-debug",
+			"configuration": "Debug"
+		},
+		{
+			"name": "macos-x64-release",
+			"configurePreset": "macos-x64-release",
+			"configuration": "Release"
+		}
+	]
+}

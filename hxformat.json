@@ -1,0 +1,42 @@
+{
+	"lineEnds": {
+		"leftCurly": "after",
+		"rightCurly": "after",
+		"emptyCurly": "noBreak",
+		"objectLiteralCurly": {"leftCurly": "after"}
+	},
+	"sameLine": {
+		"ifElse": "same",
+		"doWhile": "same",
+		"tryBody": "same",
+		"tryCatch": "same"
+	},
+	"emptyLines": {
+		"importAndUsing": {
+			"betweenImportsLevel": "firstLevelPackage",
+			"betweenImports": 1,
+			"beforeUsing": 1
+		},
+		"maxAnywhereInFile": 1
+	},
+	"wrapping": {
+		"maxLineLength": 250,
+
+		"callParameter": {
+			"defaultWrap": "fillLine",
+			"defaultLocation": "afterLast",
+			"rules": [
+				{
+					"conditions": [{"cond": "anyItemLength >= n", "value": 250}],
+					"type": "keep"
+				}
+			]
+		}
+	},
+	"whitespace": {
+		"arrowFunctionsPolicy": "around",
+		"functionTypeHaxe3Policy": "around",
+		"functionTypeHaxe4Policy": "around",
+		"objectFieldColonPolicy": "after"
+	}
+}

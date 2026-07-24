@@ -1,0 +1,7 @@
+/build/
+/.vs/
+**/x64/
+*.user
+*.suo
+*.VC.db
+include/sdl
