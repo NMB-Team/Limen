@@ -82,6 +82,11 @@ cmake --build build
 SDL3 is built statically by CMake. Set `LIMEN_SDL3_SOURCE_DIR` to use a local
 SDL3 source tree instead of the pinned fetched release.
 
+DLSS support is disabled by default and is not required to build or install
+LIMEN. On Windows x64, set `LIMEN_BUILD_DLSS=ON` and
+`LIMEN_STREAMLINE_SDK_ROOT` to build `limen_dlss.hdll`; the Streamline import
+library and runtime DLLs are required only for that opt-in module.
+
 CMake locates the DXC runtime DLLs from the Vulkan SDK or HashLink's
 `include/dx` distribution. Their locations can be overridden with
 `LIMEN_DXCOMPILER_RUNTIME_DLL` and `LIMEN_DXIL_RUNTIME_DLL`.

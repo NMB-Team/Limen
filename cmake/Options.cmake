@@ -3,7 +3,7 @@ option(LIMEN_BUILD_VULKAN "Build limen_vulkan.hdll." ON)
 option(LIMEN_BUILD_SHADERC "Build shaderc support into limen_vulkan.hdll." ON)
 option(LIMEN_BUILD_D3D11 "Build limen_d3d11.hdll." ${WIN32})
 option(LIMEN_BUILD_D3D12 "Build limen_d3d12.hdll." ${WIN32})
-option(LIMEN_BUILD_DLSS "Build limen_dlss.hdll for the D3D12 backend." ${WIN32})
+option(LIMEN_BUILD_DLSS "Build limen_dlss.hdll for the D3D12 backend." OFF)
 option(LIMEN_BUILD_AFTERMATH "Build NVIDIA Nsight Aftermath support into limen_d3d12.hdll." OFF)
 option(LIMEN_BUILD_TESTS "Build Lumen tests." OFF)
 
