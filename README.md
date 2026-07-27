@@ -90,19 +90,18 @@ with `LIMEN_VULKAN_RUNTIME_DLL`, `LIMEN_DXCOMPILER_RUNTIME_DLL`, and
 
 Enable `LIMEN_BUILD_TESTS` for the native event-translation tests.
 
-## Embedded build
+## HashLink integration
 
-HashLink builds this directory directly by default. For local development
-against a separate checkout, configure HashLink with:
+HashLink NMB pins LIMEN as the `libs/limen` submodule and builds it directly
+with CMake. To test changes without updating that pin, configure HashLink
+against this checkout:
 
 ```sh
-cmake -S . -B build -DLIMEN_SOURCE_DIR=/path/to/limen
+cmake -S /path/to/hashlink-nmb -B /path/to/hashlink-nmb/build \
+  -DLIMEN_SOURCE_DIR=/path/to/Limen
 ```
 
-## Repository synchronization
-
-After CI passes on `master`, `sync-hashlink.yml` dispatches the exact source
-commit to `hashlink-nmb`. The source repository requires a
-`HASHLINK_SYNC_TOKEN` secret with dispatch access. The HashLink repository
-requires `LIMEN_SYNC_TOKEN` to read this repository and verify or update its
-vendored snapshot.
+After a LIMEN revision passes CI, update HashLink's `libs/limen` submodule.
+The gitlink is the single source of truth for the pinned revision. HashLink's
+manual `Pin LIMEN revision` workflow updates it after the integration matrix
+succeeds.
