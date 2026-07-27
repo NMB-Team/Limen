@@ -51,14 +51,6 @@ if(LIMEN_BUILD_VULKAN)
 	find_package(Vulkan REQUIRED)
 	target_compile_definitions(limen PRIVATE LIMEN_HAS_VULKAN)
 	target_include_directories(limen PRIVATE ${Vulkan_INCLUDE_DIRS})
-	if(WIN32 AND NOT LIMEN_VULKAN_RUNTIME_DLL)
-		unset(LIMEN_VULKAN_RUNTIME_DLL CACHE)
-		find_file(LIMEN_VULKAN_RUNTIME_DLL
-			NAMES vulkan-1.dll
-			HINTS "$ENV{VULKAN_SDK}/Bin-ARM64" "$ENV{VULKAN_SDK}/Bin" "$ENV{WINDIR}/System32"
-			REQUIRED
-		)
-	endif()
 endif()
 
 if(LIMEN_BUILD_OPENGL)
@@ -132,13 +124,6 @@ if(LIMEN_BUILD_VULKAN)
 			target_link_libraries(limen_vulkan PRIVATE "${LIMEN_SHADERC_LIBRARY}")
 		endif()
 		target_compile_definitions(limen_vulkan PRIVATE HL_VULKAN_HAS_SHADERC)
-	endif()
-	if(WIN32)
-		add_custom_command(TARGET limen_vulkan POST_BUILD
-			COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-				"${LIMEN_VULKAN_RUNTIME_DLL}" "$<TARGET_FILE_DIR:limen_vulkan>"
-		)
-		install(FILES "${LIMEN_VULKAN_RUNTIME_DLL}" DESTINATION "${LIMEN_HDLL_DESTINATION}")
 	endif()
 endif()
 

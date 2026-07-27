@@ -63,7 +63,6 @@ Windows build and install directories also contain the dynamically linked
 runtime DLLs beside the modules:
 
 ```text
-vulkan-1.dll
 dxcompiler.dll
 dxil.dll
 ```
@@ -83,10 +82,9 @@ cmake --build build
 SDL3 is built statically by CMake. Set `LIMEN_SDL3_SOURCE_DIR` to use a local
 SDL3 source tree instead of the pinned fetched release.
 
-CMake locates the Vulkan and DXC runtime DLLs from the Vulkan SDK, Windows,
-or HashLink's `include/dx` distribution. Their locations can be overridden
-with `LIMEN_VULKAN_RUNTIME_DLL`, `LIMEN_DXCOMPILER_RUNTIME_DLL`, and
-`LIMEN_DXIL_RUNTIME_DLL`.
+CMake locates the DXC runtime DLLs from the Vulkan SDK or HashLink's
+`include/dx` distribution. Their locations can be overridden with
+`LIMEN_DXCOMPILER_RUNTIME_DLL` and `LIMEN_DXIL_RUNTIME_DLL`.
 
 Set `LIMEN_BUILD_AFTERMATH=ON` to add NVIDIA Nsight Aftermath GPU crash
 diagnostics to the D3D12 backend. Set `LIMEN_AFTERMATH_SDK_ROOT` to the SDK
