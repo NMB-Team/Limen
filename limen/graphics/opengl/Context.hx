@@ -99,7 +99,7 @@ class Context {
 	public static function setWindowCurrent(window:Window):Void {
 		final context = contexts.get(window) ?? current;
 		if (context == null)
-			throw "No OpenGL context is available";
+			return;
 		context.makeCurrent(window);
 	}
 
