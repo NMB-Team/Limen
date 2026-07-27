@@ -88,6 +88,14 @@ or HashLink's `include/dx` distribution. Their locations can be overridden
 with `LIMEN_VULKAN_RUNTIME_DLL`, `LIMEN_DXCOMPILER_RUNTIME_DLL`, and
 `LIMEN_DXIL_RUNTIME_DLL`.
 
+Set `LIMEN_BUILD_AFTERMATH=ON` to add NVIDIA Nsight Aftermath GPU crash
+diagnostics to the D3D12 backend. Set `LIMEN_AFTERMATH_SDK_ROOT` to the SDK
+root, or define `NSIGHT_AFTERMATH_SDK`; CMake links the matching x64 or x86
+import library and packages its runtime DLL beside `limen_d3d12.hdll`. The
+include directory, library, and runtime DLL can be overridden with
+`LIMEN_AFTERMATH_INCLUDE_DIR`, `LIMEN_AFTERMATH_LIBRARY`, and
+`LIMEN_AFTERMATH_RUNTIME_DLL`.
+
 Enable `LIMEN_BUILD_TESTS` for the native event-translation tests.
 
 ## HashLink integration

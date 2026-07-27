@@ -16,6 +16,10 @@ class D3D12 {
 		return new D3D12(driver);
 	}
 
+	public static function setGpuCrashHandler(handler:(name:hl.Bytes, bytes:hl.Bytes, size:Int, lastFile:Bool) -> Void):Void {
+		D3D12Bindings.setGpuCrashHandler(handler);
+	}
+
 	function new(driver:Dx12DriverInstance) {
 		this.driver = driver;
 	}

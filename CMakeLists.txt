@@ -43,6 +43,10 @@ target_include_directories(limen
 )
 target_link_libraries(limen PRIVATE libhl SDL3::SDL3-static ${LIMEN_PLATFORM_LIBRARIES})
 
+if(LIMEN_BUILD_DLSS AND (NOT WIN32 OR NOT LIMEN_BUILD_D3D12))
+	message(FATAL_ERROR "LIMEN_BUILD_DLSS requires the Windows D3D12 backend.")
+endif()
+
 if(LIMEN_BUILD_VULKAN)
 	find_package(Vulkan REQUIRED)
 	target_compile_definitions(limen PRIVATE LIMEN_HAS_VULKAN)
@@ -193,6 +197,56 @@ if(WIN32 AND LIMEN_BUILD_D3D12)
 		)
 	endif()
 
+	if(LIMEN_BUILD_AFTERMATH)
+		if(_LIMEN_DXC_ARCH STREQUAL "arm64")
+			message(FATAL_ERROR "NVIDIA Nsight Aftermath is not supported by the Windows ARM64 build.")
+		endif()
+		set(_LIMEN_AFTERMATH_ROOT_HINTS
+			"${CMAKE_CURRENT_SOURCE_DIR}/include/aftermath"
+			"${CMAKE_SOURCE_DIR}/include/aftermath"
+		)
+		if(LIMEN_HASHLINK_ROOT)
+			list(APPEND _LIMEN_AFTERMATH_ROOT_HINTS "${LIMEN_HASHLINK_ROOT}/include/aftermath")
+		endif()
+		set(_LIMEN_AFTERMATH_INCLUDE_HINTS ${_LIMEN_AFTERMATH_ROOT_HINTS})
+		if(LIMEN_AFTERMATH_SDK_ROOT)
+			list(APPEND _LIMEN_AFTERMATH_ROOT_HINTS "${LIMEN_AFTERMATH_SDK_ROOT}")
+			list(APPEND _LIMEN_AFTERMATH_INCLUDE_HINTS "${LIMEN_AFTERMATH_SDK_ROOT}/include")
+		endif()
+		if(DEFINED ENV{NSIGHT_AFTERMATH_SDK})
+			list(APPEND _LIMEN_AFTERMATH_ROOT_HINTS "$ENV{NSIGHT_AFTERMATH_SDK}")
+			list(APPEND _LIMEN_AFTERMATH_INCLUDE_HINTS "$ENV{NSIGHT_AFTERMATH_SDK}/include")
+		endif()
+		find_path(LIMEN_AFTERMATH_INCLUDE_DIR
+			NAMES GFSDK_Aftermath.h
+			HINTS ${_LIMEN_AFTERMATH_INCLUDE_HINTS}
+			REQUIRED
+		)
+		if(_LIMEN_DXC_ARCH STREQUAL "x64")
+			set(_LIMEN_AFTERMATH_LIBRARY_NAME GFSDK_Aftermath_Lib.x64)
+		else()
+			set(_LIMEN_AFTERMATH_LIBRARY_NAME GFSDK_Aftermath_Lib.x86)
+		endif()
+		if(NOT LIMEN_AFTERMATH_LIBRARY)
+			unset(LIMEN_AFTERMATH_LIBRARY CACHE)
+			find_library(LIMEN_AFTERMATH_LIBRARY
+				NAMES ${_LIMEN_AFTERMATH_LIBRARY_NAME}
+				HINTS ${_LIMEN_AFTERMATH_ROOT_HINTS}
+				PATH_SUFFIXES "lib/${_LIMEN_DXC_ARCH}" ${_LIMEN_DXC_ARCH}
+				REQUIRED
+			)
+		endif()
+		if(NOT LIMEN_AFTERMATH_RUNTIME_DLL)
+			unset(LIMEN_AFTERMATH_RUNTIME_DLL CACHE)
+			find_file(LIMEN_AFTERMATH_RUNTIME_DLL
+				NAMES "${_LIMEN_AFTERMATH_LIBRARY_NAME}.dll"
+				HINTS ${_LIMEN_AFTERMATH_ROOT_HINTS}
+				PATH_SUFFIXES "bin/${_LIMEN_DXC_ARCH}" "lib/${_LIMEN_DXC_ARCH}" ${_LIMEN_DXC_ARCH}
+				REQUIRED
+			)
+		endif()
+	endif()
+
 	add_library(limen_d3d12 SHARED
 		backend/graphics/d3d12/driver.cpp
 		backend/graphics/d3d12/debug.cpp
@@ -203,20 +257,103 @@ if(WIN32 AND LIMEN_BUILD_D3D12)
 		"${CMAKE_CURRENT_SOURCE_DIR}/backend/platform"
 	)
 	target_link_libraries(limen_d3d12 PRIVATE libhl limen d3d12 dxgi "${LIMEN_DXCOMPILER_LIBRARY}")
+	if(LIMEN_BUILD_AFTERMATH)
+		target_compile_definitions(limen_d3d12 PRIVATE LIMEN_AFTERMATH)
+		target_include_directories(limen_d3d12 PRIVATE "${LIMEN_AFTERMATH_INCLUDE_DIR}")
+		target_link_libraries(limen_d3d12 PRIVATE "${LIMEN_AFTERMATH_LIBRARY}")
+	endif()
 	add_custom_command(TARGET limen_d3d12 POST_BUILD
 		COMMAND "${CMAKE_COMMAND}" -E copy_if_different
 			"${LIMEN_DXCOMPILER_RUNTIME_DLL}" "$<TARGET_FILE_DIR:limen_d3d12>"
 		COMMAND "${CMAKE_COMMAND}" -E copy_if_different
 			"${LIMEN_DXIL_RUNTIME_DLL}" "$<TARGET_FILE_DIR:limen_d3d12>"
 	)
+	if(LIMEN_BUILD_AFTERMATH)
+		add_custom_command(TARGET limen_d3d12 POST_BUILD
+			COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+				"${LIMEN_AFTERMATH_RUNTIME_DLL}" "$<TARGET_FILE_DIR:limen_d3d12>"
+		)
+	endif()
 	install(
 		FILES "${LIMEN_DXCOMPILER_RUNTIME_DLL}" "${LIMEN_DXIL_RUNTIME_DLL}"
 		DESTINATION "${LIMEN_HDLL_DESTINATION}"
 	)
+	if(LIMEN_BUILD_AFTERMATH)
+		install(FILES "${LIMEN_AFTERMATH_RUNTIME_DLL}" DESTINATION "${LIMEN_HDLL_DESTINATION}")
+	endif()
+
+	if(LIMEN_BUILD_DLSS)
+		if(NOT _LIMEN_DXC_ARCH STREQUAL "x64")
+			message(FATAL_ERROR "NVIDIA Streamline DLSS is only supported by the Windows x64 build.")
+		endif()
+		set(_LIMEN_STREAMLINE_ROOT_HINTS
+			"${CMAKE_CURRENT_SOURCE_DIR}/backend/graphics/d3d12/streamline"
+		)
+		if(LIMEN_STREAMLINE_SDK_ROOT)
+			list(APPEND _LIMEN_STREAMLINE_ROOT_HINTS "${LIMEN_STREAMLINE_SDK_ROOT}")
+		endif()
+		if(DEFINED ENV{STREAMLINE_SDK})
+			list(APPEND _LIMEN_STREAMLINE_ROOT_HINTS "$ENV{STREAMLINE_SDK}")
+		endif()
+		if(NOT LIMEN_STREAMLINE_INTERPOSER_LIBRARY)
+			unset(LIMEN_STREAMLINE_INTERPOSER_LIBRARY CACHE)
+			find_library(LIMEN_STREAMLINE_INTERPOSER_LIBRARY
+				NAMES sl.interposer
+				HINTS ${_LIMEN_STREAMLINE_ROOT_HINTS}
+				PATH_SUFFIXES lib/x64 x64
+				REQUIRED
+			)
+		endif()
+		get_filename_component(_LIMEN_STREAMLINE_LIBRARY_DIR
+			"${LIMEN_STREAMLINE_INTERPOSER_LIBRARY}" DIRECTORY
+		)
+		get_filename_component(_LIMEN_STREAMLINE_LIBRARY_ROOT
+			"${_LIMEN_STREAMLINE_LIBRARY_DIR}/../.." ABSOLUTE
+		)
+		list(APPEND _LIMEN_STREAMLINE_ROOT_HINTS "${_LIMEN_STREAMLINE_LIBRARY_ROOT}")
+		set(_LIMEN_STREAMLINE_RUNTIME_FILES)
+		foreach(_runtime_name
+			sl.interposer.dll
+			sl.common.dll
+			sl.pcl.dll
+			sl.dlss.dll
+			nvngx_dlss.dll
+		)
+			string(MAKE_C_IDENTIFIER "${_runtime_name}" _runtime_id)
+			find_file(_LIMEN_STREAMLINE_RUNTIME_${_runtime_id}
+				NAMES "${_runtime_name}"
+				HINTS ${_LIMEN_STREAMLINE_ROOT_HINTS}
+				PATH_SUFFIXES bin/x64 x64
+				REQUIRED
+			)
+			list(APPEND _LIMEN_STREAMLINE_RUNTIME_FILES
+				"${_LIMEN_STREAMLINE_RUNTIME_${_runtime_id}}"
+			)
+		endforeach()
+
+		add_library(limen_dlss SHARED backend/graphics/d3d12/dlss.cpp)
+		limen_set_hdll(limen_dlss limen_dlss)
+		target_compile_features(limen_dlss PRIVATE cxx_std_20)
+		target_include_directories(limen_dlss PRIVATE
+			"${CMAKE_CURRENT_SOURCE_DIR}/backend/graphics/d3d12/streamline"
+		)
+		target_link_libraries(limen_dlss PRIVATE
+			libhl
+			d3d12
+			dxgi
+			"${LIMEN_STREAMLINE_INTERPOSER_LIBRARY}"
+		)
+		add_dependencies(limen_dlss limen_d3d12)
+		add_custom_command(TARGET limen_dlss POST_BUILD
+			COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+				${_LIMEN_STREAMLINE_RUNTIME_FILES} "$<TARGET_FILE_DIR:limen_dlss>"
+		)
+		install(FILES ${_LIMEN_STREAMLINE_RUNTIME_FILES} DESTINATION "${LIMEN_HDLL_DESTINATION}")
+	endif()
 endif()
 
 set(_LIMEN_INSTALL_TARGETS limen)
-foreach(_target limen_opengl limen_vulkan limen_d3d11 limen_d3d12)
+foreach(_target limen_opengl limen_vulkan limen_d3d11 limen_d3d12 limen_dlss)
 	if(TARGET ${_target})
 		list(APPEND _LIMEN_INSTALL_TARGETS ${_target})
 	endif()
@@ -226,6 +363,7 @@ install(
 	TARGETS ${_LIMEN_INSTALL_TARGETS}
 	RUNTIME DESTINATION "${LIMEN_HDLL_DESTINATION}"
 	LIBRARY DESTINATION "${LIMEN_HDLL_DESTINATION}"
+	ARCHIVE DESTINATION "${LIMEN_HDLL_DESTINATION}"
 )
 
 if(LIMEN_BUILD_TESTS)

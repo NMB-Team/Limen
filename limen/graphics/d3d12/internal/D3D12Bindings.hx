@@ -145,6 +145,8 @@ class D3D12Bindings {
 
 	public static function resume() {}
 
+	public static function setGpuCrashHandler(handler:(name:hl.Bytes, bytes:hl.Bytes, size:Int, lastFile:Bool) -> Void) {}
+
 	public static function getConstant(index:Int):Int {
 		return 0;
 	}

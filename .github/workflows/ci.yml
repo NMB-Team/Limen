@@ -22,36 +22,42 @@ jobs:
             cmake_arch: -A x64
             hashlink_library: bin/libhl.lib
             graphics_options: -DLIMEN_BUILD_OPENGL=ON -DLIMEN_BUILD_VULKAN=ON -DLIMEN_BUILD_D3D11=ON -DLIMEN_BUILD_D3D12=ON
+            dlss_options: -DLIMEN_BUILD_DLSS=ON -DLIMEN_STREAMLINE_SDK_ROOT="$GITHUB_WORKSPACE/streamline"
           - name: Windows x64 MinGW
             runner: windows-latest
             platform: windows-x64-mingw
             cmake_arch: -G "MinGW Makefiles"
             hashlink_library: bin/libhl.dll.a
             graphics_options: -DLIMEN_BUILD_OPENGL=ON -DLIMEN_BUILD_VULKAN=ON -DLIMEN_BUILD_SHADERC=OFF -DLIMEN_BUILD_D3D11=ON -DLIMEN_BUILD_D3D12=OFF
+            dlss_options: -DLIMEN_BUILD_DLSS=OFF
           - name: Linux x64
             runner: ubuntu-latest
             platform: linux-x64
             cmake_arch: ""
             hashlink_library: bin/libhl.so
             graphics_options: -DLIMEN_BUILD_OPENGL=ON -DLIMEN_BUILD_VULKAN=ON -DLIMEN_BUILD_D3D11=OFF -DLIMEN_BUILD_D3D12=OFF
+            dlss_options: -DLIMEN_BUILD_DLSS=OFF
           - name: Linux ARM64
             runner: ubuntu-24.04-arm
             platform: linux-arm64
             cmake_arch: ""
             hashlink_library: bin/libhl.so
             graphics_options: -DLIMEN_BUILD_OPENGL=ON -DLIMEN_BUILD_VULKAN=ON -DLIMEN_BUILD_D3D11=OFF -DLIMEN_BUILD_D3D12=OFF
+            dlss_options: -DLIMEN_BUILD_DLSS=OFF
           - name: macOS x64
             runner: macos-15-intel
             platform: macos-x64
             cmake_arch: -DCMAKE_OSX_ARCHITECTURES=x86_64 -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13
             hashlink_library: bin/libhl.dylib
             graphics_options: -DLIMEN_BUILD_OPENGL=ON -DLIMEN_BUILD_VULKAN=OFF -DLIMEN_BUILD_D3D11=OFF -DLIMEN_BUILD_D3D12=OFF
+            dlss_options: -DLIMEN_BUILD_DLSS=OFF
           - name: macOS ARM64
             runner: macos-latest
             platform: macos-arm64
             cmake_arch: -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
             hashlink_library: bin/libhl.dylib
             graphics_options: -DLIMEN_BUILD_OPENGL=ON -DLIMEN_BUILD_VULKAN=OFF -DLIMEN_BUILD_D3D11=OFF -DLIMEN_BUILD_D3D12=OFF
+            dlss_options: -DLIMEN_BUILD_DLSS=OFF
 
     defaults:
       run:
@@ -115,6 +121,11 @@ jobs:
               -o "$RUNNER_TEMP/dxc.zip" \
               https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.8.2505.1/dxc_2025_07_14.zip
             7z x "$RUNNER_TEMP/dxc.zip" -ohashlink/include/dx
+
+            curl -fsSL --retry 3 --retry-delay 5 \
+              -o "$RUNNER_TEMP/streamline.zip" \
+              https://github.com/NVIDIA-RTX/Streamline/releases/download/v2.12.0/streamline-sdk-v2.12.0.zip
+            7z x "$RUNNER_TEMP/streamline.zip" -ostreamline
           fi
 
       - name: Build NMB HashLink library
@@ -142,7 +153,8 @@ jobs:
             -DLIMEN_HASHLINK_ROOT="$GITHUB_WORKSPACE/hashlink" \
             -DLIMEN_HASHLINK_LIBRARY="$GITHUB_WORKSPACE/hashlink-build/${{ matrix.hashlink_library }}" \
             -DLIMEN_BUILD_TESTS=ON \
-            ${{ matrix.graphics_options }}
+            ${{ matrix.graphics_options }} \
+            ${{ matrix.dlss_options }}
 
       - name: Build LIMEN
         run: cmake --build build --config Release --parallel
