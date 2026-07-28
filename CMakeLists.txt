@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.24)
 
+if(MSVC)
+	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+
 if(TARGET libhl)
 	set(LIMEN_EMBEDDED ON)
 else()
