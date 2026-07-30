@@ -1,13 +1,19 @@
-# LIMEN
+<div align=center>
 
-LIMEN is the SDL3 platform and graphics integration for HashLink NMB.
+<img src=".github/img/limen-logo.svg" width=300 />
+
+# LIMEN
+#### is the SDL3 platform and graphics integration for HashLink NMB.
 
 SDL owns windows, displays, fullscreen state, input, cursors, clipboard,
 drag-and-drop, and native event delivery. OpenGL, Vulkan, Direct3D 11, and
 Direct3D 12 own GPU rendering only.
 
-This repository is the canonical implementation. HashLink embeds it through
-its `LIMEN_SOURCE_DIR` CMake option.
+</div>
+
+> [!IMPORTANT]
+> This repository is the canonical implementation. HashLink embeds it through
+> its `LIMEN_SOURCE_DIR` CMake option.
 
 ## Haxe API
 
@@ -52,15 +58,17 @@ and `shader`. Vulkan follows the equivalent package structure.
 The native build produces exactly:
 
 ```text
-limen.hdll
-limen_opengl.hdll
-limen_vulkan.hdll
-limen_d3d11.hdll
-limen_d3d12.hdll
+limen.hdll - Core of LIMEN
+limen_opengl.hdll - GL driver (includes on all targets)
+limen_vulkan.hdll - Vulkan driver (includes on all targets)
+limen_d3d11.hdll - Direct3D 11 (includes on all windows targets)
+limen_d3d12.hdll - Direct3D 12 (includes on WinX64 ONLY)
 ```
 
 Windows build and install directories also contain the dynamically linked
 runtime DLLs beside the modules:
+
+Contains and using only by **Direct3D 12**
 
 ```text
 dxcompiler.dll

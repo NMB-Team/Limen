@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title">
+<title id="title">LIMEN</title>
+<defs>
+  <linearGradient id="limenGradient" x1="312" y1="272" x2="936" y2="752" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#e9931e"/>
+    <stop offset="0.4" stop-color="#fdcb08"/>
+    <stop offset="1" stop-color="#97d52f"/>
+  </linearGradient>
+</defs>
+
+<path fill="#f9004b" d="M176 96h400a56 56 0 0 1 56 56v56H208v608h424v56a56 56 0 0 1-56 56H176a80 80 0 0 1-80-80V176a80 80 0 0 1 80-80Z"/>
+
+<path fill="url(#limenGradient)" d="M352 272h536l48 40-48 40H352a40 40 0 0 1-40-40 40 40 0 0 1 40-40Z"/>
+<path fill="url(#limenGradient)" d="M320 416h568l48 40-48 40H320a40 40 0 0 1-40-40 40 40 0 0 1 40-40Z"/>
+<path fill="url(#limenGradient)" d="M320 560h568l48 40-48 40H320a40 40 0 0 1-40-40 40 40 0 0 1 40-40Z"/>
+<path fill="url(#limenGradient)" d="M352 704h536l48 40-48 40H352a40 40 0 0 1-40-40 40 40 0 0 1 40-40Z"/>
+</svg>
