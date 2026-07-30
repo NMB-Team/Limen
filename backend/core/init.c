@@ -13,7 +13,7 @@ HL_PRIM bool HL_NAME(init_once)() {
 #ifdef HL_ANDROID
 	SDL_SetMainReady();
 #endif
-	if (!SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
+	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
 		hl_error("SDL_Init failed: %s", hl_to_utf16(SDL_GetError()));
 		return false;
 	}

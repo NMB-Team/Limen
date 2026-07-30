@@ -2,7 +2,6 @@ package limen.platform;
 
 import limen.platform.Platform.DisplayId;
 import limen.platform.internal.SdlBindings;
-import limen.graphics.opengl.Context;
 
 typedef WinPtr = hl.Abstract<"limen_window">;
 
@@ -129,14 +128,6 @@ class Window {
 
 	public inline function raise():Void {
 		SdlBindings.winRaise(win);
-	}
-
-	public inline function setCurrent():Void {
-		Context.setWindowCurrent(this);
-	}
-
-	public inline function present():Void {
-		Context.presentWindow(this);
 	}
 
 	public inline function setDarkMode(enabled:Bool):Bool {

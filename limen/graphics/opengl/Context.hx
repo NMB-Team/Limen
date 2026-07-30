@@ -4,7 +4,6 @@ import limen.graphics.opengl.internal.OpenGLBindings;
 import limen.graphics.opengl.internal.OpenGLBindings.ContextHandle;
 import limen.platform.Platform;
 import limen.platform.Window;
-import haxe.ds.ObjectMap;
 
 private typedef Version = {
 	var major:Int;
@@ -20,9 +19,6 @@ class Context {
 	public static dynamic function onError(message:String):Void {
 		throw message;
 	}
-
-	static final contexts = new ObjectMap<Window, Context>();
-	static var current:Context;
 
 	public var vsync(default, set):Bool;
 
@@ -62,27 +58,26 @@ class Context {
 		return null;
 	}
 
-	function new(window:Window, handle:ContextHandle) {
+	private function new(window:Window, handle:ContextHandle) {
 		this.window = window;
 		this.handle = handle;
-		contexts.set(window, this);
-		current = this;
 	}
 
-	public function makeCurrent(?target:Window):Void {
-		OpenGLBindings.makeCurrent((target ?? window).nativeHandle, handle);
-		current = this;
+	public function makeCurrent():Void {
+		OpenGLBindings.makeCurrent(window.nativeHandle, handle);
 	}
 
-	public function present(?target:Window):Void {
+	public function present():Void {
 		if (handle == null)
 			return;
+
 		if (vsync && Platform.isWindows()) {
 			final spent = haxe.Timer.stamp() - lastFrame;
 			if (spent < 0.005)
 				Sys.sleep(0.005 - spent);
 		}
-		OpenGLBindings.swapWindow((target ?? window).nativeHandle);
+
+		OpenGLBindings.swapWindow(window.nativeHandle);
 		lastFrame = haxe.Timer.stamp();
 	}
 
@@ -91,26 +86,10 @@ class Context {
 			return;
 		OpenGLBindings.destroyContext(handle);
 		handle = null;
-		contexts.remove(window);
-		if (current == this)
-			current = null;
 	}
 
-	public static function setWindowCurrent(window:Window):Void {
-		final context = contexts.get(window) ?? current;
-		if (context == null)
-			return;
-		context.makeCurrent(window);
-	}
-
-	public static function presentWindow(window:Window):Void {
-		final context = contexts.get(window) ?? current;
-		if (context == null)
-			throw "No OpenGL context is available";
-		context.present(window);
-	}
-
-	function set_vsync(enabled:Bool):Bool {
+	@:noCompletion
+	private function set_vsync(enabled:Bool):Bool {
 		makeCurrent();
 		OpenGLBindings.setVsync(enabled);
 		return vsync = enabled;

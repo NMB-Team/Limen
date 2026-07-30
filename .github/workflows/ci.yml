@@ -127,6 +127,7 @@ jobs:
             -DWITH_HEAPS=OFF \
             -DWITH_OPENAL=OFF \
             -DWITH_SDL=OFF \
+            -DWITH_LIMEN=OFF \
             -DWITH_SQLITE=OFF \
             -DWITH_SSL=OFF \
             -DWITH_UI=OFF \
