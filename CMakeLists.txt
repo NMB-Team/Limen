@@ -330,7 +330,7 @@ if(LIMEN_WINDOWS_X64 AND LIMEN_BUILD_D3D12)
 
 		add_library(limen_dlss SHARED backend/src/graphics/d3d12/dlss.cpp)
 		limen_set_native_library(limen_dlss dlss .limen)
-		target_compile_features(limen_dlss PRIVATE cxx_std_20)
+		target_compile_features(limen_dlss PRIVATE cxx_std_23)
 		target_include_directories(limen_dlss PRIVATE
 			"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/graphics/d3d12/streamline"
 		)

@@ -10,6 +10,7 @@ function(limen_set_native_library target output_name suffix)
 	set_target_properties(${target} PROPERTIES
 		PREFIX ""
 		OUTPUT_NAME "${output_name}"
+		ARCHIVE_OUTPUT_NAME "${target}"
 		SUFFIX "${suffix}"
 	)
 

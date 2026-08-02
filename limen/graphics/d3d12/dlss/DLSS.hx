@@ -206,8 +206,8 @@ class DLSS {
 		return 0;
 	}
 
-	public static function getOptimalSettings(options:DLSSOptions):DLSSOptimalSettings {
-		return null;
+	public static function getOptimalSettings(options:DLSSOptions, outOptimalSettings:DLSSOptimalSettings):Int {
+		return 0;
 	}
 
 	public static function getNewFrameToken(frameIndex:Int):DLSSFrameToken {
