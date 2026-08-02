@@ -1,10 +1,19 @@
-option(LIMEN_BUILD_OPENGL "Build limen_opengl.hdll." ON)
-option(LIMEN_BUILD_VULKAN "Build limen_vulkan.hdll." ON)
-option(LIMEN_BUILD_SHADERC "Build shaderc support into limen_vulkan.hdll." ON)
-option(LIMEN_BUILD_D3D11 "Build limen_d3d11.hdll." ${MSVC})
-option(LIMEN_BUILD_D3D12 "Build limen_d3d12.hdll." ${MSVC})
-option(LIMEN_BUILD_DLSS "Build limen_dlss.hdll for the D3D12 backend." OFF)
-option(LIMEN_BUILD_AFTERMATH "Build NVIDIA Nsight Aftermath support into limen_d3d12.hdll." OFF)
+set(LIMEN_WINDOWS_X64 OFF)
+if(WIN32
+	AND CMAKE_SIZEOF_VOID_P EQUAL 8
+	AND NOT CMAKE_GENERATOR_PLATFORM MATCHES "^(ARM64|ARM64EC)$"
+	AND NOT CMAKE_SYSTEM_PROCESSOR MATCHES "^(ARM64|aarch64)$"
+)
+	set(LIMEN_WINDOWS_X64 ON)
+endif()
+
+option(LIMEN_BUILD_OPENGL "Build opengl.limen." ON)
+option(LIMEN_BUILD_VULKAN "Build vulkan.limen." ON)
+option(LIMEN_BUILD_SHADERC "Build shaderc support into vulkan.limen." ON)
+option(LIMEN_BUILD_D3D11 "Build d3d11.limen." ${WIN32})
+option(LIMEN_BUILD_D3D12 "Build d3d12.limen." ${LIMEN_WINDOWS_X64})
+option(LIMEN_BUILD_DLSS "Build dlss.limen for the D3D12 backend." OFF)
+option(LIMEN_BUILD_AFTERMATH "Build NVIDIA Nsight Aftermath support into d3d12.limen." OFF)
 option(LIMEN_BUILD_TESTS "Build Lumen tests." OFF)
 
 set(LIMEN_SDL3_SOURCE_DIR "" CACHE PATH "Optional SDL3 source tree; otherwise SDL3 is fetched by CMake.")

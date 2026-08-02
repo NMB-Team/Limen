@@ -6,11 +6,11 @@ else()
 	set(LIMEN_HDLL_DESTINATION "${CMAKE_INSTALL_LIBDIR}")
 endif()
 
-function(limen_set_hdll target output_name)
+function(limen_set_native_library target output_name suffix)
 	set_target_properties(${target} PROPERTIES
 		PREFIX ""
 		OUTPUT_NAME "${output_name}"
-		SUFFIX ".hdll"
+		SUFFIX "${suffix}"
 	)
 
 	if(NOT MSVC AND NOT APPLE)

@@ -23,32 +23,37 @@ limen_resolve_hashlink()
 limen_resolve_sdl3()
 
 add_library(limen SHARED
-	backend/core/hints.c
-	backend/core/init.c
-	backend/core/time.c
-	backend/input/events.c
-	backend/input/gamepad.c
-	backend/input/joystick.c
-	backend/input/keyboard.c
-	backend/input/mouse.c
-	backend/window/clipboard.c
-	backend/window/cursor.c
-	backend/window/display.c
-	backend/window/dragdrop.c
-	backend/window/window.c
-	backend/platform/graphics.c
+	backend/src/core/hints.c
+	backend/src/core/init.c
+	backend/src/core/graphics_driver.c
+	backend/src/core/time.c
+	backend/src/input/events.c
+	backend/src/input/gamepad.c
+	backend/src/input/joystick.c
+	backend/src/input/keyboard.c
+	backend/src/input/mouse.c
+	backend/src/window/clipboard.c
+	backend/src/window/cursor.c
+	backend/src/window/display.c
+	backend/src/window/dragdrop.c
+	backend/src/window/window.c
+	backend/src/platform/graphics.c
 	${LIMEN_PLATFORM_SOURCES}
 )
-limen_set_hdll(limen limen)
+limen_set_native_library(limen limen .hdll)
 target_compile_definitions(limen PRIVATE LIMEN_PLATFORM_BUILD)
 target_include_directories(limen
-	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
-	PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/backend/platform"
+	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/backend/include"
+	PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/backend/src/platform"
 )
 target_link_libraries(limen PRIVATE libhl SDL3::SDL3-static ${LIMEN_PLATFORM_LIBRARIES})
 
-if(LIMEN_BUILD_DLSS AND (NOT WIN32 OR NOT LIMEN_BUILD_D3D12))
-	message(FATAL_ERROR "LIMEN_BUILD_DLSS requires the Windows D3D12 backend.")
+if(LIMEN_BUILD_D3D12 AND NOT LIMEN_WINDOWS_X64)
+	message(FATAL_ERROR "LIMEN_BUILD_D3D12 is supported only on Windows x64.")
+endif()
+
+if(LIMEN_BUILD_DLSS AND (NOT LIMEN_WINDOWS_X64 OR NOT LIMEN_BUILD_D3D12))
+	message(FATAL_ERROR "LIMEN_BUILD_DLSS requires the Windows x64 D3D12 backend.")
 endif()
 
 if(LIMEN_BUILD_VULKAN)
@@ -59,17 +64,17 @@ endif()
 
 if(LIMEN_BUILD_OPENGL)
 	add_library(limen_opengl SHARED
-		backend/graphics/opengl/context.c
-		backend/graphics/opengl/gl.c
+		backend/src/graphics/opengl/context.c
+		backend/src/graphics/opengl/gl.c
 	)
-	limen_set_hdll(limen_opengl limen_opengl)
+	limen_set_native_library(limen_opengl opengl .limen)
 	target_include_directories(limen_opengl PRIVATE
-		"${CMAKE_CURRENT_SOURCE_DIR}/include"
-		"${CMAKE_CURRENT_SOURCE_DIR}/backend/platform"
-		"${CMAKE_CURRENT_SOURCE_DIR}/backend/graphics/opengl"
+		"${CMAKE_CURRENT_SOURCE_DIR}/backend/include"
+		"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/platform"
+		"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/graphics/opengl"
 	)
 	if(WIN32 AND NOT MINGW)
-		target_include_directories(limen_opengl PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/gl")
+		target_include_directories(limen_opengl PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/backend/include/gl")
 	endif()
 	target_link_libraries(limen_opengl PRIVATE libhl limen)
 	if(APPLE)
@@ -88,14 +93,14 @@ endif()
 
 if(LIMEN_BUILD_VULKAN)
 	add_library(limen_vulkan SHARED
-		backend/graphics/vulkan/surface.c
-		backend/graphics/vulkan/vulkan.c
-		backend/graphics/vulkan/shaderc.c
+		backend/src/graphics/vulkan/surface.c
+		backend/src/graphics/vulkan/vulkan.c
+		backend/src/graphics/vulkan/shaderc.c
 	)
-	limen_set_hdll(limen_vulkan limen_vulkan)
+	limen_set_native_library(limen_vulkan vulkan .limen)
 	target_include_directories(limen_vulkan PRIVATE
-		"${CMAKE_CURRENT_SOURCE_DIR}/include"
-		"${CMAKE_CURRENT_SOURCE_DIR}/backend/platform"
+		"${CMAKE_CURRENT_SOURCE_DIR}/backend/include"
+		"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/platform"
 		${Vulkan_INCLUDE_DIRS}
 	)
 	target_link_libraries(limen_vulkan PRIVATE libhl limen Vulkan::Vulkan)
@@ -132,16 +137,16 @@ if(LIMEN_BUILD_VULKAN)
 endif()
 
 if(WIN32 AND LIMEN_BUILD_D3D11)
-	add_library(limen_d3d11 SHARED backend/graphics/d3d11/driver.cpp)
-	limen_set_hdll(limen_d3d11 limen_d3d11)
+	add_library(limen_d3d11 SHARED backend/src/graphics/d3d11/driver.cpp)
+	limen_set_native_library(limen_d3d11 d3d11 .limen)
 	target_include_directories(limen_d3d11 PRIVATE
-		"${CMAKE_CURRENT_SOURCE_DIR}/include"
-		"${CMAKE_CURRENT_SOURCE_DIR}/backend/platform"
+		"${CMAKE_CURRENT_SOURCE_DIR}/backend/include"
+		"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/platform"
 	)
 	target_link_libraries(limen_d3d11 PRIVATE libhl limen d3d11 dxgi d3dcompiler)
 endif()
 
-if(WIN32 AND LIMEN_BUILD_D3D12)
+if(LIMEN_WINDOWS_X64 AND LIMEN_BUILD_D3D12)
 	if(CMAKE_GENERATOR_PLATFORM STREQUAL "ARM64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "^(ARM64|aarch64)$")
 		set(_LIMEN_DXC_ARCH arm64)
 	elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -152,15 +157,18 @@ if(WIN32 AND LIMEN_BUILD_D3D12)
 	set(_LIMEN_DXC_RUNTIME_HINTS
 		"${CMAKE_SOURCE_DIR}/include/dx/bin/${_LIMEN_DXC_ARCH}"
 		"${LIMEN_HASHLINK_ROOT}/include/dx/bin/${_LIMEN_DXC_ARCH}"
-		"$ENV{VULKAN_SDK}/Bin-ARM64"
-		"$ENV{VULKAN_SDK}/Bin"
 	)
 	set(_LIMEN_DXC_LIBRARY_HINTS
 		"${CMAKE_SOURCE_DIR}/include/dx/lib/${_LIMEN_DXC_ARCH}"
 		"${LIMEN_HASHLINK_ROOT}/include/dx/lib/${_LIMEN_DXC_ARCH}"
-		"$ENV{VULKAN_SDK}/Lib-ARM64"
-		"$ENV{VULKAN_SDK}/Lib"
 	)
+	if(_LIMEN_DXC_ARCH STREQUAL "arm64")
+		list(APPEND _LIMEN_DXC_RUNTIME_HINTS "$ENV{VULKAN_SDK}/Bin-ARM64")
+		list(APPEND _LIMEN_DXC_LIBRARY_HINTS "$ENV{VULKAN_SDK}/Lib-ARM64")
+	else()
+		list(APPEND _LIMEN_DXC_RUNTIME_HINTS "$ENV{VULKAN_SDK}/Bin")
+		list(APPEND _LIMEN_DXC_LIBRARY_HINTS "$ENV{VULKAN_SDK}/Lib")
+	endif()
 	if(NOT LIMEN_DXCOMPILER_LIBRARY)
 		unset(LIMEN_DXCOMPILER_LIBRARY CACHE)
 		find_library(LIMEN_DXCOMPILER_LIBRARY
@@ -191,7 +199,7 @@ if(WIN32 AND LIMEN_BUILD_D3D12)
 			message(FATAL_ERROR "NVIDIA Nsight Aftermath is not supported by the Windows ARM64 build.")
 		endif()
 		set(_LIMEN_AFTERMATH_ROOT_HINTS
-			"${CMAKE_CURRENT_SOURCE_DIR}/include/aftermath"
+			"${CMAKE_CURRENT_SOURCE_DIR}/backend/include/aftermath"
 			"${CMAKE_SOURCE_DIR}/include/aftermath"
 		)
 		if(LIMEN_HASHLINK_ROOT)
@@ -237,13 +245,13 @@ if(WIN32 AND LIMEN_BUILD_D3D12)
 	endif()
 
 	add_library(limen_d3d12 SHARED
-		backend/graphics/d3d12/driver.cpp
-		backend/graphics/d3d12/debug.cpp
+		backend/src/graphics/d3d12/driver.cpp
+		backend/src/graphics/d3d12/debug.cpp
 	)
-	limen_set_hdll(limen_d3d12 limen_d3d12)
+	limen_set_native_library(limen_d3d12 d3d12 .limen)
 	target_include_directories(limen_d3d12 PRIVATE
-		"${CMAKE_CURRENT_SOURCE_DIR}/include"
-		"${CMAKE_CURRENT_SOURCE_DIR}/backend/platform"
+		"${CMAKE_CURRENT_SOURCE_DIR}/backend/include"
+		"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/platform"
 	)
 	target_link_libraries(limen_d3d12 PRIVATE libhl limen d3d12 dxgi "${LIMEN_DXCOMPILER_LIBRARY}")
 	if(LIMEN_BUILD_AFTERMATH)
@@ -276,7 +284,7 @@ if(WIN32 AND LIMEN_BUILD_D3D12)
 			message(FATAL_ERROR "NVIDIA Streamline DLSS is only supported by the Windows x64 build.")
 		endif()
 		set(_LIMEN_STREAMLINE_ROOT_HINTS
-			"${CMAKE_CURRENT_SOURCE_DIR}/backend/graphics/d3d12/streamline"
+			"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/graphics/d3d12/streamline"
 		)
 		if(LIMEN_STREAMLINE_SDK_ROOT)
 			list(APPEND _LIMEN_STREAMLINE_ROOT_HINTS "${LIMEN_STREAMLINE_SDK_ROOT}")
@@ -320,11 +328,11 @@ if(WIN32 AND LIMEN_BUILD_D3D12)
 			)
 		endforeach()
 
-		add_library(limen_dlss SHARED backend/graphics/d3d12/dlss.cpp)
-		limen_set_hdll(limen_dlss limen_dlss)
+		add_library(limen_dlss SHARED backend/src/graphics/d3d12/dlss.cpp)
+		limen_set_native_library(limen_dlss dlss .limen)
 		target_compile_features(limen_dlss PRIVATE cxx_std_20)
 		target_include_directories(limen_dlss PRIVATE
-			"${CMAKE_CURRENT_SOURCE_DIR}/backend/graphics/d3d12/streamline"
+			"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/graphics/d3d12/streamline"
 		)
 		target_link_libraries(limen_dlss PRIVATE
 			libhl

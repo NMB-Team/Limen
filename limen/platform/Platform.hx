@@ -1,5 +1,6 @@
 package limen.platform;
 
+import limen.graphics.GraphicsDriver;
 import limen.platform.display.Display;
 import limen.platform.event.Event;
 import limen.platform.input.Keyboard;
@@ -17,17 +18,33 @@ typedef DisplayInfo = limen.platform.display.Display.DisplayInfo;
 typedef DisplayMode = limen.platform.display.DisplayMode;
 
 class Platform {
+	public static var graphicsDriver(default, null):GraphicsDriver = None;
+
 	static var initDone = false;
 	static var isWin32 = false;
 
 	static final event = new Event();
 	static final watchEvent = new Event();
 
-	public static function init():Void {
+	public static function init(preferredGraphicsDriver:GraphicsDriver = OpenGL, ?supportedGraphicsDrivers:Array<GraphicsDriver>):Void {
 		if (initDone)
 			return;
 		if (!SdlBindings.initOnce())
 			throw "Failed to init SDL";
+
+		var supported = 0;
+		if (supportedGraphicsDrivers == null)
+			supported = 0x1E;
+		else
+			for (driver in supportedGraphicsDrivers)
+				supported |= 1 << (driver : Int);
+
+		graphicsDriver = SdlBindings.selectGraphicsDriver(preferredGraphicsDriver, supported);
+		if (graphicsDriver == None) {
+			SdlBindings.quit();
+			throw "No LIMEN graphics driver was found";
+		}
+
 		initDone = true;
 		isWin32 = SdlBindings.detectWin32();
 	}
@@ -57,6 +74,7 @@ class Platform {
 		if (!initDone)
 			return;
 		SdlBindings.quit();
+		graphicsDriver = None;
 		initDone = false;
 	}
 

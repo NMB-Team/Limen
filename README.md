@@ -59,11 +59,22 @@ The native build produces exactly:
 
 ```text
 limen.hdll - Core of LIMEN
-limen_opengl.hdll - GL driver (includes on all targets)
-limen_vulkan.hdll - Vulkan driver (includes on all targets)
-limen_d3d11.hdll - Direct3D 11 (includes on all windows targets)
-limen_d3d12.hdll - Direct3D 12 (includes on WinX64 ONLY)
+opengl.limen - GL driver (includes on all targets)
+vulkan.limen - Vulkan driver (includes on all targets)
+d3d11.limen - Direct3D 11 (includes on all Windows targets)
+d3d12.limen - Direct3D 12 (includes on Win64 ONLY)
+dlss.limen - DLSS (optional, includes on Win64 and with D3D12 ONLY)
 ```
+
+`Platform.init()` prefers OpenGL as the minimum backend. Pass another
+`GraphicsDriver` to request it first. If that module is missing or cannot be
+loaded, LIMEN falls back to OpenGL and then to any other available driver.
+The selected backend is exposed as `Platform.graphicsDriver`. Initialization
+fails with `No LIMEN graphics driver was found` when no driver module exists.
+Applications that compile only a subset of renderers can pass that subset as
+the second argument so fallback never selects an unavailable implementation.
+`DLSS.isAvailable()` is true only when D3D12 is selected and
+`dlss.limen` loads successfully.
 
 Windows build and install directories also contain the dynamically linked
 runtime DLLs beside the modules:
@@ -92,7 +103,7 @@ SDL3 source tree instead of the pinned fetched release.
 
 DLSS support is disabled by default and is not required to build or install
 LIMEN. On Windows x64, set `LIMEN_BUILD_DLSS=ON` and
-`LIMEN_STREAMLINE_SDK_ROOT` to build `limen_dlss.hdll`; the Streamline import
+`LIMEN_STREAMLINE_SDK_ROOT` to build `dlss.limen`; the Streamline import
 library and runtime DLLs are required only for that opt-in module.
 
 CMake locates the DXC runtime DLLs from the Vulkan SDK or HashLink's
@@ -102,7 +113,7 @@ CMake locates the DXC runtime DLLs from the Vulkan SDK or HashLink's
 Set `LIMEN_BUILD_AFTERMATH=ON` to add NVIDIA Nsight Aftermath GPU crash
 diagnostics to the D3D12 backend. Set `LIMEN_AFTERMATH_SDK_ROOT` to the SDK
 root, or define `NSIGHT_AFTERMATH_SDK`; CMake links the matching x64 or x86
-import library and packages its runtime DLL beside `limen_d3d12.hdll`. The
+import library and packages its runtime DLL beside `d3d12.limen`. The
 include directory, library, and runtime DLL can be overridden with
 `LIMEN_AFTERMATH_INCLUDE_DIR`, `LIMEN_AFTERMATH_LIBRARY`, and
 `LIMEN_AFTERMATH_RUNTIME_DLL`.

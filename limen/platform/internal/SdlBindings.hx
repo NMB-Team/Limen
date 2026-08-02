@@ -14,6 +14,14 @@ class SdlBindings {
 		return false;
 	}
 
+	public static function selectGraphicsDriver(preferred:Int, supported:Int):Int {
+		return 0;
+	}
+
+	public static function isDlssAvailable():Bool {
+		return false;
+	}
+
 	public static function quit():Void {}
 
 	public static function delay(milliseconds:Int):Void {}

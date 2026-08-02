@@ -1,9 +1,9 @@
 add_executable(limen_event_translation_test
 	event_translation.c
-	../backend/input/events.c
+	../backend/src/input/events.c
 )
 target_include_directories(limen_event_translation_test PRIVATE
-	"${CMAKE_CURRENT_SOURCE_DIR}/../backend"
+	"${CMAKE_CURRENT_SOURCE_DIR}/../backend/src"
 )
 target_link_libraries(limen_event_translation_test PRIVATE libhl SDL3::SDL3)
 

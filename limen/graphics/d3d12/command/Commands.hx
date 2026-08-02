@@ -28,7 +28,7 @@ enum abstract ClearFlags(Int) {
 	final BOTH = 3;
 }
 
-@:hlNative("limen_d3d12", "command_allocator_")
+@:hlNative("?limen_d3d12", "command_allocator_")
 abstract CommandAllocator(Dx12Resource) {
 	public function new(type) {
 		this = create(type);
@@ -41,7 +41,7 @@ abstract CommandAllocator(Dx12Resource) {
 	}
 }
 
-@:hlNative("limen_d3d12", "command_list_")
+@:hlNative("?limen_d3d12", "command_list_")
 abstract CommandList(Dx12Resource) {
 	public function new(type, alloc, state) {
 		this = create(type, alloc, state);
@@ -146,7 +146,7 @@ enum abstract CommandListType(Int) {
 	public final VIDEO_ENCODE = 6;
 }
 
-@:hlNative("limen_d3d12", "command_queue_")
+@:hlNative("?limen_d3d12", "command_queue_")
 abstract CommandQueue(Dx12Resource) {
 	public function new(type) {
 		this = create(type);
@@ -177,13 +177,13 @@ abstract CommandSignature(Dx12Resource) {}
 	public function new() {}
 }
 
-@:hlNative("limen_d3d12", "fence_")
+@:hlNative("?limen_d3d12", "fence_")
 abstract Fence(Dx12Resource) {
 	public function new(value, flags) {
 		this = create(value, flags);
 	}
 
-	@:hlNative("limen_d3d12", "fence_get_completed_value")
+	@:hlNative("?limen_d3d12", "fence_get_completed_value")
 	public function getValue():Int64 {
 		return 0;
 	}
@@ -257,7 +257,7 @@ enum abstract PredicationOp(Int) {
 	public function new() {}
 }
 
-@:hlNative("limen_d3d12", "waitevent_")
+@:hlNative("?limen_d3d12", "waitevent_")
 abstract WaitEvent(hl.Abstract<"dx_event">) {
 	public function new(state) {
 		this = cast create(state);

@@ -48,14 +48,14 @@ enum abstract Constant(Int) to Int {
 
 typedef Device = hl.Abstract<"dx_device">;
 
-@:hlNative("limen_d3d12")
+@:hlNative("?limen_d3d12")
 class D3D12Bindings {
-	@:hlNative("limen_d3d12", "compiler_create")
+	@:hlNative("?limen_d3d12", "compiler_create")
 	public static function compilerCreate():CompilerHandle {
 		return null;
 	}
 
-	@:hlNative("limen_d3d12", "compiler_compile")
+	@:hlNative("?limen_d3d12", "compiler_compile")
 	public static function compilerCompile(compiler:CompilerHandle, source:hl.Bytes, profile:hl.Bytes, args:hl.NativeArray<hl.Bytes>, output:hl.Ref<Int>):hl.Bytes {
 		return null;
 	}
@@ -170,30 +170,30 @@ class D3D12Bindings {
 		return out;
 	}
 
-	@:hlNative("limen_d3d12", "get_timestamp_frequency")
+	@:hlNative("?limen_d3d12", "get_timestamp_frequency")
 	public static function getTimestampFrequency():Int64 {
 		return 0;
 	}
 
-	@:hlNative("limen_d3d12", "list_devices")
+	@:hlNative("?limen_d3d12", "list_devices")
 	static function dxListDevices():hl.NativeArray<hl.Bytes> {
 		return null;
 	}
 
-	@:hlNative("limen_d3d12", "get_device_name")
+	@:hlNative("?limen_d3d12", "get_device_name")
 	static function dxGetDeviceName():hl.Bytes {
 		return null;
 	}
 
-	@:hlNative("limen_d3d12", "get_driver_version")
+	@:hlNative("?limen_d3d12", "get_driver_version")
 	public static function getDriverVersion():Int64 {
 		return 0;
 	}
 
-	@:hlNative("limen_d3d12", "query_video_memory_info")
+	@:hlNative("?limen_d3d12", "query_video_memory_info")
 	public static function queryVideoMemoryInfo(group:Int, infos:QueryVideoMemoryInfo):Void {}
 
-	@:hlNative("limen_d3d12", "create_sdl")
+	@:hlNative("?limen_d3d12", "create_sdl")
 	static function dxCreate(win:hl.Abstract<"limen_window">, flags:Dx12DriverInitFlags, deviceName:hl.Bytes):Dx12DriverInstance {
 		return null;
 	}

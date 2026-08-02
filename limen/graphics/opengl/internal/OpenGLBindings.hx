@@ -16,7 +16,7 @@ import limen.platform.Window.WinPtr;
 
 abstract ContextHandle(hl.Abstract<"limen_gl">) {}
 
-@:hlNative("limen_opengl", "gl_")
+@:hlNative("?limen_opengl", "gl_")
 class OpenGLBindings {
 	@:hlNative("?limen_opengl", "win_get_glcontext")
 	public static function createContext(window:WinPtr):ContextHandle {
@@ -207,19 +207,19 @@ class OpenGLBindings {
 
 	public static function texParameterf(t:Int, key:Int, value:hl.F32) {}
 
-	@:hlNative("limen_opengl", "gl_tex_image2d")
+	@:hlNative("?limen_opengl", "gl_tex_image2d")
 	public static function texImage2D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, border:Int, format:Int, type:Int, image:hl.Bytes) {}
 
-	@:hlNative("limen_opengl", "gl_tex_image3d")
+	@:hlNative("?limen_opengl", "gl_tex_image3d")
 	public static function texImage3D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, depth:Int, border:Int, format:Int, type:Int, image:hl.Bytes) {}
 
-	@:hlNative("limen_opengl", "gl_tex_image2d_multisample")
+	@:hlNative("?limen_opengl", "gl_tex_image2d_multisample")
 	public static function texImage2DMultisample(target:Int, samples:Int, internalFormat:Int, width:Int, height:Int, fixedsamplelocations:Bool) {}
 
-	@:hlNative("limen_opengl", "gl_compressed_tex_image2d")
+	@:hlNative("?limen_opengl", "gl_compressed_tex_image2d")
 	public static function compressedTexImage2D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, border:Int, imageSize:Int, image:hl.Bytes) {}
 
-	@:hlNative("limen_opengl", "gl_compressed_tex_image3d")
+	@:hlNative("?limen_opengl", "gl_compressed_tex_image3d")
 	public static function compressedTexImage3D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, depth:Int, border:Int, imageSize:Int, image:hl.Bytes) {}
 
 	@:hlNative("?limen_opengl", "gl_tex_sub_image2d")
@@ -256,7 +256,7 @@ class OpenGLBindings {
 
 	public static function bindFramebuffer(target:Int, f:Framebuffer) {}
 
-	@:hlNative("limen_opengl", "gl_framebuffer_texture2d")
+	@:hlNative("?limen_opengl", "gl_framebuffer_texture2d")
 	public static function framebufferTexture2D(target:Int, attach:Int, texTarget:Int, t:Texture, level:Int) {}
 
 	public static function framebufferTextureLayer(target:Int, attach:Int, t:Texture, level:Int, layer:Int) {}

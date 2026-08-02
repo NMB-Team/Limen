@@ -3,13 +3,13 @@ package limen.graphics.d3d12.descriptor;
 import limen.graphics.d3d12.DX12Core.Address;
 import limen.graphics.d3d12.resource.Resources.Dx12Resource;
 
-@:hlNative("limen_d3d12", "descriptor_heap_")
+@:hlNative("?limen_d3d12", "descriptor_heap_")
 abstract DescriptorHeap(Dx12Resource) to Dx12Resource {
 	public function new(desc) {
 		this = create(desc);
 	}
 
-	@:hlNative("limen_d3d12", "descriptor_heap_get_handle")
+	@:hlNative("?limen_d3d12", "descriptor_heap_get_handle")
 	public function getHandle(gpu:Bool):Address {
 		return cast null;
 	}
