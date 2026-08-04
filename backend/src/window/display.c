@@ -55,26 +55,31 @@ HL_PRIM int HL_NAME(get_screen_width)() {
 	const SDL_DisplayMode* mode = current_mode_for_window(NULL);
 	return mode != NULL ? mode->w : 0;
 }
+DEFINE_PRIM(_I32, get_screen_width, _NO_ARG);
 
 HL_PRIM int HL_NAME(get_screen_height)() {
 	const SDL_DisplayMode* mode = current_mode_for_window(NULL);
 	return mode != NULL ? mode->h : 0;
 }
+DEFINE_PRIM(_I32, get_screen_height, _NO_ARG);
 
 HL_PRIM int HL_NAME(get_screen_width_of_window)(SDL_Window* window) {
 	const SDL_DisplayMode* mode = current_mode_for_window(window);
 	return mode != NULL ? mode->w : 0;
 }
+DEFINE_PRIM(_I32, get_screen_width_of_window, TWIN);
 
 HL_PRIM int HL_NAME(get_screen_height_of_window)(SDL_Window* window) {
 	const SDL_DisplayMode* mode = current_mode_for_window(window);
 	return mode != NULL ? mode->h : 0;
 }
+DEFINE_PRIM(_I32, get_screen_height_of_window, TWIN);
 
 HL_PRIM int HL_NAME(get_framerate)(SDL_Window* window) {
 	const SDL_DisplayMode* mode = current_mode_for_window(window);
 	return mode != NULL ? (int)mode->refresh_rate : 0;
 }
+DEFINE_PRIM(_I32, get_framerate, TWIN);
 
 HL_PRIM varray* HL_NAME(get_displays)() {
 	int count;
@@ -101,6 +106,7 @@ HL_PRIM varray* HL_NAME(get_displays)() {
 	SDL_free(displays);
 	return result;
 }
+DEFINE_PRIM(_ARR, get_displays, _NO_ARG);
 
 HL_PRIM varray* HL_NAME(get_display_modes)(int display_index) {
 	int count;
@@ -120,6 +126,7 @@ HL_PRIM varray* HL_NAME(get_display_modes)(int display_index) {
 	SDL_free(modes);
 	return result;
 }
+DEFINE_PRIM(_ARR, get_display_modes, _I32);
 
 HL_PRIM vdynobj* HL_NAME(get_current_display_mode)(int display_index, bool desktop) {
 	SDL_DisplayID display = limen_display_id_from_index(display_index);
@@ -134,6 +141,7 @@ HL_PRIM vdynobj* HL_NAME(get_current_display_mode)(int display_index, bool deskt
 	hl_dyn_seti(object, hl_hash_utf8("framerate"), &hlt_i32, (int)mode->refresh_rate);
 	return (vdynobj*)object;
 }
+DEFINE_PRIM(_DYN, get_current_display_mode, _I32 _BOOL);
 
 HL_PRIM varray* HL_NAME(get_devices)() {
 	int count;
@@ -148,13 +156,4 @@ HL_PRIM varray* HL_NAME(get_devices)() {
 	SDL_free(displays);
 	return result;
 }
-
-DEFINE_PRIM(_I32, get_screen_width, _NO_ARG);
-DEFINE_PRIM(_I32, get_screen_height, _NO_ARG);
-DEFINE_PRIM(_I32, get_screen_width_of_window, TWIN);
-DEFINE_PRIM(_I32, get_screen_height_of_window, TWIN);
-DEFINE_PRIM(_I32, get_framerate, TWIN);
-DEFINE_PRIM(_ARR, get_displays, _NO_ARG);
-DEFINE_PRIM(_ARR, get_display_modes, _I32);
-DEFINE_PRIM(_DYN, get_current_display_mode, _I32 _BOOL);
 DEFINE_PRIM(_ARR, get_devices, _NO_ARG);

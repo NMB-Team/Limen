@@ -106,10 +106,12 @@ HL_PRIM SDL_Window* HL_NAME(win_create_ex)(int x, int y, int width, int height, 
 	SDL_StartTextInput(window);
 	return window;
 }
+DEFINE_PRIM(TWIN, win_create_ex, _I32 _I32 _I32 _I32 _I32);
 
 HL_PRIM SDL_Window* HL_NAME(win_create)(int width, int height) {
 	return HL_NAME(win_create_ex)(SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, 0);
 }
+DEFINE_PRIM(TWIN, win_create, _I32 _I32);
 
 HL_PRIM bool HL_NAME(win_set_fullscreen)(SDL_Window* window, int mode) {
 	limen_fullscreen_mode normalized = normalize_fullscreen_mode(mode);
@@ -145,6 +147,7 @@ HL_PRIM bool HL_NAME(win_set_fullscreen)(SDL_Window* window, int mode) {
 	SDL_SetWindowFullscreenMode(window, NULL);
 	return SDL_SetWindowFullscreen(window, true);
 }
+DEFINE_PRIM(_BOOL, win_set_fullscreen, TWIN _I32);
 
 HL_PRIM bool HL_NAME(win_set_display_mode)(SDL_Window* window, int width, int height, int framerate) {
 	SDL_DisplayMode mode;
@@ -157,74 +160,91 @@ HL_PRIM bool HL_NAME(win_set_display_mode)(SDL_Window* window, int width, int he
 		sync_window_state(window);
 	return result;
 }
+DEFINE_PRIM(_BOOL, win_set_display_mode, TWIN _I32 _I32 _I32);
 
 HL_PRIM int HL_NAME(win_display_handle)(SDL_Window* window) {
 	return limen_display_index_from_id(SDL_GetDisplayForWindow(window));
 }
+DEFINE_PRIM(_I32, win_display_handle, TWIN);
 
 HL_PRIM void HL_NAME(win_set_title)(SDL_Window* window, vbyte* title) {
 	SDL_SetWindowTitle(window, (char*)title);
 }
+DEFINE_PRIM(_VOID, win_set_title, TWIN _BYTES);
 
 HL_PRIM void HL_NAME(win_set_icon)(SDL_Window* window, SDL_Surface* surface) {
 	SDL_SetWindowIcon(window, surface);
 }
+DEFINE_PRIM(_VOID, win_set_icon, TWIN _SURF);
 
 HL_PRIM void HL_NAME(win_set_position)(SDL_Window* window, int x, int y) {
 	SDL_SetWindowPosition(window, x, y);
 }
+DEFINE_PRIM(_VOID, win_set_position, TWIN _I32 _I32);
 
 HL_PRIM void HL_NAME(win_get_position)(SDL_Window* window, int* x, int* y) {
 	SDL_GetWindowPosition(window, x, y);
 }
+DEFINE_PRIM(_VOID, win_get_position, TWIN _REF(_I32) _REF(_I32));
 
 HL_PRIM void HL_NAME(win_center)(SDL_Window* window, bool primary) {
 	SDL_DisplayID display = primary ? SDL_GetPrimaryDisplay() : SDL_GetDisplayForWindow(window);
 	int centered = SDL_WINDOWPOS_CENTERED_DISPLAY(display);
 	SDL_SetWindowPosition(window, centered, centered);
 }
+DEFINE_PRIM(_VOID, win_center, TWIN _BOOL);
 
 HL_PRIM void HL_NAME(win_set_size)(SDL_Window* window, int width, int height) {
 	if (SDL_GetWindowFlags(window) & SDL_WINDOW_MAXIMIZED)
 		SDL_RestoreWindow(window);
 	SDL_SetWindowSize(window, width, height);
 }
+DEFINE_PRIM(_VOID, win_set_size, TWIN _I32 _I32);
 
 HL_PRIM void HL_NAME(win_set_min_size)(SDL_Window* window, int width, int height) {
 	SDL_SetWindowMinimumSize(window, width, height);
 }
+DEFINE_PRIM(_VOID, win_set_min_size, TWIN _I32 _I32);
 
 HL_PRIM void HL_NAME(win_set_max_size)(SDL_Window* window, int width, int height) {
 	SDL_SetWindowMaximumSize(window, width, height);
 }
+DEFINE_PRIM(_VOID, win_set_max_size, TWIN _I32 _I32);
 
 HL_PRIM void HL_NAME(win_get_pixel_size)(SDL_Window* window, int* width, int* height) {
 	SDL_GetWindowSizeInPixels(window, width, height);
 }
+DEFINE_PRIM(_VOID, win_get_pixel_size, TWIN _REF(_I32) _REF(_I32));
 
 HL_PRIM void HL_NAME(win_get_size)(SDL_Window* window, int* width, int* height) {
 	SDL_GetWindowSize(window, width, height);
 }
+DEFINE_PRIM(_VOID, win_get_size, TWIN _REF(_I32) _REF(_I32));
 
 HL_PRIM void HL_NAME(win_get_min_size)(SDL_Window* window, int* width, int* height) {
 	SDL_GetWindowMinimumSize(window, width, height);
 }
+DEFINE_PRIM(_VOID, win_get_min_size, TWIN _REF(_I32) _REF(_I32));
 
 HL_PRIM void HL_NAME(win_get_max_size)(SDL_Window* window, int* width, int* height) {
 	SDL_GetWindowMaximumSize(window, width, height);
 }
+DEFINE_PRIM(_VOID, win_get_max_size, TWIN _REF(_I32) _REF(_I32));
 
 HL_PRIM double HL_NAME(win_get_display_scale)(SDL_Window* window) {
 	return SDL_GetWindowDisplayScale(window);
 }
+DEFINE_PRIM(_F64, win_get_display_scale, TWIN);
 
 HL_PRIM double HL_NAME(win_get_opacity)(SDL_Window* window) {
 	return SDL_GetWindowOpacity(window);
 }
+DEFINE_PRIM(_F64, win_get_opacity, TWIN);
 
 HL_PRIM bool HL_NAME(win_set_opacity)(SDL_Window* window, double opacity) {
 	return SDL_SetWindowOpacity(window, (float)opacity);
 }
+DEFINE_PRIM(_BOOL, win_set_opacity, TWIN _F64);
 
 HL_PRIM bool HL_NAME(win_set_dark_mode)(SDL_Window* window, bool enabled) {
 #ifdef HL_WIN_DESKTOP
@@ -235,6 +255,7 @@ HL_PRIM bool HL_NAME(win_set_dark_mode)(SDL_Window* window, bool enabled) {
 	return false;
 #endif
 }
+DEFINE_PRIM(_BOOL, win_set_dark_mode, TWIN _BOOL);
 
 HL_PRIM void HL_NAME(win_resize)(SDL_Window* window, int mode) {
 	switch (mode) {
@@ -257,14 +278,22 @@ HL_PRIM void HL_NAME(win_resize)(SDL_Window* window, int mode) {
 			break;
 	}
 }
+DEFINE_PRIM(_VOID, win_resize, TWIN _I32);
 
 HL_PRIM void HL_NAME(win_raise)(SDL_Window* window) {
 	SDL_RaiseWindow(window);
 }
+DEFINE_PRIM(_VOID, win_raise, TWIN);
+
+HL_PRIM bool HL_NAME(win_set_always_on_top)(SDL_Window* window, bool enabled) {
+	return SDL_SetWindowAlwaysOnTop(window, enabled);
+}
+DEFINE_PRIM(_BOOL, win_set_always_on_top, TWIN _BOOL);
 
 HL_PRIM int HL_NAME(win_get_id)(SDL_Window* window) {
 	return SDL_GetWindowID(window);
 }
+DEFINE_PRIM(_I32, win_get_id, TWIN);
 
 HL_PRIM void HL_NAME(window_destroy)(SDL_Window* window) {
 #ifdef HL_WIN_DESKTOP
@@ -272,34 +301,9 @@ HL_PRIM void HL_NAME(window_destroy)(SDL_Window* window) {
 #endif
 	SDL_DestroyWindow(window);
 }
+DEFINE_PRIM(_VOID, window_destroy, TWIN);
 
 HL_PRIM const char* HL_NAME(win_error)() {
 	return SDL_GetError();
 }
-
-DEFINE_PRIM(TWIN, win_create_ex, _I32 _I32 _I32 _I32 _I32);
-DEFINE_PRIM(TWIN, win_create, _I32 _I32);
-DEFINE_PRIM(_BOOL, win_set_fullscreen, TWIN _I32);
-DEFINE_PRIM(_BOOL, win_set_display_mode, TWIN _I32 _I32 _I32);
-DEFINE_PRIM(_I32, win_display_handle, TWIN);
-DEFINE_PRIM(_VOID, win_resize, TWIN _I32);
-DEFINE_PRIM(_VOID, win_raise, TWIN);
-DEFINE_PRIM(_VOID, win_set_title, TWIN _BYTES);
-DEFINE_PRIM(_VOID, win_set_icon, TWIN _SURF);
-DEFINE_PRIM(_VOID, win_set_position, TWIN _I32 _I32);
-DEFINE_PRIM(_VOID, win_get_position, TWIN _REF(_I32) _REF(_I32));
-DEFINE_PRIM(_VOID, win_center, TWIN _BOOL);
-DEFINE_PRIM(_VOID, win_set_size, TWIN _I32 _I32);
-DEFINE_PRIM(_VOID, win_set_min_size, TWIN _I32 _I32);
-DEFINE_PRIM(_VOID, win_set_max_size, TWIN _I32 _I32);
-DEFINE_PRIM(_VOID, win_get_pixel_size, TWIN _REF(_I32) _REF(_I32));
-DEFINE_PRIM(_VOID, win_get_size, TWIN _REF(_I32) _REF(_I32));
-DEFINE_PRIM(_VOID, win_get_min_size, TWIN _REF(_I32) _REF(_I32));
-DEFINE_PRIM(_VOID, win_get_max_size, TWIN _REF(_I32) _REF(_I32));
-DEFINE_PRIM(_F64, win_get_display_scale, TWIN);
-DEFINE_PRIM(_F64, win_get_opacity, TWIN);
-DEFINE_PRIM(_BOOL, win_set_opacity, TWIN _F64);
-DEFINE_PRIM(_BOOL, win_set_dark_mode, TWIN _BOOL);
-DEFINE_PRIM(_VOID, window_destroy, TWIN);
 DEFINE_PRIM(_BYTES, win_error, _NO_ARG);
-DEFINE_PRIM(_I32, win_get_id, TWIN);

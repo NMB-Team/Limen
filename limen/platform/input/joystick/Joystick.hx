@@ -49,15 +49,18 @@ class Joystick {
 		ptr = null;
 	}
 
+	@:noCompletion
 	inline function get_id():Int {
 		return SdlBindings.joyGetId(ptr);
 	}
 
+	@:noCompletion
 	inline function get_name():String {
 		final value = SdlBindings.joyGetName(ptr);
 		return value == null ? "" : @:privateAccess String.fromUTF8(value);
 	}
 
+	@:noCompletion
 	inline function get_isOpen():Bool {
 		return ptr != null;
 	}

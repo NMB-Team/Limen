@@ -162,12 +162,18 @@ class Window {
 		SdlBindings.winResize(win, 2);
 	}
 
-	function set_title(name:String):String {
+	public inline function setAlwaysOnTop(enabled:Bool):Bool {
+		return SdlBindings.winSetAlwaysOnTop(win, enabled);
+	}
+
+	@:noCompletion
+	private function set_title(name:String):String {
 		SdlBindings.winSetTitle(win, @:privateAccess name.toUtf8());
 		return title = name;
 	}
 
-	function set_displayMode(mode:WindowMode):WindowMode {
+	@:noCompletion
+	private function set_displayMode(mode:WindowMode):WindowMode {
 		if (mode == Fullscreen && displaySetting != null)
 			SdlBindings.winSetDisplayMode(win, displaySetting.width, displaySetting.height, displaySetting.framerate);
 		if (SdlBindings.winSetFullscreen(win, mode))
@@ -175,100 +181,119 @@ class Window {
 		return displayMode;
 	}
 
-	function set_visible(value:Bool):Bool {
+	@:noCompletion
+	private function set_visible(value:Bool):Bool {
 		if (visible != value)
 			SdlBindings.winResize(win, value ? 3 : 4);
 		return visible = value;
 	}
 
-	function get_width():Int {
+	@:noCompletion
+	private function get_width():Int {
 		var value = 0;
 		SdlBindings.winGetSize(win, value, null);
 		return value;
 	}
 
-	function get_height():Int {
+	@:noCompletion
+	private function get_height():Int {
 		var value = 0;
 		SdlBindings.winGetSize(win, null, value);
 		return value;
 	}
 
-	function get_windowToPixelRatio():Float {
+	@:noCompletion
+	private function get_windowToPixelRatio():Float {
 		var pixelHeight = 0;
 		SdlBindings.winGetPixelSize(win, null, pixelHeight);
 		return height / pixelHeight;
 	}
 
-	function get_minWidth():Int {
+	@:noCompletion
+	private function get_minWidth():Int {
 		var value = 0;
 		SdlBindings.winGetMinSize(win, value, null);
 		return value;
 	}
 
-	function get_minHeight():Int {
+	@:noCompletion
+	private function get_minHeight():Int {
 		var value = 0;
 		SdlBindings.winGetMinSize(win, null, value);
 		return value;
 	}
 
-	function get_maxWidth():Int {
+	@:noCompletion
+	private function get_maxWidth():Int {
 		var value = 0;
 		SdlBindings.winGetMaxSize(win, value, null);
 		return value;
 	}
 
-	function get_maxHeight():Int {
+	@:noCompletion
+	private function get_maxHeight():Int {
 		var value = 0;
 		SdlBindings.winGetMaxSize(win, null, value);
 		return value;
 	}
 
+	@:noCompletion
 	inline function get_displayScale():Float {
 		return SdlBindings.winGetDisplayScale(win);
 	}
 
-	function get_x():Int {
+	@:noCompletion
+	private function get_x():Int {
 		var value = 0;
 		SdlBindings.winGetPosition(win, value, null);
 		return value;
 	}
 
-	function get_y():Int {
+	@:noCompletion
+	private function get_y():Int {
 		var value = 0;
 		SdlBindings.winGetPosition(win, null, value);
 		return value;
 	}
 
+	@:noCompletion
 	inline function get_currentMonitor():DisplayId {
 		return SdlBindings.winDisplayHandle(win);
 	}
 
+	@:noCompletion
 	inline function get_opacity():Float {
 		return SdlBindings.winGetOpacity(win);
 	}
 
-	function set_opacity(value:Float):Float {
+	@:noCompletion
+	private function set_opacity(value:Float):Float {
 		SdlBindings.winSetOpacity(win, value);
 		return value;
 	}
 
+	@:noCompletion
 	inline function get_grab():Bool {
 		return SdlBindings.getWindowGrab(win);
 	}
 
-	function set_grab(value:Bool):Bool {
+	@:noCompletion
+	private function set_grab(value:Bool):Bool {
 		SdlBindings.setWindowGrab(win, value);
 		return value;
 	}
 
+	@:noCompletion
 	inline function get_id():Int {
 		return SdlBindings.winGetId(win);
 	}
 
+	@:noCompletion
 	inline function get_nativeHandle():WinPtr {
 		return win;
 	}
 
+	@:noCompletion
 	static function getNativeError():String {
 		final error = SdlBindings.winError();
 		return error == null ? "unknown error" : @:privateAccess String.fromUTF8(error);

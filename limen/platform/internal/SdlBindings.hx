@@ -216,6 +216,10 @@ class SdlBindings {
 		return false;
 	}
 
+	public static function winSetAlwaysOnTop(win:WinPtr, enabled:Bool):Bool {
+		return false;
+	}
+
 	public static function surfaceFrom(pixels:hl.Bytes, width:Int, height:Int, depth:Int, pitch:Int, rmask:Int, gmask:Int, bmask:Int, amask:Int):SurfacePtr {
 		return null;
 	}
