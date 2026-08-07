@@ -38,6 +38,7 @@ import limen.platform.Window;
 
 abstract CompilerHandle(hl.Abstract<"dx_compiler">) {}
 typedef Adapter = hl.Abstract<"dx_adapter">;
+typedef Factory = hl.Abstract<"dx_factory">;
 
 enum abstract Constant(Int) to Int {
 	public final TEXTURE_DATA_PITCH_ALIGNMENT = 0;
@@ -66,13 +67,23 @@ class D3D12Bindings {
 
 	public static function disposeDriver(driver:Dx12DriverInstance):Void {}
 
+	public static function createCommandQueue() {}
+
 	public static function getDevice():Device {
+		return null;
+	}
+
+	public static function getFactory():Factory {
 		return null;
 	}
 
 	public static function getAdapter():Adapter {
 		return null;
 	}
+
+	public static function setDevice(device:Device) {}
+
+	public static function setFactory(factory:Factory) {}
 
 	public static function flushMessages() {}
 
