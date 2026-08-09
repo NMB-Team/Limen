@@ -193,14 +193,35 @@ jobs:
             fi
           done
 
-      - name: Replace latest release
+      - name: Update latest release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release delete latest --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
-          gh release create latest release/* \
+          set -euo pipefail
+
+          if ! gh release view latest --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create latest release/* \
+              --repo "$GITHUB_REPOSITORY" \
+              --prerelease \
+              --target "$GITHUB_SHA" \
+              --title "LIMEN latest build" \
+              --notes "Automated LIMEN builds from $GITHUB_SHA using NMB-Team/hashlink-nmb."
+            exit 0
+          fi
+
+          # Move the existing rolling tag to the commit that produced this build.
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/latest" \
+            -f sha="$GITHUB_SHA" \
+            -F force=true
+
+          # Update metadata in place. The release stays published the whole time.
+          gh release edit latest \
             --repo "$GITHUB_REPOSITORY" \
-            --prerelease \
-            --target "$GITHUB_SHA" \
             --title "LIMEN latest build" \
-            --notes "Automated LIMEN builds from $GITHUB_SHA using NMB-Team/hashlink-nmb."
+            --notes "Automated LIMEN builds from $GITHUB_SHA using NMB-Team/hashlink-nmb." \
+            --prerelease
+
+          # Asset names are stable, so replace them without deleting/recreating the release.
+          gh release upload latest release/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber
