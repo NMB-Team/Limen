@@ -1,6 +1,7 @@
 package limen.graphics.d3d12;
 
 import limen.graphics.d3d12.DX12Core.DxgiFormat;
+import limen.graphics.d3d12.command.Commands.CommandQueue;
 import limen.graphics.d3d12.internal.D3D12Bindings;
 import limen.graphics.d3d12.internal.D3D12Bindings.Dx12DriverInitFlags;
 import limen.graphics.d3d12.internal.D3D12Bindings.Dx12DriverInstance;
@@ -24,20 +25,8 @@ class D3D12 {
 		this.driver = driver;
 	}
 
-	public inline function resize(width:Int, height:Int, bufferCount:Int, format:DxgiFormat):Void {
-		D3D12Bindings.resize(width, height, bufferCount, format);
-	}
-
-	public inline function present(vsync:Bool):Void {
-		D3D12Bindings.present(vsync);
-	}
-
-	public inline function suspend():Void {
-		D3D12Bindings.suspend();
-	}
-
-	public inline function resume():Void {
-		D3D12Bindings.resume();
+	public inline function resize(directQueue:CommandQueue, width:Int, height:Int, bufferCount:Int, format:DxgiFormat):Void {
+		D3D12Bindings.resize(directQueue, width, height, bufferCount, format);
 	}
 
 	public function destroy():Void {

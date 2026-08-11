@@ -16,9 +16,6 @@
 #include <GL/glext.h>
 #elif defined(HL_CONSOLE)
 #include <graphic/glapi.h>
-#elif defined(HL_MESA)
-#include <GL/osmesa.h>
-#include <GLES3/gl3.h>
 #define HL_GLES
 #elif defined(HL_ANDROID)
 #include <GLES3/gl32.h>
@@ -771,16 +768,12 @@ HL_PRIM bool HL_NAME(gl_query_result_available)(vdynamic* q) {
 
 HL_PRIM double HL_NAME(gl_query_result)(vdynamic* q) {
 	GLuint64 v = -1;
-#if !defined(HL_MESA) && !defined(HL_MOBILE)
 	glGetQueryObjectui64v(q->v.i, GL_QUERY_RESULT, &v);
-#endif
 	return (double)v;
 }
 
 HL_PRIM void HL_NAME(gl_query_counter)(vdynamic* q, int target) {
-#if !defined(HL_MESA) && !defined(HL_MOBILE)
 	glQueryCounter(q->v.i, target);
-#endif
 }
 
 // vertex array

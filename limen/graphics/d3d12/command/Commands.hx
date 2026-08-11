@@ -49,8 +49,6 @@ abstract CommandList(Dx12Resource) {
 
 	public function close() {}
 
-	public function execute() {}
-
 	public function clearRenderTargetView(rtv:Address, color:ClearColor) {}
 
 	public function clearDepthStencilView(rtv:Address, flags:ClearFlags, depth:Single, stencil:Int) {}
@@ -159,6 +157,16 @@ abstract CommandQueue(Dx12Resource) {
 	public function signal(fence:Fence, value:Int64) {}
 
 	public function wait(fence:Fence, value:Int64) {}
+
+	public function present(vsync:Bool) {}
+
+	public function suspend() {}
+
+	public function resume() {}
+
+	public function getTimestampFrequency():Int64 {
+		return 0;
+	}
 
 	static function create(type:CommandListType):Dx12Resource {
 		return null;

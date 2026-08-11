@@ -103,7 +103,10 @@ HL_PRIM SDL_Window* HL_NAME(win_create_ex)(int x, int y, int width, int height, 
 	}
 	SDL_RaiseWindow(window);
 #endif
+
+#ifndef HL_ANDROID
 	SDL_StartTextInput(window);
+#endif
 	return window;
 }
 DEFINE_PRIM(TWIN, win_create_ex, _I32 _I32 _I32 _I32 _I32);

@@ -1,6 +1,7 @@
 package limen.graphics.d3d12.internal;
 
 import limen.graphics.d3d12.command.Commands.CommandList;
+import limen.graphics.d3d12.command.Commands.CommandQueue;
 import limen.graphics.d3d12.command.Commands.CommandSignature;
 import limen.graphics.d3d12.command.Commands.CommandSignatureDesc;
 import limen.graphics.d3d12.command.Commands.Fence;
@@ -66,8 +67,6 @@ class D3D12Bindings {
 	}
 
 	public static function disposeDriver(driver:Dx12DriverInstance):Void {}
-
-	public static function createCommandQueue() {}
 
 	public static function getDevice():Device {
 		return null;
@@ -140,21 +139,11 @@ class D3D12Bindings {
 		return null;
 	}
 
-	public static function resize(width:Int, height:Int, bufferCount:Int, format:DxgiFormat) {}
+	public static function resize(directQueue:CommandQueue, width:Int, height:Int, bufferCount:Int, format:DxgiFormat) {}
 
 	public static function updateSubResource(commandList:CommandList, dst:GpuResource, src:GpuResource, srcOffset:Int64, first:Int, count:Int, data:SubResourceData):Bool {
 		return false;
 	}
-
-	public static function signal(fence:Fence, value:Int64) {}
-
-	public static function wait(fence:Fence, value:Int64) {}
-
-	public static function present(vsync:Bool) {}
-
-	public static function suspend() {}
-
-	public static function resume() {}
 
 	public static function setGpuCrashHandler(handler:(name:hl.Bytes, bytes:hl.Bytes, size:Int, lastFile:Bool) -> Void) {}
 
@@ -179,11 +168,6 @@ class D3D12Bindings {
 			out.push(@:privateAccess String.fromUCS2(arr[i]));
 		}
 		return out;
-	}
-
-	@:hlNative("?limen_d3d12", "get_timestamp_frequency")
-	public static function getTimestampFrequency():Int64 {
-		return 0;
 	}
 
 	@:hlNative("?limen_d3d12", "list_devices")
