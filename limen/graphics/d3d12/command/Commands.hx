@@ -164,6 +164,7 @@ abstract CommandQueue(Dx12Resource) {
 
 	public function resume() {}
 
+	@:hlNative("limen_d3d12", "command_queue_get_timestamp_frequency")
 	public function getTimestampFrequency():Int64 {
 		return 0;
 	}
