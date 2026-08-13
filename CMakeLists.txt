@@ -1,14 +1,33 @@
 cmake_minimum_required(VERSION 3.24)
 
-if(MSVC)
-	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-endif()
-
 if(TARGET libhl)
 	set(LIMEN_EMBEDDED ON)
 else()
 	project(limen LANGUAGES C CXX)
 	set(LIMEN_EMBEDDED OFF)
+endif()
+
+set(CMAKE_C_STANDARD 23)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+    add_compile_options(
+        $<$<CONFIG:Release>:/Oi>
+        $<$<CONFIG:Release>:/Gy>
+        $<$<CONFIG:Release>:/Ot>
+        $<$<CONFIG:Release>:/Oy>
+        $<$<CONFIG:Release>:/GT>
+        $<$<CONFIG:Release>:/GS->
+        $<$<CONFIG:Release>:/Zc:inline>
+    )
+    add_link_options(
+        $<$<CONFIG:Release>:/OPT:REF>
+        $<$<CONFIG:Release>:/OPT:ICF>
+    )
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
