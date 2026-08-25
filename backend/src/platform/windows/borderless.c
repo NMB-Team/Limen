@@ -3,15 +3,11 @@
 #include <stdlib.h>
 #include <windows.h>
 
-#define LIMEN_BORDERLESS_SAVE_PROPERTY "hashlink.borderless_save"
+#define LIMEN_BORDERLESS_SAVE_PROPERTY "limen.borderless_save"
 
 typedef struct {
-	int x;
-	int y;
-	int width;
-	int height;
+	WINDOWPLACEMENT placement;
 	LONG style;
-	bool maximized;
 } limen_saved_window;
 
 static HWND get_native_window(SDL_Window* window) {
@@ -25,28 +21,22 @@ bool limen_windows_prepare_fullscreen(SDL_Window* window, int mode) {
 
 	if (native == NULL)
 		return false;
+
+	// mode == 2 means we're ENTERING WindowedFullscreen, so nothing should be restored yet
 	if (saved == NULL || mode == 2)
 		return true;
 
 	SetWindowLong(native, GWL_STYLE, saved->style);
-	if (saved->maximized) {
-		WINDOWPLACEMENT placement = { sizeof(placement) };
-		placement.showCmd = SW_SHOWMAXIMIZED;
-		placement.rcNormalPosition.left = saved->x;
-		placement.rcNormalPosition.top = saved->y;
-		placement.rcNormalPosition.right = saved->x + saved->width;
-		placement.rcNormalPosition.bottom = saved->y + saved->height;
-		SetWindowPlacement(native, &placement);
-		SetWindowPos(native, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOOWNERZORDER | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
-	} else {
-		SetWindowPos(native, NULL, saved->x, saved->y, saved->width, saved->height, SWP_NOOWNERZORDER | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
-		SDL_SetWindowSize(window, saved->width, saved->height);
-	}
+
+	WINDOWPLACEMENT placement = saved->placement;
+	placement.length = sizeof(WINDOWPLACEMENT);
+
+	SetWindowPlacement(native, &placement);
+
+	SetWindowPos(native, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
 
 	free(saved);
 	SDL_SetPointerProperty(properties, LIMEN_BORDERLESS_SAVE_PROPERTY, NULL);
-	if (mode == 1)
-		SDL_SyncWindow(window);
 	return true;
 }
 
@@ -54,40 +44,36 @@ bool limen_windows_set_borderless_fixed(SDL_Window* window) {
 	SDL_PropertiesID properties = SDL_GetWindowProperties(window);
 	limen_saved_window* saved = (limen_saved_window*)SDL_GetPointerProperty(properties, LIMEN_BORDERLESS_SAVE_PROPERTY, NULL);
 	HWND native = get_native_window(window);
-	HMONITOR monitor;
-	MONITORINFO monitor_info = { sizeof(monitor_info) };
-	RECT rectangle;
 
 	if (native == NULL)
 		return false;
 
-	monitor = MonitorFromWindow(native, MONITOR_DEFAULTTONEAREST);
+	HMONITOR monitor = MonitorFromWindow(native, MONITOR_DEFAULTTONEAREST);
+	MONITORINFO monitor_info = { sizeof(monitor_info) };
 	if (!GetMonitorInfo(monitor, &monitor_info))
 		return false;
 
 	if (saved == NULL) {
-		WINDOWPLACEMENT placement = { sizeof(placement) };
-		bool maximized = IsZoomed(native) != 0;
-		if (maximized && GetWindowPlacement(native, &placement))
-			rectangle = placement.rcNormalPosition;
-		else
-			GetWindowRect(native, &rectangle);
-
 		saved = (limen_saved_window*)malloc(sizeof(*saved));
-		saved->x = rectangle.left;
-		saved->y = rectangle.top;
-		saved->width = rectangle.right - rectangle.left;
-		saved->height = rectangle.bottom - rectangle.top;
+
+		if (saved == NULL)
+			return false;
+
+		saved->placement.length = sizeof(WINDOWPLACEMENT);
+
+		if (!GetWindowPlacement(native, &saved->placement)) {
+			free(saved);
+			return false;
+		}
+
 		saved->style = GetWindowLong(native, GWL_STYLE);
-		saved->maximized = maximized;
 		SDL_SetPointerProperty(properties, LIMEN_BORDERLESS_SAVE_PROPERTY, saved);
 	}
 
 	SDL_SetWindowFullscreen(window, false);
-	if (saved->maximized) {
-		SDL_RestoreWindow(window);
+
+	if (IsZoomed(native))
 		ShowWindow(native, SW_RESTORE);
-	}
 	SetWindowLong(native, GWL_STYLE, WS_POPUP | WS_VISIBLE);
 	SetWindowPos(native, NULL, monitor_info.rcMonitor.left, monitor_info.rcMonitor.top, monitor_info.rcMonitor.right - monitor_info.rcMonitor.left, monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top + 2,
 	             SWP_NOOWNERZORDER | SWP_FRAMECHANGED | SWP_SHOWWINDOW);

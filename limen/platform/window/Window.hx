@@ -137,7 +137,7 @@ class Window {
 
 	@:noCompletion
 	private function set_displayMode(mode:WindowMode):WindowMode {
-		if (mode == Fullscreen && displaySetting != null)
+		if (mode == ExclusiveFullscreen && displaySetting != null)
 			SdlBindings.winSetDisplayMode(win, displaySetting.width, displaySetting.height, displaySetting.framerate);
 		if (SdlBindings.winSetFullscreen(win, mode))
 			displayMode = mode;

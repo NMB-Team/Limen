@@ -90,8 +90,10 @@ HL_PRIM bool HL_NAME(win_set_fullscreen)(SDL_Window* window, int mode) {
 #endif
 	if (normalized == LIMEN_FULLSCREEN_WINDOWED) {
 		bool result = SDL_SetWindowFullscreen(window, false);
-		if (result)
+		if (result) {
+			sync_window_state(window);
 			SDL_SetWindowFullscreenMode(window, NULL);
+		}
 		return result;
 	}
 	if (normalized == LIMEN_FULLSCREEN_EXCLUSIVE) {
@@ -164,8 +166,6 @@ HL_PRIM void HL_NAME(win_center)(SDL_Window* window, bool primary) {
 DEFINE_PRIM(_VOID, win_center, TWIN _BOOL);
 
 HL_PRIM void HL_NAME(win_set_size)(SDL_Window* window, int width, int height) {
-	if (SDL_GetWindowFlags(window) & SDL_WINDOW_MAXIMIZED)
-		SDL_RestoreWindow(window);
 	SDL_SetWindowSize(window, width, height);
 }
 DEFINE_PRIM(_VOID, win_set_size, TWIN _I32 _I32);
