@@ -1,12 +1,12 @@
 package limen.platform.internal;
 
 import limen.platform.Platform.DisplayId;
-import limen.platform.Window.WinPtr;
-import limen.platform.Window.WindowMode;
+import limen.platform.window.Window.WinPtr;
 import limen.platform.internal.NativeTypes.CursorPtr;
 import limen.platform.internal.NativeTypes.GamepadPtr;
 import limen.platform.internal.NativeTypes.JoystickPtr;
 import limen.platform.internal.NativeTypes.SurfacePtr;
+import limen.platform.window.WindowMode;
 
 @:hlNative("limen")
 class SdlBindings {
@@ -138,7 +138,7 @@ class SdlBindings {
 
 	public static function messageBox(title:hl.Bytes, text:hl.Bytes, icon:Int):Void {}
 
-	public static function winCreateEx(x:Int, y:Int, width:Int, height:Int, flags:Int):WinPtr {
+	public static function winCreateEx(x:Int, y:Int, width:Int, height:Int, flags:hl.I64):WinPtr {
 		return null;
 	}
 

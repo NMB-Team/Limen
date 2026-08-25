@@ -27,6 +27,6 @@ the native modules built from [`../backend`](../backend) through HashLink
   details rather than application-facing APIs.
 
 Use `limen.platform.Platform` to initialize and stop the platform layer, and
-`limen.platform.Window` to create application windows. Choose a graphics
+`limen.platform.window.Window` to create application windows. Choose a graphics
 package only when the application needs that rendering backend. See the
 repository root README for a usage example and build instructions.

@@ -1,53 +1,15 @@
-package limen.platform;
+package limen.platform.window;
 
 import limen.platform.Platform.DisplayId;
+import limen.platform.Surface;
+import limen.platform.display.DisplaySetting;
 import limen.platform.internal.SdlBindings;
+import limen.platform.window.WindowFlags.*;
+import limen.platform.window.WindowMode.*;
 
 typedef WinPtr = hl.Abstract<"limen_window">;
 
-enum abstract WindowMode(Int) {
-	final Windowed = 0;
-	final Fullscreen = 1;
-	final BorderlessFixed = 2;
-	final Borderless = 3;
-}
-
-typedef DisplaySetting = {
-	var width:Int;
-	var height:Int;
-	var framerate:Int;
-}
-
 class Window {
-	public static inline final SDL_WINDOWPOS_UNDEFINED = 0x1FFF0000;
-	public static inline final SDL_WINDOWPOS_CENTERED = 0x2FFF0000;
-
-	public static inline final SDL_WINDOW_FULLSCREEN = 0x00000001;
-	public static inline final SDL_WINDOW_OPENGL = 0x00000002;
-	public static inline final SDL_WINDOW_OCCLUDED = 0x00000004;
-	public static inline final SDL_WINDOW_HIDDEN = 0x00000008;
-	public static inline final SDL_WINDOW_BORDERLESS = 0x00000010;
-	public static inline final SDL_WINDOW_RESIZABLE = 0x00000020;
-	public static inline final SDL_WINDOW_MINIMIZED = 0x00000040;
-	public static inline final SDL_WINDOW_MAXIMIZED = 0x00000080;
-	public static inline final SDL_WINDOW_MOUSE_GRABBED = 0x00000100;
-	public static inline final SDL_WINDOW_INPUT_FOCUS = 0x00000200;
-	public static inline final SDL_WINDOW_MOUSE_FOCUS = 0x00000400;
-	public static inline final SDL_WINDOW_FOREIGN = 0x00000800;
-	public static inline final SDL_WINDOW_MODAL = 0x00001000;
-	public static inline final SDL_WINDOW_ALLOW_HIGHDPI = 0x00002000;
-	public static inline final SDL_WINDOW_MOUSE_CAPTURE = 0x00004000;
-	public static inline final SDL_WINDOW_ALWAYS_ON_TOP = 0x00010000;
-	public static inline final SDL_WINDOW_UTILITY = 0x00020000;
-	public static inline final SDL_WINDOW_TOOLTIP = 0x00040000;
-	public static inline final SDL_WINDOW_POPUP_MENU = 0x00080000;
-	public static inline final SDL_WINDOW_VULKAN = 0x10000000;
-	public static inline final SDL_WINDOW_METAL = 0x20000000;
-
-	public static inline final SDL_WINDOW_SHOWN = 0x00000004;
-	public static inline final SDL_WINDOW_INPUT_GRABBED = 0x00000100;
-	public static inline final SDL_WINDOW_SKIP_TASKBAR = 0x00020000;
-
 	public var id(get, never):Int;
 	public var nativeHandle(get, never):WinPtr;
 	public var title(default, set):String;
@@ -73,7 +35,7 @@ class Window {
 	var win:WinPtr;
 
 	public static function create(options:WindowOptions):Window {
-		var flags = options.flags ?? 0;
+		var flags:WindowFlags = options.flags ?? 0;
 		if (options.resizable != false)
 			flags |= SDL_WINDOW_RESIZABLE;
 		if (options.visible == false)
@@ -81,12 +43,13 @@ class Window {
 		return new Window(options.title, options.width, options.height, options.x ?? SDL_WINDOWPOS_CENTERED, options.y ?? SDL_WINDOWPOS_CENTERED, flags);
 	}
 
-	public function new(title:String, width:Int, height:Int, x:Int = SDL_WINDOWPOS_CENTERED, y:Int = SDL_WINDOWPOS_CENTERED, flags:Int = SDL_WINDOW_RESIZABLE) {
-		win = SdlBindings.winCreateEx(x, y, width, height, flags);
+	public function new(title:String, width:Int, height:Int, x:Int = SDL_WINDOWPOS_CENTERED, y:Int = SDL_WINDOWPOS_CENTERED, flags:WindowFlags = SDL_WINDOW_RESIZABLE) {
+		final nativeFlags:hl.I64 = (flags : haxe.Int64);
+		win = SdlBindings.winCreateEx(x, y, width, height, nativeFlags);
 		if (win == null)
 			throw "Failed to create window (" + getNativeError() + ")";
 		this.title = title;
-		visible = (flags & SDL_WINDOW_HIDDEN) == 0;
+		visible = !flags.has(SDL_WINDOW_HIDDEN);
 		windows.push(this);
 	}
 

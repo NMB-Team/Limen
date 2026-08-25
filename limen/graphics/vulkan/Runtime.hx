@@ -2,7 +2,7 @@ package limen.graphics.vulkan;
 
 import limen.graphics.vulkan.internal.VulkanBindings;
 import limen.graphics.vulkan.internal.VulkanBindings.VkContext;
-import limen.platform.Window;
+import limen.platform.window.Window;
 
 class Runtime {
 	public static function createSurface(window:Window, enableValidation:Bool = false):Surface {

@@ -6,7 +6,7 @@ import limen.graphics.d3d11.internal.D3D11Bindings.Dx11DriverInitFlags;
 import limen.graphics.d3d11.internal.D3D11Bindings.Dx11DriverInstance;
 import limen.graphics.d3d11.internal.D3D11Bindings.FeatureLevel;
 import limen.graphics.d3d11.internal.D3D11Bindings.PresentFlags;
-import limen.platform.Window;
+import limen.platform.window.Window;
 
 class D3D11 {
 	var driver:Dx11DriverInstance;

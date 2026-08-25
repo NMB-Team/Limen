@@ -383,6 +383,7 @@ install(
 )
 
 if(LIMEN_BUILD_TESTS)
+	target_compile_definitions(limen PRIVATE LIMEN_BUILD_TESTS)
 	enable_testing()
 	add_subdirectory(tests)
 endif()

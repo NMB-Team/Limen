@@ -3,7 +3,7 @@ package limen.graphics.opengl;
 import limen.graphics.opengl.internal.OpenGLBindings;
 import limen.graphics.opengl.internal.OpenGLBindings.ContextHandle;
 import limen.platform.Platform;
-import limen.platform.Window;
+import limen.platform.window.Window;
 
 private typedef Version = {
 	var major:Int;

@@ -21,7 +21,7 @@ The public API follows the native subsystem layout:
 
 ```haxe
 import limen.platform.Platform;
-import limen.platform.Window;
+import limen.platform.window.Window;
 import limen.platform.event.Event;
 import limen.platform.input.gamepad.Gamepad;
 
@@ -50,7 +50,7 @@ Platform types are grouped under `limen.platform.event`,
 and `limen.platform.system`.
 
 Graphics backends own their context and device setup. For example, an OpenGL
-window uses `Window.SDL_WINDOW_OPENGL` and
+window uses `WindowFlags.SDL_WINDOW_OPENGL` and
 `limen.graphics.opengl.Context.create(window)`. D3D12 concepts live under
 `limen.graphics.d3d12.command`, `descriptor`, `pipeline`, `query`, `resource`,
 and `shader`. Vulkan follows the equivalent package structure.

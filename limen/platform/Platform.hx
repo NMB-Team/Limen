@@ -1,5 +1,7 @@
 package limen.platform;
 
+import limen.platform.window.Window;
+import limen.platform.window.Window.WinPtr;
 import limen.graphics.GraphicsDriver;
 import limen.platform.display.Display;
 import limen.platform.event.Event;
@@ -175,7 +177,7 @@ class Platform {
 		return Keyboard.layout();
 	}
 
-	public static inline function getFramerate(window:Window.WinPtr):Int {
+	public static inline function getFramerate(window:WinPtr):Int {
 		return SdlBindings.getFramerate(window);
 	}
 

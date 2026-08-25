@@ -30,7 +30,7 @@ import limen.graphics.d3d11.DX11States.SamplerState;
 
 import haxe.Int64;
 
-import limen.platform.Window;
+import limen.platform.window.Window;
 
 #if (!gfx_dx12 || gfx_dx11)
 @:hlNative("?limen_d3d11")

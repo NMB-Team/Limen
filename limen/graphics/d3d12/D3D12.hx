@@ -5,7 +5,7 @@ import limen.graphics.d3d12.command.Commands.CommandQueue;
 import limen.graphics.d3d12.internal.D3D12Bindings;
 import limen.graphics.d3d12.internal.D3D12Bindings.Dx12DriverInitFlags;
 import limen.graphics.d3d12.internal.D3D12Bindings.Dx12DriverInstance;
-import limen.platform.Window;
+import limen.platform.window.Window;
 
 class D3D12 {
 	var driver:Dx12DriverInstance;

@@ -29,9 +29,22 @@ static void sync_window_state(SDL_Window* window) {
 #endif
 }
 
-HL_PRIM SDL_Window* HL_NAME(win_create_ex)(int x, int y, int width, int height, int flags) {
+#ifdef LIMEN_BUILD_TESTS
+static int64_t last_window_flags;
+
+HL_PRIM int64_t HL_NAME(test_last_window_flags)(void) {
+	return last_window_flags;
+}
+DEFINE_PRIM(_I64, test_last_window_flags, _NO_ARG);
+#endif
+
+HL_PRIM SDL_Window* HL_NAME(win_create_ex)(int x, int y, int width, int height, int64_t flags) {
+	SDL_WindowFlags window_flags = (SDL_WindowFlags)flags;
+#ifdef LIMEN_BUILD_TESTS
+	last_window_flags = flags;
+#endif
 #ifdef HL_MOBILE
-	SDL_Window* window = SDL_CreateWindow("", width, height, SDL_WINDOW_BORDERLESS | flags);
+	SDL_Window* window = SDL_CreateWindow("", width, height, SDL_WINDOW_BORDERLESS | window_flags);
 #else
 	SDL_PropertiesID properties = SDL_CreateProperties();
 	if (properties == 0)
@@ -41,54 +54,7 @@ HL_PRIM SDL_Window* HL_NAME(win_create_ex)(int x, int y, int width, int height, 
 	SDL_SetNumberProperty(properties, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, height);
 	SDL_SetNumberProperty(properties, SDL_PROP_WINDOW_CREATE_X_NUMBER, x);
 	SDL_SetNumberProperty(properties, SDL_PROP_WINDOW_CREATE_Y_NUMBER, y);
-	if (flags & SDL_WINDOW_METAL) {
-		SDL_SetBooleanProperty(properties, SDL_PROP_WINDOW_CREATE_METAL_BOOLEAN, true);
-	}
-	if (flags & SDL_WINDOW_VULKAN) {
-		SDL_SetBooleanProperty(properties, SDL_PROP_WINDOW_CREATE_VULKAN_BOOLEAN, true);
-	}
-	if (flags & SDL_WINDOW_OPENGL) {
-		SDL_SetBooleanProperty(properties, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
-	}
-	if (flags & SDL_WINDOW_BORDERLESS) {
-		SDL_SetBooleanProperty(properties, SDL_PROP_WINDOW_CREATE_BORDERLESS_BOOLEAN, true);
-	}
-	if (flags & SDL_WINDOW_FULLSCREEN) {
-		SDL_SetBooleanProperty(properties, SDL_PROP_WINDOW_CREATE_FULLSCREEN_BOOLEAN, true);
-	}
-	if (flags & SDL_WINDOW_HIDDEN) {
-		SDL_SetBooleanProperty(properties, SDL_PROP_WINDOW_CREATE_HIDDEN_BOOLEAN, true);
-	}
-	if (flags & SDL_WINDOW_RESIZABLE) {
-		SDL_SetBooleanProperty(properties, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, true);
-	}
-	if (flags & SDL_WINDOW_MINIMIZED) {
-		SDL_SetBooleanProperty(properties, SDL_PROP_WINDOW_CREATE_MINIMIZED_BOOLEAN, true);
-	}
-	if (flags & SDL_WINDOW_MAXIMIZED) {
-		SDL_SetBooleanProperty(properties, SDL_PROP_WINDOW_CREATE_MAXIMIZED_BOOLEAN, true);
-	}
-	if (flags & SDL_WINDOW_MOUSE_GRABBED) {
-		SDL_SetBooleanProperty(properties, SDL_PROP_WINDOW_CREATE_MOUSE_GRABBED_BOOLEAN, true);
-	}
-	if (flags & SDL_WINDOW_HIGH_PIXEL_DENSITY) {
-		SDL_SetBooleanProperty(properties, SDL_PROP_WINDOW_CREATE_HIGH_PIXEL_DENSITY_BOOLEAN, true);
-	}
-	if (flags & SDL_WINDOW_ALWAYS_ON_TOP) {
-		SDL_SetBooleanProperty(properties, SDL_PROP_WINDOW_CREATE_ALWAYS_ON_TOP_BOOLEAN, true);
-	}
-	if (flags & SDL_WINDOW_UTILITY) {
-		SDL_SetBooleanProperty(properties, SDL_PROP_WINDOW_CREATE_UTILITY_BOOLEAN, true);
-	}
-	if (flags & SDL_WINDOW_TOOLTIP) {
-		SDL_SetBooleanProperty(properties, SDL_PROP_WINDOW_CREATE_TOOLTIP_BOOLEAN, true);
-	}
-	if (flags & SDL_WINDOW_POPUP_MENU) {
-		SDL_SetBooleanProperty(properties, SDL_PROP_WINDOW_CREATE_MENU_BOOLEAN, true);
-	}
-	if (flags & SDL_WINDOW_MODAL) {
-		SDL_SetBooleanProperty(properties, SDL_PROP_WINDOW_CREATE_MODAL_BOOLEAN, true);
-	}
+	SDL_SetNumberProperty(properties, SDL_PROP_WINDOW_CREATE_FLAGS_NUMBER, (Sint64)window_flags);
 
 	SDL_Window* window = SDL_CreateWindowWithProperties(properties);
 	SDL_DestroyProperties(properties);
@@ -97,7 +63,7 @@ HL_PRIM SDL_Window* HL_NAME(win_create_ex)(int x, int y, int width, int height, 
 		return NULL;
 
 #ifdef HL_WIN
-	if (!(flags & SDL_WINDOW_HIDDEN) && !(SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS)) {
+	if (!(window_flags & SDL_WINDOW_HIDDEN) && !(SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS)) {
 		SDL_HideWindow(window);
 		SDL_ShowWindow(window);
 	}
@@ -109,7 +75,7 @@ HL_PRIM SDL_Window* HL_NAME(win_create_ex)(int x, int y, int width, int height, 
 #endif
 	return window;
 }
-DEFINE_PRIM(TWIN, win_create_ex, _I32 _I32 _I32 _I32 _I32);
+DEFINE_PRIM(TWIN, win_create_ex, _I32 _I32 _I32 _I32 _I64);
 
 HL_PRIM SDL_Window* HL_NAME(win_create)(int width, int height) {
 	return HL_NAME(win_create_ex)(SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, 0);

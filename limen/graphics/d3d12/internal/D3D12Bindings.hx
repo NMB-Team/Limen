@@ -35,7 +35,7 @@ import limen.graphics.d3d12.query.Queries.QueryHeapDesc;
 
 import haxe.Int64;
 
-import limen.platform.Window;
+import limen.platform.window.Window;
 
 abstract CompilerHandle(hl.Abstract<"dx_compiler">) {}
 typedef Adapter = hl.Abstract<"dx_adapter">;
