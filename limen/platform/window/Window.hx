@@ -42,9 +42,13 @@ class Window {
 		return new Window(options.title, options.width, options.height, options.x ?? SDL_WINDOWPOS_CENTERED, options.y ?? SDL_WINDOWPOS_CENTERED, flags);
 	}
 
-	public function new(title:String, width:Int, height:Int, x:Int = SDL_WINDOWPOS_CENTERED, y:Int = SDL_WINDOWPOS_CENTERED, flags:WindowFlags = SDL_WINDOW_RESIZABLE) {
-		final nativeFlags:hl.I64 = (flags : haxe.Int64);
-		win = SdlBindings.winCreateEx(x, y, width, height, nativeFlags);
+	public function new(title:String, width:Int, height:Int, ?x:Int, ?y:Int, ?flags:WindowFlags) {
+		final actualX = x ?? SDL_WINDOWPOS_CENTERED;
+		final actualY = y ?? SDL_WINDOWPOS_CENTERED;
+		final actualFlags = flags ?? SDL_WINDOW_RESIZABLE;
+
+		final nativeFlags:hl.I64 = (actualFlags : haxe.Int64);
+		win = SdlBindings.winCreateEx(actualX, actualY, width, height, nativeFlags);
 		if (win == null)
 			throw "Failed to create window (" + getNativeError() + ")";
 		this.title = title;
