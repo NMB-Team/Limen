@@ -75,7 +75,7 @@ bool limen_windows_set_borderless_fixed(SDL_Window* window) {
 	if (IsZoomed(native))
 		ShowWindow(native, SW_RESTORE);
 	SetWindowLong(native, GWL_STYLE, WS_POPUP | WS_VISIBLE);
-	SetWindowPos(native, nullptr, monitor_info.rcMonitor.left, monitor_info.rcMonitor.top, monitor_info.rcMonitor.right - monitor_info.rcMonitor.left, monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top + 2,
+	SetWindowPos(native, nullptr, monitor_info.rcMonitor.left, monitor_info.rcMonitor.top, monitor_info.rcMonitor.right - monitor_info.rcMonitor.left, monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top + 1,
 	             SWP_NOOWNERZORDER | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
 	return true;
 }
