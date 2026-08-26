@@ -184,7 +184,7 @@ enum abstract DLSSBufferType(Int) {
 	public function new() {}
 }
 
-@:hlNative("?limen_dlss")
+@:hlNative("limen", "dlss_")
 class DLSS {
 	public static function isAvailable():Bool {
 		return Platform.graphicsDriver == GraphicsDriver.D3D12 && SdlBindings.isDlssAvailable();

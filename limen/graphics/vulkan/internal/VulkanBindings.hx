@@ -51,7 +51,7 @@ enum abstract ShaderKind(Int) {
 	final Fragment = 1;
 }
 
-@:hlNative("?limen_vulkan", "vk_")
+@:hlNative("limen", "vulkan_vk_")
 abstract VkContext(hl.Abstract<"vk_context">) {
 	public function getLimits():VkPhysicalDeviceLimits {
 		return null;
@@ -208,16 +208,16 @@ abstract VkContext(hl.Abstract<"vk_context">) {
 
 abstract VkSurface(hl.Bytes) {}
 
-@:hlNative("?limen_vulkan", "vk_")
+@:hlNative("limen", "vulkan_vk_")
 class VulkanBindings {
 	public static var ENABLE_VALIDATION = false;
 
-	@:hlNative("?limen_vulkan", "vk_init")
+	@:hlNative("limen", "vulkan_vk_init")
 	public static function initialize(enableValidation:Bool):Bool {
 		return false;
 	}
 
-	@:hlNative("?limen_vulkan", "win_get_vulkan")
+	@:hlNative("limen", "vulkan_win_get_vulkan")
 	public static function createWindowSurface(window:hl.Abstract<"limen_window">):VkSurface {
 		return null;
 	}
@@ -237,7 +237,7 @@ class VulkanBindings {
 		return @:privateAccess new haxe.io.Bytes(bytes, outSize);
 	}
 
-	@:hlNative("?limen_vulkan", "compile_shader")
+	@:hlNative("limen", "vulkan_compile_shader")
 	static function compile_shader(source:hl.Bytes, shaderFile:hl.Bytes, mainFunction:hl.Bytes, kind:ShaderKind, outSize:hl.Ref<Int>):hl.Bytes {
 		return null;
 	}

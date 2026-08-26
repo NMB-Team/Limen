@@ -152,7 +152,7 @@ class ResourceBox {
 }
 
 abstract Resource(hl.Abstract<"dx_resource">) {
-	@:hlNative("?limen_d3d11", "map")
+	@:hlNative("limen", "d3d11_map")
 	public function map(subResource:Int, type:MapType, waitGpu:Bool, pitch:hl.Ref<Int>):hl.Bytes {
 		return null;
 	}
@@ -165,19 +165,19 @@ abstract Resource(hl.Abstract<"dx_resource">) {
 		dxCopySubresourceRegion(subResource, dstX, dstY, dstZ, src, srcSubResource, srcBox);
 	}
 
-	@:hlNative("?limen_d3d11", "copy_resource")
+	@:hlNative("limen", "d3d11_copy_resource")
 	public function copyResource(from:Resource) {}
 
-	@:hlNative("?limen_d3d11", "update_subresource")
+	@:hlNative("limen", "d3d11_update_subresource")
 	private function dxUpdateSubresource(subResource:Int, box:Dynamic, data:hl.Bytes, srcRowPitch:Int, srcDepthPitch:Int):Void {}
 
-	@:hlNative("?limen_d3d11", "copy_subresource_region")
+	@:hlNative("limen", "d3d11_copy_subresource_region")
 	private function dxCopySubresourceRegion(subResource:Int, dstX:Int, dstY:Int, dstZ:Int, src:Resource, srcSubResource:Int, srcBox:Dynamic):Void {}
 
-	@:hlNative("?limen_d3d11", "unmap")
+	@:hlNative("limen", "d3d11_unmap")
 	public function unmap(subResource:Int):Void {}
 
-	@:hlNative("?limen_d3d11", "release_resource")
+	@:hlNative("limen", "d3d11_release_resource")
 	public function release() {}
 }
 

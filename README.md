@@ -3,7 +3,7 @@
 <img src=".github/img/limen-logo.svg" width=300 />
 
 # LIMEN
-#### is the SDL3 platform and graphics integration for HashLink NMB.
+#### is the SDL3 platform and graphics integration for HashLink.
 
 SDL owns windows, displays, fullscreen state, input, cursors, clipboard,
 drag-and-drop, and native event delivery. OpenGL, Vulkan, Direct3D 11, and
@@ -66,6 +66,10 @@ d3d12.limen - Direct3D 12 (includes on Win64 ONLY)
 dlss.limen - DLSS (optional, includes on Win64 and with D3D12 ONLY)
 ```
 
+HashLink loads only `limen.hdll`. LIMEN loads backend modules itself and
+resolves their HashLink primitives through the modules' existing `hlp_*`
+exports, so no custom HashLink runtime support is required.
+
 `Platform.init()` prefers OpenGL as the minimum backend. Pass another
 `GraphicsDriver` to request it first. If that module is missing or cannot be
 loaded, LIMEN falls back to OpenGL and then to any other available driver.
@@ -90,7 +94,7 @@ dxil.dll
 
 ```sh
 cmake -S . -B build \
-  -DLIMEN_HASHLINK_ROOT=/path/to/hashlink-nmb \
+  -DLIMEN_HASHLINK_ROOT=/path/to/hashlink \
   -DLIMEN_BUILD_OPENGL=ON \
   -DLIMEN_BUILD_VULKAN=ON \
   -DLIMEN_BUILD_D3D11=ON \

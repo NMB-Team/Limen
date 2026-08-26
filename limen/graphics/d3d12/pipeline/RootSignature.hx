@@ -58,7 +58,7 @@ enum abstract RootParameterType(Int) {
 	final UAV = 4;
 }
 
-@:hlNative("?limen_d3d12", "rootsignature_")
+@:hlNative("limen", "d3d12_rootsignature_")
 abstract RootSignature(Dx12Resource) {
 	public function new(bytes:hl.Bytes, len:Int) {
 		this = create(bytes, len);

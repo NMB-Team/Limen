@@ -61,10 +61,10 @@ jobs:
       - name: Checkout LIMEN
         uses: actions/checkout@v7
 
-      - name: Checkout NMB HashLink
+      - name: Checkout HashLink
         uses: actions/checkout@v7
         with:
-          repository: NMB-Team/hashlink-nmb
+          repository: HaxeFoundation/hashlink
           ref: master
           path: hashlink
 
@@ -113,11 +113,11 @@ jobs:
           if [[ "${{ matrix.platform }}" != "windows-x64-mingw" ]]; then
             curl -fsSL --retry 3 --retry-delay 5 \
               -o "$RUNNER_TEMP/dxc.zip" \
-              https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.8.2505.1/dxc_2025_07_14.zip
+              https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.9.2607/dxc_2026_07_29.zip
             7z x "$RUNNER_TEMP/dxc.zip" -ohashlink/include/dx
           fi
 
-      - name: Build NMB HashLink library
+      - name: Build HashLink library
         run: |
           cmake -S hashlink -B hashlink-build \
             ${{ matrix.cmake_arch }} \
@@ -205,7 +205,7 @@ jobs:
               --prerelease \
               --target "$GITHUB_SHA" \
               --title "LIMEN latest build" \
-              --notes "Automated LIMEN builds from $GITHUB_SHA using NMB-Team/hashlink-nmb."
+              --notes "Automated LIMEN builds from $GITHUB_SHA."
             exit 0
           fi
 
@@ -218,7 +218,7 @@ jobs:
           gh release edit latest \
             --repo "$GITHUB_REPOSITORY" \
             --title "LIMEN latest build" \
-            --notes "Automated LIMEN builds from $GITHUB_SHA using NMB-Team/hashlink-nmb." \
+            --notes "Automated LIMEN builds from $GITHUB_SHA." \
             --prerelease
 
           # Asset names are stable, so replace them without deleting/recreating the release.

@@ -31,12 +31,12 @@ import limen.graphics.vulkan.render.RenderPass.VkSubpassContents;
 
 import haxe.Int64;
 
-@:hlNative("?limen_vulkan", "vk_")
+@:hlNative("limen", "vulkan_vk_")
 abstract VkCommandBuffer(hl.Abstract<"vk_command_buffer">) {
-	@:hlNative("?limen_vulkan", "vk_command_begin")
+	@:hlNative("limen", "vulkan_vk_command_begin")
 	public function begin(inf:VkCommandBufferBeginInfo) {}
 
-	@:hlNative("?limen_vulkan", "vk_command_end")
+	@:hlNative("limen", "vulkan_vk_command_end")
 	public function end() {}
 
 	public function clearColorImage(img:VkImage, layout:VkImageLayout, colors:ArrayStruct<VkClearColorValue>, colorCount:Int, range:VkImageSubResourceRange) {}

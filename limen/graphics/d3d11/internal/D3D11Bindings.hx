@@ -33,7 +33,7 @@ import haxe.Int64;
 import limen.platform.window.Window;
 
 #if (!gfx_dx12 || gfx_dx11)
-@:hlNative("?limen_d3d11")
+@:hlNative("limen", "d3d11_")
 class D3D11Bindings {
 	public static var fullScreen(get, set):Bool;
 	public static var minimumFeatureLevel = FeatureLevel.Level9_1;
@@ -210,67 +210,67 @@ class D3D11Bindings {
 		return false;
 	}
 
-	@:hlNative("?limen_d3d11", "create_depth_stencil_state")
+	@:hlNative("limen", "d3d11_create_depth_stencil_state")
 	static function dxCreateDepthStencilState(desc:Dynamic):DepthStencilState {
 		return null;
 	}
 
-	@:hlNative("?limen_d3d11", "create_rasterizer_state")
+	@:hlNative("limen", "d3d11_create_rasterizer_state")
 	static function dxCreateRasterizerState(desc:Dynamic):RasterState {
 		return null;
 	}
 
-	@:hlNative("?limen_d3d11", "create_render_target_view")
+	@:hlNative("limen", "d3d11_create_render_target_view")
 	static function dxCreateRenderTargetView(r:Resource, desc:Dynamic):RenderTargetView {
 		return null;
 	}
 
-	@:hlNative("?limen_d3d11", "create_sdl")
+	@:hlNative("limen", "d3d11_create_sdl")
 	static function dxCreate(win:hl.Abstract<"limen_window">, format:Format, flags:Dx11DriverInitFlags, minimumFeatureLevel:FeatureLevel):Dx11DriverInstance {
 		return null;
 	}
 
-	@:hlNative("?limen_d3d11", "get_device_name")
+	@:hlNative("limen", "d3d11_get_device_name")
 	static function dxGetDeviceName():hl.Bytes {
 		return null;
 	}
 
-	@:hlNative("?limen_d3d11", "compile_shader")
+	@:hlNative("limen", "d3d11_compile_shader")
 	static function dxCompileShader(data:hl.Bytes, size:Int, source:hl.Bytes, entry:hl.Bytes, target:hl.Bytes, flags:ShaderFlags, error:hl.Ref<Bool>, outSize:hl.Ref<Int>):hl.Bytes {
 		return null;
 	}
 
-	@:hlNative("?limen_d3d11", "disassemble_shader")
+	@:hlNative("limen", "d3d11_disassemble_shader")
 	static function dxDisassembleShader(data:hl.Bytes, size:Int, flags:DisassembleFlags, comments:hl.Bytes, outSize:hl.Ref<Int>):hl.Bytes {
 		return null;
 	}
 
-	@:hlNative("?limen_d3d11", "create_vertex_shader")
+	@:hlNative("limen", "d3d11_create_vertex_shader")
 	static function dxCreateVertexShader(data:hl.Bytes, size:Int):Shader {
 		return null;
 	}
 
-	@:hlNative("?limen_d3d11", "create_pixel_shader")
+	@:hlNative("limen", "d3d11_create_pixel_shader")
 	static function dxCreatePixelShader(data:hl.Bytes, size:Int):Shader {
 		return null;
 	}
 
-	@:hlNative("?limen_d3d11", "create_texture_2d")
+	@:hlNative("limen", "d3d11_create_texture_2d")
 	static function dxCreateTexture2d(desc:Dynamic, data:hl.Bytes):Resource {
 		return null;
 	}
 
-	@:hlNative("?limen_d3d11", "create_sampler_state")
+	@:hlNative("limen", "d3d11_create_sampler_state")
 	static function dxCreateSamplerState(desc:Dynamic):SamplerState {
 		return null;
 	}
 
-	@:hlNative("?limen_d3d11", "create_shader_resource_view")
+	@:hlNative("limen", "d3d11_create_shader_resource_view")
 	static function dxCreateShaderResourceView(res:Resource, desc:Dynamic):ShaderResourceView {
 		return null;
 	}
 
-	@:hlNative("?limen_d3d11", "debug_print")
+	@:hlNative("limen", "d3d11_debug_print")
 	static function dxDebugPrint(str:hl.Bytes) {}
 }
 #end

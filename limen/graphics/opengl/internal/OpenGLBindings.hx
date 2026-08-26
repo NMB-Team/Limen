@@ -16,33 +16,33 @@ import limen.platform.window.Window.WinPtr;
 
 abstract ContextHandle(hl.Abstract<"limen_gl">) {}
 
-@:hlNative("?limen_opengl", "gl_")
+@:hlNative("limen", "opengl_gl_")
 class OpenGLBindings {
-	@:hlNative("?limen_opengl", "win_get_glcontext")
+	@:hlNative("limen", "opengl_win_get_glcontext")
 	public static function createContext(window:WinPtr):ContextHandle {
 		return null;
 	}
 
-	@:hlNative("?limen_opengl", "gl_context_destroy")
+	@:hlNative("limen", "opengl_gl_context_destroy")
 	public static function destroyContext(context:ContextHandle):Void {}
 
-	@:hlNative("?limen_opengl", "win_render_to")
+	@:hlNative("limen", "opengl_win_render_to")
 	public static function makeCurrent(window:WinPtr, context:ContextHandle):Void {}
 
-	@:hlNative("?limen_opengl", "win_swap_window")
+	@:hlNative("limen", "opengl_win_swap_window")
 	public static function swapWindow(window:WinPtr):Void {}
 
-	@:hlNative("?limen_opengl", "gl_options")
+	@:hlNative("limen", "opengl_gl_options")
 	public static function configureContext(major:Int, minor:Int, depth:Int, stencil:Int, flags:Int, samples:Int):Void {}
 
-	@:hlNative("?limen_opengl", "set_vsync")
+	@:hlNative("limen", "opengl_set_vsync")
 	public static function setVsync(enabled:Bool):Void {}
 
 	public static function init():Bool {
 		return false;
 	}
 
-	@:hlNative("?limen_opengl", "gl_set_debug")
+	@:hlNative("limen", "opengl_gl_set_debug")
 	public static function setDebug(enable:Bool):Bool {
 		return false;
 	}
@@ -200,46 +200,46 @@ class OpenGLBindings {
 
 	public static function bindTexture(t:Int, texture:Texture) {}
 
-	@:hlNative("?limen_opengl", "gl_bind_image_texture")
+	@:hlNative("limen", "opengl_gl_bind_image_texture")
 	public static function bindImageTexture(unit:Int, texture:Int, level:Int, layered:Bool, layer:Int, access:Int, format:Int) {}
 
 	public static function texParameteri(t:Int, key:Int, value:Int) {}
 
 	public static function texParameterf(t:Int, key:Int, value:hl.F32) {}
 
-	@:hlNative("?limen_opengl", "gl_tex_image2d")
+	@:hlNative("limen", "opengl_gl_tex_image2d")
 	public static function texImage2D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, border:Int, format:Int, type:Int, image:hl.Bytes) {}
 
-	@:hlNative("?limen_opengl", "gl_tex_image3d")
+	@:hlNative("limen", "opengl_gl_tex_image3d")
 	public static function texImage3D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, depth:Int, border:Int, format:Int, type:Int, image:hl.Bytes) {}
 
-	@:hlNative("?limen_opengl", "gl_tex_image2d_multisample")
+	@:hlNative("limen", "opengl_gl_tex_image2d_multisample")
 	public static function texImage2DMultisample(target:Int, samples:Int, internalFormat:Int, width:Int, height:Int, fixedsamplelocations:Bool) {}
 
-	@:hlNative("?limen_opengl", "gl_compressed_tex_image2d")
+	@:hlNative("limen", "opengl_gl_compressed_tex_image2d")
 	public static function compressedTexImage2D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, border:Int, imageSize:Int, image:hl.Bytes) {}
 
-	@:hlNative("?limen_opengl", "gl_compressed_tex_image3d")
+	@:hlNative("limen", "opengl_gl_compressed_tex_image3d")
 	public static function compressedTexImage3D(target:Int, level:Int, internalFormat:Int, width:Int, height:Int, depth:Int, border:Int, imageSize:Int, image:hl.Bytes) {}
 
-	@:hlNative("?limen_opengl", "gl_tex_sub_image2d")
+	@:hlNative("limen", "opengl_gl_tex_sub_image2d")
 	public static function texSubImage2D(target:Int, level:Int, xoffset:Int, yoffset:Int, width:Int, height:Int, format:Int, type:Int, image:hl.Bytes) {}
 
-	@:hlNative("?limen_opengl", "gl_tex_sub_image3d")
+	@:hlNative("limen", "opengl_gl_tex_sub_image3d")
 	public static function texSubImage3D(target:Int, level:Int, xoffset:Int, yoffset:Int, zoffset:Int, width:Int, height:Int, depth:Int, format:Int, type:Int, image:hl.Bytes) {}
 
-	@:hlNative("?limen_opengl", "gl_compressed_tex_sub_image2d")
+	@:hlNative("limen", "opengl_gl_compressed_tex_sub_image2d")
 	public static function compressedTexSubImage2D(target:Int, level:Int, xoffset:Int, yoffset:Int, width:Int, height:Int, format:Int, type:Int, image:hl.Bytes) {}
 
-	@:hlNative("?limen_opengl", "gl_compressed_tex_sub_image3d")
+	@:hlNative("limen", "opengl_gl_compressed_tex_sub_image3d")
 	public static function compressedTexSubImage3D(target:Int, level:Int, xoffset:Int, yoffset:Int, zoffset:Int, width:Int, height:Int, depth:Int, format:Int, type:Int, image:hl.Bytes) {}
 
 	/** Requires OpenGL 4.2+, therefore not supported on Apple platforms **/
-	@:hlNative("?limen_opengl", "gl_tex_storage2d")
+	@:hlNative("limen", "opengl_gl_tex_storage2d")
 	public static function texStorage2D(target:Int, levels:Int, internalFormat:Int, width:Int, height:Int) {}
 
 	/** Requires OpenGL 4.2+, therefore not supported on Apple platforms **/
-	@:hlNative("?limen_opengl", "gl_tex_storage3d")
+	@:hlNative("limen", "opengl_gl_tex_storage3d")
 	public static function texStorage3D(target:Int, levels:Int, internalFormat:Int, width:Int, height:Int, depth:Int) {}
 
 	public static function generateMipmap(t:Int) {}
@@ -256,7 +256,7 @@ class OpenGLBindings {
 
 	public static function bindFramebuffer(target:Int, f:Framebuffer) {}
 
-	@:hlNative("?limen_opengl", "gl_framebuffer_texture2d")
+	@:hlNative("limen", "opengl_gl_framebuffer_texture2d")
 	public static function framebufferTexture2D(target:Int, attach:Int, texTarget:Int, t:Texture, level:Int) {}
 
 	public static function framebufferTextureLayer(target:Int, attach:Int, t:Texture, level:Int, layer:Int) {}
@@ -303,7 +303,7 @@ class OpenGLBindings {
 
 	public static function bufferSubData(target:Int, offset:Int, data:hl.Bytes, srcOffset:Int, srcLength:Int) {}
 
-	@:hlNative("?limen_opengl", "gl_get_buffer_sub_data")
+	@:hlNative("limen", "opengl_gl_get_buffer_sub_data")
 	public static function getBufferSubData(target:Int, offset:Int, data:hl.Bytes, srcOffset:Int, srcLength:Int) {}
 
 	public static function enableVertexAttribArray(attrib:Int) {}
@@ -400,13 +400,13 @@ class OpenGLBindings {
 	// ssbos
 
 	/** Requires OpenGL 4.3+, therefore not supported on Apple platforms **/
-	@:hlNative("?limen_opengl", "gl_get_program_resource_index")
+	@:hlNative("limen", "opengl_gl_get_program_resource_index")
 	public static function getProgramResourceIndex(p:Program, type:Int, name:String):Int {
 		return 0;
 	}
 
 	/** Requires OpenGL 4.3+, therefore not supported on Apple platforms **/
-	@:hlNative("?limen_opengl", "gl_shader_storage_block_binding")
+	@:hlNative("limen", "opengl_gl_shader_storage_block_binding")
 	public static function shaderStorageBlockBinding(p:Program, blockIndex:Int, blockBinding:Int):Void {}
 
 	// ----- CONSTANTS -----

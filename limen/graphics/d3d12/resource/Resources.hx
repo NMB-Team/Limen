@@ -13,7 +13,7 @@ enum abstract CpuPageProperty(Int) {
 	final WRITE_BACK = 3;
 }
 
-@:hlNative("?limen_d3d12", "resource_")
+@:hlNative("limen", "d3d12_resource_")
 abstract Dx12Resource(hl.Abstract<"dx_resource">) {
 	public function release() {}
 
@@ -33,14 +33,14 @@ enum abstract Dx12ResourceDimension(Int) {
 	final TEXTURE3D = 4;
 }
 
-@:hlNative("?limen_d3d12", "resource_") @:forward(release, setName)
+@:hlNative("limen", "d3d12_resource_") @:forward(release, setName)
 abstract GpuResource(Dx12Resource) {
-	@:hlNative("?limen_d3d12", "resource_get_gpu_virtual_address")
+	@:hlNative("limen", "d3d12_resource_get_gpu_virtual_address")
 	public function getGpuVirtualAddress():Int64 {
 		return 0;
 	}
 
-	@:hlNative("?limen_d3d12", "get_required_intermediate_size")
+	@:hlNative("limen", "d3d12_get_required_intermediate_size")
 	public function getRequiredIntermediateSize(subRes:Int, resCount:Int):Int64 {
 		return 0;
 	}

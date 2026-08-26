@@ -41,10 +41,44 @@ include(Platform)
 limen_resolve_hashlink()
 limen_resolve_sdl3()
 
+set(_LIMEN_MODULE_PROXY_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/limen_module_proxies.c")
+set(_LIMEN_MODULE_PROXY_CONTENT "#include \"module_loader.h\"\n")
+set(_LIMEN_MODULE_PROXY_INPUTS
+	opengl
+		backend/src/graphics/opengl/context.c
+		backend/src/graphics/opengl/gl.c
+	vulkan
+		backend/src/graphics/vulkan/surface.c
+		backend/src/graphics/vulkan/vulkan.c
+		backend/src/graphics/vulkan/shaderc.c
+	d3d11
+		backend/src/graphics/d3d11/driver.cpp
+	d3d12
+		backend/src/graphics/d3d12/driver.cpp
+		backend/src/graphics/d3d12/debug.cpp
+	dlss
+		backend/src/graphics/d3d12/dlss.cpp
+)
+set(_LIMEN_MODULE_PROXY_MODULE "")
+foreach(_input IN LISTS _LIMEN_MODULE_PROXY_INPUTS)
+	if(NOT _input MATCHES "\\.(c|cpp)$")
+		set(_LIMEN_MODULE_PROXY_MODULE "${_input}")
+		continue()
+	endif()
+	set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${_input}")
+	file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/${_input}" _primitive_lines REGEX "^[ \t]*DEFINE_PRIM\\(")
+	foreach(_primitive_line IN LISTS _primitive_lines)
+		string(REGEX REPLACE "^[ \t]*DEFINE_PRIM\\([^,]+,[ \t]*([A-Za-z0-9_]+).*$" "\\1" _primitive_name "${_primitive_line}")
+		string(APPEND _LIMEN_MODULE_PROXY_CONTENT "LIMEN_MODULE_PROXY(${_LIMEN_MODULE_PROXY_MODULE}, ${_primitive_name})\n")
+	endforeach()
+endforeach()
+file(WRITE "${_LIMEN_MODULE_PROXY_SOURCE}" "${_LIMEN_MODULE_PROXY_CONTENT}")
+
 add_library(limen SHARED
 	backend/src/core/hints.c
 	backend/src/core/init.c
 	backend/src/core/graphics_driver.c
+	backend/src/core/module_loader.c
 	backend/src/core/time.c
 	backend/src/input/events.c
 	backend/src/input/gamepad.c
@@ -58,12 +92,15 @@ add_library(limen SHARED
 	backend/src/window/window.c
 	backend/src/platform/graphics.c
 	${LIMEN_PLATFORM_SOURCES}
+	"${_LIMEN_MODULE_PROXY_SOURCE}"
 )
 limen_set_native_library(limen limen .hdll)
 target_compile_definitions(limen PRIVATE LIMEN_PLATFORM_BUILD)
 target_include_directories(limen
 	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/backend/include"
-	PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/backend/src/platform"
+	PRIVATE
+		"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/core"
+		"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/platform"
 )
 target_link_libraries(limen PRIVATE libhl SDL3::SDL3-static ${LIMEN_PLATFORM_LIBRARIES})
 

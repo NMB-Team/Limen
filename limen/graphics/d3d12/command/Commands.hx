@@ -28,7 +28,7 @@ enum abstract ClearFlags(Int) {
 	final BOTH = 3;
 }
 
-@:hlNative("?limen_d3d12", "command_allocator_")
+@:hlNative("limen", "d3d12_command_allocator_")
 abstract CommandAllocator(Dx12Resource) {
 	public function new(type) {
 		this = create(type);
@@ -41,7 +41,7 @@ abstract CommandAllocator(Dx12Resource) {
 	}
 }
 
-@:hlNative("?limen_d3d12", "command_list_")
+@:hlNative("limen", "d3d12_command_list_")
 abstract CommandList(Dx12Resource) {
 	public function new(type, alloc, state) {
 		this = create(type, alloc, state);
@@ -100,10 +100,10 @@ abstract CommandList(Dx12Resource) {
 	public function rsSetScissorRects(count:Int, rects:Rect) {}
 
 	#if heaps_debug_events
-	@:hlNative("?limen_d3d12", "command_list_pix_begin_event")
+	@:hlNative("limen", "d3d12_command_list_pix_begin_event")
 	public function pixBeginEvent(color:haxe.Int64, formatString:hl.Bytes) {}
 
-	@:hlNative("?limen_d3d12", "command_list_pix_end_event")
+	@:hlNative("limen", "d3d12_command_list_pix_end_event")
 	public function pixEndEvent() {}
 	#end
 
@@ -144,7 +144,7 @@ enum abstract CommandListType(Int) {
 	public final VIDEO_ENCODE = 6;
 }
 
-@:hlNative("?limen_d3d12", "command_queue_")
+@:hlNative("limen", "d3d12_command_queue_")
 abstract CommandQueue(Dx12Resource) {
 	public function new(type) {
 		this = create(type);
@@ -164,7 +164,7 @@ abstract CommandQueue(Dx12Resource) {
 
 	public function resume() {}
 
-	@:hlNative("limen_d3d12", "command_queue_get_timestamp_frequency")
+	@:hlNative("limen", "d3d12_command_queue_get_timestamp_frequency")
 	public function getTimestampFrequency():Int64 {
 		return 0;
 	}
@@ -186,13 +186,13 @@ abstract CommandSignature(Dx12Resource) {}
 	public function new() {}
 }
 
-@:hlNative("?limen_d3d12", "fence_")
+@:hlNative("limen", "d3d12_fence_")
 abstract Fence(Dx12Resource) {
 	public function new(value, flags) {
 		this = create(value, flags);
 	}
 
-	@:hlNative("?limen_d3d12", "fence_get_completed_value")
+	@:hlNative("limen", "d3d12_fence_get_completed_value")
 	public function getValue():Int64 {
 		return 0;
 	}
@@ -266,7 +266,7 @@ enum abstract PredicationOp(Int) {
 	public function new() {}
 }
 
-@:hlNative("?limen_d3d12", "waitevent_")
+@:hlNative("limen", "d3d12_waitevent_")
 abstract WaitEvent(hl.Abstract<"dx_event">) {
 	public function new(state) {
 		this = cast create(state);

@@ -1,4 +1,5 @@
 #include "internal.h"
+#include "module_loader.h"
 
 typedef enum {
 	LIMEN_GRAPHICS_NONE,
@@ -17,17 +18,12 @@ static const char* limen_graphics_modules[LIMEN_GRAPHICS_DRIVER_COUNT] = {
 	"d3d12.limen",
 };
 
-static void* limen_graphics_handles[LIMEN_GRAPHICS_DRIVER_COUNT];
-static void* limen_dlss_handle;
 static limen_graphics_driver limen_selected_graphics_driver;
 
 static bool limen_load_graphics_driver(limen_graphics_driver driver) {
 	if (driver <= LIMEN_GRAPHICS_NONE || driver >= LIMEN_GRAPHICS_DRIVER_COUNT)
 		return false;
-	if (limen_graphics_handles[driver] != NULL)
-		return true;
-	limen_graphics_handles[driver] = SDL_LoadObject(limen_graphics_modules[driver]);
-	return limen_graphics_handles[driver] != NULL;
+	return limen_module_load(limen_graphics_modules[driver]) != NULL;
 }
 
 HL_PRIM int HL_NAME(select_graphics_driver)(int preferred, int supported) {
@@ -63,11 +59,9 @@ HL_PRIM int HL_NAME(select_graphics_driver)(int preferred, int supported) {
 HL_PRIM bool HL_NAME(is_dlss_available)() {
 	if (limen_selected_graphics_driver != LIMEN_GRAPHICS_D3D12)
 		return false;
-	if (limen_dlss_handle != NULL)
-		return true;
-	limen_dlss_handle = SDL_LoadObject("dlss.limen");
+	bool available = limen_module_load("dlss.limen") != NULL;
 	SDL_ClearError();
-	return limen_dlss_handle != NULL;
+	return available;
 }
 
 DEFINE_PRIM(_I32, select_graphics_driver, _I32 _I32);

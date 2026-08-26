@@ -1,4 +1,5 @@
 #include "internal.h"
+#include "module_loader.h"
 #include <locale.h>
 
 #ifdef HL_ANDROID
@@ -25,6 +26,7 @@ HL_PRIM bool HL_NAME(init_once)() {
 }
 
 HL_PRIM void HL_NAME(quit)() {
+	limen_modules_unload();
 	SDL_Quit();
 #ifdef _WIN32
 	timeEndPeriod(1);
