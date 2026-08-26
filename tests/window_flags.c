@@ -25,7 +25,7 @@ int main(void) {
 		fprintf(stderr, "SDL_WINDOW_NOT_FOCUSABLE was changed across the native ABI\n");
 		return 1;
 	}
-	if (window == NULL) {
+	if (window == nullptr) {
 		fprintf(stderr, "Window creation failed\n");
 		return 1;
 	}

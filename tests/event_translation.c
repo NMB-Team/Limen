@@ -1,18 +1,15 @@
 #include "core/internal.h"
 #include <assert.h>
-#include <string.h>
 
 static limen_event translate(SDL_Event* source) {
-	limen_event destination;
-	memset(&destination, 0, sizeof(destination));
+	limen_event destination = {};
 	assert(limen_translate_event(source, &destination));
 	assert(destination.timestamp == (double)source->common.timestamp / 1000000000.0);
 	return destination;
 }
 
 int main(void) {
-	SDL_Event source;
-	memset(&source, 0, sizeof(source));
+	SDL_Event source = {};
 
 	source.type = SDL_EVENT_WINDOW_RESIZED;
 	source.window.timestamp = 1500000000;
@@ -26,7 +23,7 @@ int main(void) {
 	assert(destination.mouseX == 1280);
 	assert(destination.mouseY == 720);
 
-	memset(&source, 0, sizeof(source));
+	source = (SDL_Event) {};
 	source.type = SDL_EVENT_KEY_DOWN;
 	source.key.timestamp = 2500000000;
 	source.key.windowID = 5;
@@ -42,7 +39,7 @@ int main(void) {
 	assert(destination.modifier == SDL_KMOD_LSHIFT);
 	assert(destination.keyRepeat);
 
-	memset(&source, 0, sizeof(source));
+	source = (SDL_Event) {};
 	source.type = SDL_EVENT_MOUSE_WHEEL;
 	source.wheel.timestamp = 3500000000;
 	source.wheel.windowID = 6;
@@ -56,7 +53,7 @@ int main(void) {
 	assert(destination.mouseX == 42);
 	assert(destination.mouseY == 24);
 
-	memset(&source, 0, sizeof(source));
+	source = (SDL_Event) {};
 	source.type = SDL_EVENT_FINGER_MOTION;
 	source.tfinger.timestamp = 4500000000;
 	source.tfinger.windowID = 7;
@@ -70,7 +67,7 @@ int main(void) {
 	assert(destination.mouseX == 2500);
 	assert(destination.mouseY == 7500);
 
-	memset(&source, 0, sizeof(source));
+	source = (SDL_Event) {};
 	source.type = SDL_EVENT_GAMEPAD_AXIS_MOTION;
 	source.gaxis.timestamp = 5500000000;
 	source.gaxis.which = 10;
@@ -82,7 +79,7 @@ int main(void) {
 	assert(destination.button == SDL_GAMEPAD_AXIS_LEFTX);
 	assert(destination.value == 1234);
 
-	memset(&source, 0, sizeof(source));
+	source = (SDL_Event) {};
 	source.type = SDL_EVENT_JOYSTICK_BUTTON_DOWN;
 	source.jbutton.timestamp = 6500000000;
 	source.jbutton.which = 11;

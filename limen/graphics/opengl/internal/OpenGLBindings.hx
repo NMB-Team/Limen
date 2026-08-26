@@ -12,7 +12,7 @@ import limen.graphics.opengl.OpenGLTypes.VertexArray;
 
 import haxe.Int64;
 
-import limen.platform.window.Window.WinPtr;
+import limen.platform.internal.NativeTypes.WinPtr;
 
 abstract ContextHandle(hl.Abstract<"limen_gl">) {}
 

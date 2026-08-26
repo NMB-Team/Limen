@@ -54,10 +54,10 @@
 #define GL_IMPORT(fun, t) fun = (PFNGL##t##PROC)limen_gl_get_proc_address(#fun)
 #ifndef __APPLE__
 #define GL_IMPORT_OPT(fun, t)                                  \
-	PFNGL##t##PROC fun = NULL;                                 \
+	PFNGL##t##PROC fun = nullptr;                                 \
 	if (!fun) {                                                \
 		fun = (PFNGL##t##PROC)limen_gl_get_proc_address(#fun); \
-		if (fun == NULL)                                       \
+		if (fun == nullptr)                                       \
 			hl_error("function not resolved");                 \
 	}
 #endif
@@ -71,52 +71,52 @@
 static int GLLoadAPI() {
 #include "GLImports.h"
 #ifdef HL_GL_DYNAMIC_IMPORTS
-	if (glGenFramebuffers == NULL) {
+	if (glGenFramebuffers == nullptr) {
 		glGenFramebuffers = (PFNGLGENFRAMEBUFFERSPROC)limen_gl_get_proc_address("glGenFramebuffersEXT");
 	}
-	if (glBindFramebuffer == NULL) {
+	if (glBindFramebuffer == nullptr) {
 		glBindFramebuffer = (PFNGLBINDFRAMEBUFFERPROC)limen_gl_get_proc_address("glBindFramebufferEXT");
 	}
-	if (glFramebufferTexture2D == NULL) {
+	if (glFramebufferTexture2D == nullptr) {
 		glFramebufferTexture2D = (PFNGLFRAMEBUFFERTEXTURE2DPROC)limen_gl_get_proc_address("glFramebufferTexture2DEXT");
 	}
-	if (glDeleteFramebuffers == NULL) {
+	if (glDeleteFramebuffers == nullptr) {
 		glDeleteFramebuffers = (PFNGLDELETEFRAMEBUFFERSPROC)limen_gl_get_proc_address("glDeleteFramebuffersEXT");
 	}
-	if (glGenRenderbuffers == NULL) {
+	if (glGenRenderbuffers == nullptr) {
 		glGenRenderbuffers = (PFNGLGENRENDERBUFFERSPROC)limen_gl_get_proc_address("glGenRenderbuffersEXT");
 	}
-	if (glBindRenderbuffer == NULL) {
+	if (glBindRenderbuffer == nullptr) {
 		glBindRenderbuffer = (PFNGLBINDRENDERBUFFERPROC)limen_gl_get_proc_address("glBindRenderbufferEXT");
 	}
-	if (glRenderbufferStorage == NULL) {
+	if (glRenderbufferStorage == nullptr) {
 		glRenderbufferStorage = (PFNGLRENDERBUFFERSTORAGEPROC)limen_gl_get_proc_address("glRenderbufferStorageEXT");
 	}
-	if (glFramebufferRenderbuffer == NULL) {
+	if (glFramebufferRenderbuffer == nullptr) {
 		glFramebufferRenderbuffer = (PFNGLFRAMEBUFFERRENDERBUFFERPROC)limen_gl_get_proc_address("glFramebufferRenderbufferEXT");
 	}
-	if (glDeleteRenderbuffers == NULL) {
+	if (glDeleteRenderbuffers == nullptr) {
 		glDeleteRenderbuffers = (PFNGLDELETERENDERBUFFERSPROC)limen_gl_get_proc_address("glDeleteRenderbuffersEXT");
 	}
-	if (glGenerateMipmap == NULL) {
+	if (glGenerateMipmap == nullptr) {
 		glGenerateMipmap = (PFNGLGENERATEMIPMAPPROC)limen_gl_get_proc_address("glGenerateMipmapEXT");
 	}
-	if (glVertexAttribDivisor == NULL) {
+	if (glVertexAttribDivisor == nullptr) {
 		glVertexAttribDivisor = (PFNGLVERTEXATTRIBDIVISORPROC)limen_gl_get_proc_address("glVertexAttribDivisorARB");
 	}
-	if (glDrawArraysInstanced == NULL) {
+	if (glDrawArraysInstanced == nullptr) {
 		glDrawArraysInstanced = (PFNGLDRAWARRAYSINSTANCEDPROC)limen_gl_get_proc_address("glDrawArraysInstancedARB");
 	}
-	if (glDrawElementsInstanced == NULL) {
+	if (glDrawElementsInstanced == nullptr) {
 		glDrawElementsInstanced = (PFNGLDRAWELEMENTSINSTANCEDPROC)limen_gl_get_proc_address("glDrawElementsInstancedARB");
 	}
 
-	if (glCreateProgram == NULL || glDeleteProgram == NULL || glLinkProgram == NULL || glAttachShader == NULL || glGetProgramInfoLog == NULL || glGetUniformLocation == NULL || glGetAttribLocation == NULL || glCreateShader == NULL ||
-	    glDeleteShader == NULL || glShaderSource == NULL || glCompileShader == NULL || glGetShaderInfoLog == NULL || glGetShaderiv == NULL || glGetProgramiv == NULL || glUseProgram == NULL || glGenBuffers == NULL || glBindBuffer == NULL ||
-	    glBufferData == NULL || glBufferSubData == NULL || glDeleteBuffers == NULL || glEnableVertexAttribArray == NULL || glDisableVertexAttribArray == NULL || glVertexAttribPointer == NULL || glDrawBuffers == NULL || glGenFramebuffers == NULL ||
-	    glBindFramebuffer == NULL || glFramebufferTexture2D == NULL || glDeleteFramebuffers == NULL || glGenRenderbuffers == NULL || glBindRenderbuffer == NULL || glRenderbufferStorage == NULL || glFramebufferRenderbuffer == NULL ||
-	    glDeleteRenderbuffers == NULL || glGenerateMipmap == NULL || glUniform1i == NULL || glUniform3fv == NULL || glUniform4fv == NULL || glUniformMatrix3fv == NULL || glUniformMatrix4fv == NULL || glUniform1f == NULL || glUniform2f == NULL ||
-	    glUniform3f == NULL || glUniform4f == NULL) {
+	if (glCreateProgram == nullptr || glDeleteProgram == nullptr || glLinkProgram == nullptr || glAttachShader == nullptr || glGetProgramInfoLog == nullptr || glGetUniformLocation == nullptr || glGetAttribLocation == nullptr || glCreateShader == nullptr ||
+	    glDeleteShader == nullptr || glShaderSource == nullptr || glCompileShader == nullptr || glGetShaderInfoLog == nullptr || glGetShaderiv == nullptr || glGetProgramiv == nullptr || glUseProgram == nullptr || glGenBuffers == nullptr || glBindBuffer == nullptr ||
+	    glBufferData == nullptr || glBufferSubData == nullptr || glDeleteBuffers == nullptr || glEnableVertexAttribArray == nullptr || glDisableVertexAttribArray == nullptr || glVertexAttribPointer == nullptr || glDrawBuffers == nullptr || glGenFramebuffers == nullptr ||
+	    glBindFramebuffer == nullptr || glFramebufferTexture2D == nullptr || glDeleteFramebuffers == nullptr || glGenRenderbuffers == nullptr || glBindRenderbuffer == nullptr || glRenderbufferStorage == nullptr || glFramebufferRenderbuffer == nullptr ||
+	    glDeleteRenderbuffers == nullptr || glGenerateMipmap == nullptr || glUniform1i == nullptr || glUniform3fv == nullptr || glUniform4fv == nullptr || glUniformMatrix3fv == nullptr || glUniformMatrix4fv == nullptr || glUniform1f == nullptr || glUniform2f == nullptr ||
+	    glUniform3f == nullptr || glUniform4f == nullptr) {
 		return 1;
 	}
 #endif
@@ -140,8 +140,8 @@ HL_PRIM bool HL_NAME(gl_set_debug)(bool enable) {
 #ifdef GL_VERSION_4_3
 	if (enable) {
 		glEnable(GL_DEBUG_OUTPUT);
-		glDebugMessageControl(GL_DONT_CARE, GL_DEBUG_TYPE_PERFORMANCE, GL_DONT_CARE, 0, NULL, GL_FALSE);
-		glDebugMessageControl(GL_DONT_CARE, GL_DEBUG_TYPE_OTHER, GL_DONT_CARE, 0, NULL, GL_FALSE);
+		glDebugMessageControl(GL_DONT_CARE, GL_DEBUG_TYPE_PERFORMANCE, GL_DONT_CARE, 0, nullptr, GL_FALSE);
+		glDebugMessageControl(GL_DONT_CARE, GL_DEBUG_TYPE_OTHER, GL_DONT_CARE, 0, nullptr, GL_FALSE);
 		glDebugMessageCallback(debug_message_callback, 0);
 	} else {
 		glDisable(GL_DEBUG_OUTPUT);
@@ -284,7 +284,7 @@ static vdynamic* alloc_i32(int v) {
 HL_PRIM vdynamic* HL_NAME(gl_create_program)() {
 	int v = glCreateProgram();
 	if (v == 0)
-		return NULL;
+		return nullptr;
 	return alloc_i32(v);
 }
 
@@ -316,13 +316,13 @@ HL_PRIM vdynamic* HL_NAME(gl_get_program_parameter)(vdynamic* p, int param) {
 		default:
 			hl_error("Unsupported param %d", param);
 	}
-	return NULL;
+	return nullptr;
 }
 
 HL_PRIM vbyte* HL_NAME(gl_get_program_info_bytes)(vdynamic* p) {
 	char log[4096];
 	*log = 0;
-	glGetProgramInfoLog(p->v.i, 4096, NULL, log);
+	glGetProgramInfoLog(p->v.i, 4096, nullptr, log);
 	return hl_copy_bytes((vbyte*)log, (int)strlen(log) + 1);
 }
 
@@ -330,7 +330,7 @@ HL_PRIM vdynamic* HL_NAME(gl_get_uniform_location)(vdynamic* p, vstring* name) {
 	char* cname = hl_to_utf8(name->bytes);
 	int u = glGetUniformLocation(p->v.i, cname);
 	if (u < 0)
-		return NULL;
+		return nullptr;
 	return alloc_i32(u);
 }
 
@@ -348,13 +348,13 @@ HL_PRIM void HL_NAME(gl_use_program)(vdynamic* p) {
 HL_PRIM vdynamic* HL_NAME(gl_create_shader)(int type) {
 	int s = glCreateShader(type);
 	if (s == 0)
-		return NULL;
+		return nullptr;
 	return alloc_i32(s);
 }
 
 HL_PRIM void HL_NAME(gl_shader_source)(vdynamic* s, vstring* src) {
 	const GLchar* c = (GLchar*)hl_to_utf8(src->bytes);
-	glShaderSource(s->v.i, 1, &c, NULL);
+	glShaderSource(s->v.i, 1, &c, nullptr);
 }
 
 HL_PRIM void HL_NAME(gl_compile_shader)(vdynamic* s) {
@@ -364,7 +364,7 @@ HL_PRIM void HL_NAME(gl_compile_shader)(vdynamic* s) {
 HL_PRIM vbyte* HL_NAME(gl_get_shader_info_bytes)(vdynamic* s) {
 	char log[4096];
 	*log = 0;
-	glGetShaderInfoLog(s->v.i, 4096, NULL, log);
+	glGetShaderInfoLog(s->v.i, 4096, nullptr, log);
 	return hl_copy_bytes((vbyte*)log, (int)strlen(log) + 1);
 }
 
@@ -381,7 +381,7 @@ HL_PRIM vdynamic* HL_NAME(gl_get_shader_parameter)(vdynamic* s, int param) {
 		default:
 			hl_error("Unsupported param %d", param);
 	}
-	return NULL;
+	return nullptr;
 }
 
 HL_PRIM void HL_NAME(gl_delete_shader)(vdynamic* s) {
@@ -570,7 +570,7 @@ HL_PRIM void HL_NAME(gl_bind_buffer_base)(int target, int index, vdynamic* b) {
 }
 
 HL_PRIM void HL_NAME(gl_buffer_data_size)(int target, int size, int param) {
-	glBufferData(target, size, NULL, param);
+	glBufferData(target, size, nullptr, param);
 }
 
 HL_PRIM void HL_NAME(gl_buffer_data)(int target, int size, vbyte* data, int param) {
@@ -709,13 +709,13 @@ HL_PRIM bool HL_NAME(gl_has_extension)(vstring* name) {
 	const char* cname = hl_to_utf8(name->bytes);
 	const char* version = (const char*)glGetString(GL_VERSION);
 	int major = 0;
-	if (version != NULL) {
+	if (version != nullptr) {
 		const char* number = strstr(version, "OpenGL ES ");
-		number = number == NULL ? version : number + 10;
+		number = number == nullptr ? version : number + 10;
 		major = atoi(number);
 	}
 #ifdef HL_GL_DYNAMIC_IMPORTS
-	if (major >= 3 && glGetStringi != NULL) {
+	if (major >= 3 && glGetStringi != nullptr) {
 #else
 	if (major >= 3) {
 #endif
@@ -729,10 +729,10 @@ HL_PRIM bool HL_NAME(gl_has_extension)(vstring* name) {
 	}
 
 	const char* extensions = (const char*)glGetString(GL_EXTENSIONS);
-	if (extensions == NULL)
+	if (extensions == nullptr)
 		return false;
 	size_t nameLength = strlen(cname);
-	for (const char* ext = strstr(extensions, cname); ext != NULL; ext = strstr(ext + nameLength, cname)) {
+	for (const char* ext = strstr(extensions, cname); ext != nullptr; ext = strstr(ext + nameLength, cname)) {
 		if ((ext == extensions || ext[-1] == ' ') && (ext[nameLength] == 0 || ext[nameLength] == ' ')) {
 			return true;
 		}

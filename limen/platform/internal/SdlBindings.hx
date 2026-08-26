@@ -1,7 +1,7 @@
 package limen.platform.internal;
 
 import limen.platform.Platform.DisplayId;
-import limen.platform.window.Window.WinPtr;
+import limen.platform.internal.NativeTypes.WinPtr;
 import limen.platform.internal.NativeTypes.CursorPtr;
 import limen.platform.internal.NativeTypes.GamepadPtr;
 import limen.platform.internal.NativeTypes.JoystickPtr;
@@ -56,7 +56,7 @@ class SdlBindings {
 		return null;
 	}
 
-	public static function getFramerate(win:WinPtr):Int {
+	public static function getRefreshRate(win:WinPtr):Int {
 		return 0;
 	}
 

@@ -19,7 +19,7 @@
 #define HL_NAME(n) limen_vulkan_##n
 #include <hl.h>
 
-static VkInstance instance = NULL;
+static VkInstance instance = nullptr;
 
 #if defined(_WIN32)
 #define HL_VK_PLATFORM_EXTENSION VK_KHR_WIN32_SURFACE_EXTENSION_NAME
@@ -30,7 +30,7 @@ static VkInstance instance = NULL;
 #elif defined(__linux__)
 #define HL_VK_PLATFORM_EXTENSION VK_KHR_XLIB_SURFACE_EXTENSION_NAME
 #else
-#define HL_VK_PLATFORM_EXTENSION NULL
+#define HL_VK_PLATFORM_EXTENSION nullptr
 #endif
 
 VkInstance vk_get_instance() {
@@ -41,7 +41,7 @@ HL_PRIM bool HL_NAME(vk_init)(bool enable_validation) {
 	if (instance)
 		return true;
 #if defined(_WIN32)
-	if (GetEnvironmentVariableA("VK_LOADER_LAYERS_DISABLE", NULL, 0) == 0 && GetLastError() == ERROR_ENVVAR_NOT_FOUND) {
+	if (GetEnvironmentVariableA("VK_LOADER_LAYERS_DISABLE", nullptr, 0) == 0 && GetLastError() == ERROR_ENVVAR_NOT_FOUND) {
 		SetEnvironmentVariableA("VK_LOADER_LAYERS_DISABLE", "~implicit~");
 	}
 #endif
@@ -56,7 +56,7 @@ HL_PRIM bool HL_NAME(vk_init)(bool enable_validation) {
 #else
 	const char* extensions[3] = { VK_KHR_SURFACE_EXTENSION_NAME, HL_VK_PLATFORM_EXTENSION, VK_EXT_DEBUG_UTILS_EXTENSION_NAME };
 	int extensionCount = enable_validation ? 3 : 2;
-	if (extensions[1] == NULL)
+	if (extensions[1] == nullptr)
 		extensionCount = enable_validation ? 2 : 1;
 #endif
 	VkApplicationInfo appInfo = {
@@ -79,7 +79,7 @@ HL_PRIM bool HL_NAME(vk_init)(bool enable_validation) {
 		.ppEnabledExtensionNames = extensions,
 	};
 
-	return vkCreateInstance(&info, NULL, &instance) == VK_SUCCESS;
+	return vkCreateInstance(&info, nullptr, &instance) == VK_SUCCESS;
 }
 
 HL_PRIM vbyte* HL_NAME(vk_make_ref)(vdynamic* v) {
@@ -90,7 +90,7 @@ HL_PRIM vbyte* HL_NAME(vk_make_ref)(vdynamic* v) {
 
 HL_PRIM vbyte* HL_NAME(vk_make_array)(varray* a) {
 	if (a->size == 0)
-		return NULL;
+		return nullptr;
 	if (a->at->kind == HABSTRACT)
 		return hl_copy_bytes(hl_aptr(a, vbyte), a->size * sizeof(void*));
 	if (a->at->kind == HI32)
@@ -121,7 +121,7 @@ typedef struct _VkContext {
 
 HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue) {
 	VkContext ctx = (VkContext)malloc(sizeof(struct _VkContext));
-	memset(ctx, 0, sizeof(struct _VkContext));
+	*ctx = (struct _VkContext) {};
 	ctx->surface = surface;
 
 	int queueFamily = 0;
@@ -139,7 +139,7 @@ HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue) 
 
 	for (int i = 0; i < physicalDeviceCount; i++) {
 		int queueFamilyCount = 0;
-		vkGetPhysicalDeviceQueueFamilyProperties(deviceHandles[i], &queueFamilyCount, NULL);
+		vkGetPhysicalDeviceQueueFamilyProperties(deviceHandles[i], &queueFamilyCount, nullptr);
 		queueFamilyCount = queueFamilyCount > MAX_QUEUE_COUNT ? MAX_QUEUE_COUNT : queueFamilyCount;
 		vkGetPhysicalDeviceQueueFamilyProperties(deviceHandles[i], &queueFamilyCount, queueFamilyProperties);
 		vkGetPhysicalDeviceProperties(deviceHandles[i], &deviceProperties);
@@ -170,8 +170,8 @@ HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue) 
 		.pQueueCreateInfos = &qinf,
 	};
 
-	if (vkCreateDevice(ctx->pdevice, &dinf, NULL, &ctx->device) != VK_SUCCESS)
-		return NULL;
+	if (vkCreateDevice(ctx->pdevice, &dinf, nullptr, &ctx->device) != VK_SUCCESS)
+		return nullptr;
 
 	vkGetDeviceQueue(ctx->device, queueFamily, 0, &ctx->queue);
 	vkGetPhysicalDeviceMemoryProperties(ctx->pdevice, &ctx->memProps);
@@ -210,8 +210,8 @@ HL_PRIM bool HL_NAME(vk_init_swapchain)(VkContext ctx, int width, int height, bo
 	vkDeviceWaitIdle(ctx->device);
 
 	if (ctx->swapchain) {
-		vkDestroySwapchainKHR(ctx->device, ctx->swapchain, NULL);
-		ctx->swapchain = NULL;
+		vkDestroySwapchainKHR(ctx->device, ctx->swapchain, nullptr);
+		ctx->swapchain = nullptr;
 	}
 
 	int formatCount = 1;
@@ -225,7 +225,7 @@ HL_PRIM bool HL_NAME(vk_init_swapchain)(VkContext ctx, int width, int height, bo
 #define MAX_PRESENT_MODE_COUNT 16
 	VkPresentModeKHR modes[MAX_PRESENT_MODE_COUNT];
 
-	vkGetPhysicalDeviceSurfacePresentModesKHR(ctx->pdevice, ctx->surface, &modeCount, NULL);
+	vkGetPhysicalDeviceSurfacePresentModesKHR(ctx->pdevice, ctx->surface, &modeCount, nullptr);
 	modeCount = modeCount > MAX_PRESENT_MODE_COUNT ? MAX_PRESENT_MODE_COUNT : modeCount;
 	vkGetPhysicalDeviceSurfacePresentModesKHR(ctx->pdevice, ctx->surface, &modeCount, modes);
 
@@ -297,55 +297,55 @@ HL_PRIM bool HL_NAME(vk_init_swapchain)(VkContext ctx, int width, int height, bo
 }
 
 HL_PRIM VkShaderModule HL_NAME(vk_create_shader_module)(VkContext ctx, vbyte* data, int len) {
-	VkShaderModule module = NULL;
+	VkShaderModule module = nullptr;
 	VkShaderModuleCreateInfo inf = {
 		.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
 		.codeSize = len,
 		.pCode = (const uint32_t*)data,
 	};
-	vkCreateShaderModule(ctx->device, &inf, NULL, &module);
+	vkCreateShaderModule(ctx->device, &inf, nullptr, &module);
 	return module;
 }
 
 HL_PRIM VkPipelineLayout HL_NAME(vk_create_pipeline_layout)(VkContext ctx, VkPipelineLayoutCreateInfo* info) {
-	VkPipelineLayout p = NULL;
-	vkCreatePipelineLayout(ctx->device, info, NULL, &p);
+	VkPipelineLayout p = nullptr;
+	vkCreatePipelineLayout(ctx->device, info, nullptr, &p);
 	return p;
 }
 
 HL_PRIM VkPipeline HL_NAME(vk_create_graphics_pipeline)(VkContext ctx, VkGraphicsPipelineCreateInfo* info) {
-	VkPipeline p = NULL;
-	vkCreateGraphicsPipelines(ctx->device, NULL, 1, info, NULL, &p);
+	VkPipeline p = nullptr;
+	vkCreateGraphicsPipelines(ctx->device, nullptr, 1, info, nullptr, &p);
 	return p;
 }
 
 HL_PRIM VkRenderPass HL_NAME(vk_create_render_pass)(VkContext ctx, VkRenderPassCreateInfo* info) {
-	VkRenderPass p = NULL;
-	vkCreateRenderPass(ctx->device, info, NULL, &p);
+	VkRenderPass p = nullptr;
+	vkCreateRenderPass(ctx->device, info, nullptr, &p);
 	return p;
 }
 
 HL_PRIM VkImageView HL_NAME(vk_create_image_view)(VkContext ctx, VkImageViewCreateInfo* info) {
-	VkImageView i = NULL;
-	vkCreateImageView(ctx->device, info, NULL, &i);
+	VkImageView i = nullptr;
+	vkCreateImageView(ctx->device, info, nullptr, &i);
 	return i;
 }
 
 HL_PRIM VkFramebuffer HL_NAME(vk_create_framebuffer)(VkContext ctx, VkFramebufferCreateInfo* info) {
-	VkFramebuffer b = NULL;
-	vkCreateFramebuffer(ctx->device, info, NULL, &b);
+	VkFramebuffer b = nullptr;
+	vkCreateFramebuffer(ctx->device, info, nullptr, &b);
 	return b;
 }
 
 HL_PRIM VkDescriptorSetLayout HL_NAME(vk_create_descriptor_set_layout)(VkContext ctx, VkDescriptorSetLayoutCreateInfo* info) {
-	VkDescriptorSetLayout p = NULL;
-	vkCreateDescriptorSetLayout(ctx->device, info, NULL, &p);
+	VkDescriptorSetLayout p = nullptr;
+	vkCreateDescriptorSetLayout(ctx->device, info, nullptr, &p);
 	return p;
 }
 
 HL_PRIM VkBuffer HL_NAME(vk_create_buffer)(VkContext ctx, VkBufferCreateInfo* info) {
-	VkBuffer b = NULL;
-	vkCreateBuffer(ctx->device, info, NULL, &b);
+	VkBuffer b = nullptr;
+	vkCreateBuffer(ctx->device, info, nullptr, &b);
 	return b;
 }
 
@@ -354,17 +354,17 @@ HL_PRIM void HL_NAME(vk_get_buffer_memory_requirements)(VkContext ctx, VkBuffer 
 }
 
 HL_PRIM VkDeviceMemory HL_NAME(vk_allocate_memory)(VkContext ctx, VkMemoryAllocateInfo* inf) {
-	VkDeviceMemory m = NULL;
-	vkAllocateMemory(ctx->device, inf, NULL, &m);
+	VkDeviceMemory m = nullptr;
+	vkAllocateMemory(ctx->device, inf, nullptr, &m);
 	return m;
 }
 
 HL_PRIM vbyte* HL_NAME(vk_map_memory)(VkContext ctx, VkDeviceMemory mem, int offset, int size, int flags) {
-	if (mem == NULL || size <= 0)
-		return NULL;
-	void* ptr = NULL;
+	if (mem == nullptr || size <= 0)
+		return nullptr;
+	void* ptr = nullptr;
 	if (vkMapMemory(ctx->device, mem, offset, size, flags, &ptr) != VK_SUCCESS)
-		return NULL;
+		return nullptr;
 	return ptr;
 }
 
@@ -377,8 +377,8 @@ HL_PRIM bool HL_NAME(vk_bind_buffer_memory)(VkContext ctx, VkBuffer buf, VkDevic
 }
 
 HL_PRIM VkImage HL_NAME(vk_create_image)(VkContext ctx, VkImageCreateInfo* info) {
-	VkImage i = NULL;
-	vkCreateImage(ctx->device, info, NULL, &i);
+	VkImage i = nullptr;
+	vkCreateImage(ctx->device, info, nullptr, &i);
 	return i;
 }
 
@@ -391,8 +391,8 @@ HL_PRIM bool HL_NAME(vk_bind_image_memory)(VkContext ctx, VkImage img, VkDeviceM
 }
 
 HL_PRIM VkCommandPool HL_NAME(vk_create_command_pool)(VkContext ctx, VkCommandPoolCreateInfo* inf) {
-	VkCommandPool pool = NULL;
-	vkCreateCommandPool(ctx->device, inf, NULL, &pool);
+	VkCommandPool pool = nullptr;
+	vkCreateCommandPool(ctx->device, inf, nullptr, &pool);
 	return pool;
 }
 
@@ -401,8 +401,8 @@ HL_PRIM bool HL_NAME(vk_allocate_command_buffers)(VkContext ctx, VkCommandBuffer
 }
 
 HL_PRIM VkDescriptorPool HL_NAME(vk_create_descriptor_pool)(VkContext ctx, VkDescriptorPoolCreateInfo* inf) {
-	VkDescriptorPool pool = NULL;
-	vkCreateDescriptorPool(ctx->device, inf, NULL, &pool);
+	VkDescriptorPool pool = nullptr;
+	vkCreateDescriptorPool(ctx->device, inf, nullptr, &pool);
 	return pool;
 }
 
@@ -428,24 +428,24 @@ HL_PRIM void HL_NAME(vk_update_descriptor_image_sampler)(VkContext ctx, VkDescri
 		.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 		.pImageInfo = &imageInfo,
 	};
-	vkUpdateDescriptorSets(ctx->device, 1, &write, 0, NULL);
+	vkUpdateDescriptorSets(ctx->device, 1, &write, 0, nullptr);
 }
 
 HL_PRIM VkSampler HL_NAME(vk_create_sampler)(VkContext ctx, VkSamplerCreateInfo* inf) {
-	VkSampler sampler = NULL;
-	vkCreateSampler(ctx->device, inf, NULL, &sampler);
+	VkSampler sampler = nullptr;
+	vkCreateSampler(ctx->device, inf, nullptr, &sampler);
 	return sampler;
 }
 
 HL_PRIM VkFence HL_NAME(vk_create_fence)(VkContext ctx, VkFenceCreateInfo* inf) {
-	VkFence fence = NULL;
-	vkCreateFence(ctx->device, inf, NULL, &fence);
+	VkFence fence = nullptr;
+	vkCreateFence(ctx->device, inf, nullptr, &fence);
 	return fence;
 }
 
 HL_PRIM VkSemaphore HL_NAME(vk_create_semaphore)(VkContext ctx, VkSemaphoreCreateInfo* inf) {
-	VkSemaphore s = NULL;
-	vkCreateSemaphore(ctx->device, inf, NULL, &s);
+	VkSemaphore s = nullptr;
+	vkCreateSemaphore(ctx->device, inf, nullptr, &s);
 	return s;
 }
 
@@ -487,31 +487,31 @@ HL_PRIM void HL_NAME(vk_present)(VkContext ctx, VkSemaphore sem, int image) {
 }
 
 HL_PRIM void HL_NAME(vk_destroy_buffer)(VkContext ctx, VkBuffer buf) {
-	vkDestroyBuffer(ctx->device, buf, NULL);
+	vkDestroyBuffer(ctx->device, buf, nullptr);
 }
 
 HL_PRIM void HL_NAME(vk_destroy_image)(VkContext ctx, VkImage img) {
-	vkDestroyImage(ctx->device, img, NULL);
+	vkDestroyImage(ctx->device, img, nullptr);
 }
 
 HL_PRIM void HL_NAME(vk_destroy_image_view)(VkContext ctx, VkImageView view) {
-	vkDestroyImageView(ctx->device, view, NULL);
+	vkDestroyImageView(ctx->device, view, nullptr);
 }
 
 HL_PRIM void HL_NAME(vk_free_memory)(VkContext ctx, VkDeviceMemory mem) {
-	vkFreeMemory(ctx->device, mem, NULL);
+	vkFreeMemory(ctx->device, mem, nullptr);
 }
 
 HL_PRIM void HL_NAME(vk_destroy_fence)(VkContext ctx, VkFence fence) {
-	vkDestroyFence(ctx->device, fence, NULL);
+	vkDestroyFence(ctx->device, fence, nullptr);
 }
 
 HL_PRIM void HL_NAME(vk_destroy_semaphore)(VkContext ctx, VkSemaphore sem) {
-	vkDestroySemaphore(ctx->device, sem, NULL);
+	vkDestroySemaphore(ctx->device, sem, nullptr);
 }
 
 HL_PRIM void HL_NAME(vk_destroy_command_pool)(VkContext ctx, VkCommandPool pool) {
-	vkDestroyCommandPool(ctx->device, pool, NULL);
+	vkDestroyCommandPool(ctx->device, pool, nullptr);
 }
 
 HL_PRIM void HL_NAME(vk_free_command_buffers)(VkContext ctx, VkCommandPool pool, varray* cmd) {
@@ -519,19 +519,19 @@ HL_PRIM void HL_NAME(vk_free_command_buffers)(VkContext ctx, VkCommandPool pool,
 }
 
 HL_PRIM void HL_NAME(vk_destroy_framebuffer)(VkContext ctx, VkFramebuffer fb) {
-	vkDestroyFramebuffer(ctx->device, fb, NULL);
+	vkDestroyFramebuffer(ctx->device, fb, nullptr);
 }
 
 HL_PRIM void HL_NAME(vk_destroy_render_pass)(VkContext ctx, VkRenderPass pass) {
-	vkDestroyRenderPass(ctx->device, pass, NULL);
+	vkDestroyRenderPass(ctx->device, pass, nullptr);
 }
 
 HL_PRIM void HL_NAME(vk_destroy_descriptor_pool)(VkContext ctx, VkDescriptorPool pool) {
-	vkDestroyDescriptorPool(ctx->device, pool, NULL);
+	vkDestroyDescriptorPool(ctx->device, pool, nullptr);
 }
 
 HL_PRIM void HL_NAME(vk_destroy_sampler)(VkContext ctx, VkSampler sampler) {
-	vkDestroySampler(ctx->device, sampler, NULL);
+	vkDestroySampler(ctx->device, sampler, nullptr);
 }
 
 #define _VCTX _ABSTRACT(vk_context)
@@ -703,7 +703,7 @@ HL_PRIM void HL_NAME(vk_bind_descriptor_sets)(VkCommandBuffer out, VkPipelineBin
 }
 
 HL_PRIM void HL_NAME(vk_bind_descriptor_set)(VkCommandBuffer out, VkPipelineBindPoint bind, VkPipelineLayout layout, int first, VkDescriptorSet set) {
-	vkCmdBindDescriptorSets(out, bind, layout, first, 1, &set, 0, NULL);
+	vkCmdBindDescriptorSets(out, bind, layout, first, 1, &set, 0, nullptr);
 }
 
 DEFINE_PRIM(_VOID, vk_command_begin, _CMD _STRUCT);

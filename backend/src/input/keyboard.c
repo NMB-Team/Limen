@@ -5,10 +5,10 @@ HL_PRIM void HL_NAME(text_input)(bool enable) {
 
 	SDL_SetEventEnabled(SDL_EVENT_TEXT_INPUT, true);
 	SDL_SetEventEnabled(SDL_EVENT_TEXT_EDITING, true);
-	windows = SDL_GetWindows(NULL);
-	if (windows == NULL)
+	windows = SDL_GetWindows(nullptr);
+	if (windows == nullptr)
 		return;
-	for (int i = 0; windows[i] != NULL; i++)
+	for (int i = 0; windows[i] != nullptr; i++)
 		if (enable)
 			SDL_StartTextInput(windows[i]);
 		else

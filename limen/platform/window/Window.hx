@@ -6,8 +6,7 @@ import limen.platform.display.DisplaySetting;
 import limen.platform.internal.SdlBindings;
 import limen.platform.window.WindowFlags.*;
 import limen.platform.window.WindowMode.*;
-
-typedef WinPtr = hl.Abstract<"limen_window">;
+import limen.platform.internal.NativeTypes.WinPtr;
 
 class Window {
 	public var id(get, never):Int;

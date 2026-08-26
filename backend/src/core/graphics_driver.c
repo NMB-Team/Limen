@@ -11,7 +11,7 @@ typedef enum {
 } limen_graphics_driver;
 
 static const char* limen_graphics_modules[LIMEN_GRAPHICS_DRIVER_COUNT] = {
-	NULL,
+	nullptr,
 	"opengl.limen",
 	"vulkan.limen",
 	"d3d11.limen",
@@ -23,7 +23,7 @@ static limen_graphics_driver limen_selected_graphics_driver;
 static bool limen_load_graphics_driver(limen_graphics_driver driver) {
 	if (driver <= LIMEN_GRAPHICS_NONE || driver >= LIMEN_GRAPHICS_DRIVER_COUNT)
 		return false;
-	return limen_module_load(limen_graphics_modules[driver]) != NULL;
+	return limen_module_load(limen_graphics_modules[driver]) != nullptr;
 }
 
 HL_PRIM int HL_NAME(select_graphics_driver)(int preferred, int supported) {
@@ -59,7 +59,7 @@ HL_PRIM int HL_NAME(select_graphics_driver)(int preferred, int supported) {
 HL_PRIM bool HL_NAME(is_dlss_available)() {
 	if (limen_selected_graphics_driver != LIMEN_GRAPHICS_D3D12)
 		return false;
-	bool available = limen_module_load("dlss.limen") != NULL;
+	bool available = limen_module_load("dlss.limen") != nullptr;
 	SDL_ClearError();
 	return available;
 }

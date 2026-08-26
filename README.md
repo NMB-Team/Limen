@@ -3,11 +3,12 @@
 <img src=".github/img/limen-logo.svg" width=300 />
 
 # LIMEN
-#### is the SDL3 platform and graphics integration for HashLink.
+#### SDL3 platform and graphics integration for HashLink.
 
-SDL owns windows, displays, fullscreen state, input, cursors, clipboard,
-drag-and-drop, and native event delivery. OpenGL, Vulkan, Direct3D 11, and
-Direct3D 12 own GPU rendering only.
+LIMEN provides windows, displays, fullscreen state, input, cursors, clipboard,
+drag-and-drop and native event delivery through `SDL3`.
+
+GPU rendering is provided separately by the `OpenGL`, `Vulkan`, `Direct3D 11` and `Direct3D 12` backends.
 
 </div>
 
@@ -17,15 +18,19 @@ Direct3D 12 own GPU rendering only.
 
 ## Haxe API
 
-The public API follows the native subsystem layout:
+The public API follows the native subsystem layout.
+
+A window does not require a graphics backend. Use `GraphicsDriver.None` when
+LIMEN is only needed for platform, window and input functionality:
 
 ```haxe
+import limen.graphics.GraphicsDriver;
 import limen.platform.Platform;
 import limen.platform.window.Window;
 import limen.platform.event.Event;
-import limen.platform.input.gamepad.Gamepad;
+import limen.platform.event.EventType;
 
-Platform.init();
+Platform.init(GraphicsDriver.None);
 
 final window = Window.create({
 	title: "LIMEN",
@@ -33,50 +38,104 @@ final window = Window.create({
 	height: 720,
 	resizable: true
 });
-final displays = limen.platform.display.Display.all();
-final modes = limen.platform.display.Display.modes(displays[0].id);
 
 final event = new Event();
-while (Platform.pollEvent(event)) {
-	// Handle the event.
+var running = true;
+
+while (running) {
+	while (Platform.pollEvent(event)) {
+		switch (event.type) {
+			case EventType.Quit:
+				running = false;
+
+			default:
+		}
+	}
 }
 
 window.destroy();
 Platform.quit();
 ```
 
-Platform types are grouped under `limen.platform.event`,
-`limen.platform.cursor`, `limen.platform.input`, `limen.platform.display`,
-and `limen.platform.system`.
+Platform types are grouped under
+- `limen.platform.event`,
+- `limen.platform.cursor`,
+- `limen.platform.input`,
+- `limen.platform.display`,
+- `limen.platform.window`,
+- `limen.platform.system`.
 
-Graphics backends own their context and device setup. For example, an OpenGL
-window uses `WindowFlags.SDL_WINDOW_OPENGL` and
-`limen.graphics.opengl.Context.create(window)`. D3D12 concepts live under
-`limen.graphics.d3d12.command`, `descriptor`, `pipeline`, `query`, `resource`,
-and `shader`. Vulkan follows the equivalent package structure.
+Graphics backends own their context and device setup.
 
-The native build produces exactly:
+For example, an OpenGL window uses `WindowFlags.SDL_WINDOW_OPENGL` and
+
+```haxe
+limen.graphics.opengl.Context.create(window)
+```
+
+D3D12 concepts live under
+`limen.graphics.d3d12.command`, `descriptor`, `pipeline`, `query`, `resource`, and `shader`.
+
+Vulkan follows the equivalent package structure.
+
+The native build produces:
 
 ```text
-limen.hdll - Core of LIMEN
-opengl.limen - GL driver (includes on all targets)
-vulkan.limen - Vulkan driver (includes on all targets)
-d3d11.limen - Direct3D 11 (includes on all Windows targets)
-d3d12.limen - Direct3D 12 (includes on Win64 ONLY)
-dlss.limen - DLSS (optional, includes on Win64 and with D3D12 ONLY)
+limen.hdll   - Core platform, window, input and system module
+opengl.limen - OpenGL graphics driver
+vulkan.limen - Vulkan graphics driver
+d3d11.limen  - Direct3D 11 graphics driver (Windows)
+d3d12.limen  - Direct3D 12 graphics driver (Windows x64)
+dlss.limen   - Optional DLSS integration for D3D12 (Windows x64)
 ```
+
+##### `limen.hdll` is always required.
+
+Graphics modules are only required when the application selects a graphics
+backend. A platform-only application initialized with `GraphicsDriver.None`
+only requires `limen.hdll`.
 
 HashLink loads only `limen.hdll`. LIMEN loads backend modules itself and
 resolves their HashLink primitives through the modules' existing `hlp_*`
 exports, so no custom HashLink runtime support is required.
 
-`Platform.init()` prefers OpenGL as the minimum backend. Pass another
-`GraphicsDriver` to request it first. If that module is missing or cannot be
-loaded, LIMEN falls back to OpenGL and then to any other available driver.
-The selected backend is exposed as `Platform.graphicsDriver`. Initialization
-fails with `No LIMEN graphics driver was found` when no driver module exists.
-Applications that compile only a subset of renderers can pass that subset as
-the second argument so fallback never selects an unavailable implementation.
+### Graphics driver selection
+
+`Platform.init()` initializes LIMEN and selects a graphics backend. OpenGL is
+preferred by default:
+
+```haxe
+Platform.init();
+```
+
+A different backend can be requested explicitly:
+
+```haxe
+Platform.init(GraphicsDriver.Vulkan);
+```
+
+Applications that only use LIMEN for windows, input, displays and other
+platform functionality can disable graphics backend selection entirely:
+
+```haxe
+Platform.init(GraphicsDriver.None);
+```
+
+In platform-only mode, no graphics driver module is required and `Platform.graphicsDriver` remains `GraphicsDriver.None`.
+
+When graphics are enabled, LIMEN attempts to select the requested backend and may fall back to another supported backend. The selected backend is exposed as `Platform.graphicsDriver`.
+
+Applications that support only a specific set of renderers can provide that
+set as the second argument:
+
+```haxe
+Platform.init(GraphicsDriver.OpenGL, [GraphicsDriver.OpenGL]);
+```
+
+Graphics-enabled initialization fails with
+No LIMEN graphics driver was found when no supported graphics module can be
+loaded.
+
 `DLSS.isAvailable()` is true only when D3D12 is selected and
 `dlss.limen` loads successfully.
 
@@ -90,16 +149,55 @@ dxcompiler.dll
 dxil.dll
 ```
 
+## Examples
+
+Small self-contained examples are available in [`examples/`](examples/).
+
+#### Window
+
+[`examples/window`](examples/window/) demonstrates the platform layer without
+a graphics backend:
+
+It uses:
+
+```haxe
+Platform.init(GraphicsDriver.None);
+```
+
+and only requires `limen.hdll`.
+
+Build and run:
+
+```sh
+cd examples/window
+haxe build-window.hxml
+hl exwindow.hl
+```
+
+#### OpenGL
+
+[examples/gl](examples/gl) demonstrates LIMEN's OpenGL integration with a
+small interactive shader demo:
+
+Build and run:
+
+```sh
+cd examples/gl
+haxe build-gl.hxml
+hl exgl.hl
+```
+
+The OpenGL example requires both `limen.hdll` and `opengl.limen`.
+
+See [examples/README.md](examples/README.md) for more details
+
 ## Standalone build
 
 ```sh
-cmake -S . -B build \
+cmake --preset "SEE CMakePresets.json" --fresh \
   -DLIMEN_HASHLINK_ROOT=/path/to/hashlink \
-  -DLIMEN_BUILD_OPENGL=ON \
-  -DLIMEN_BUILD_VULKAN=ON \
-  -DLIMEN_BUILD_D3D11=ON \
-  -DLIMEN_BUILD_D3D12=ON
-cmake --build build
+  -DLIMEN_HASHLINK_LIBRARY=/path/to/hashlink/compiled_dependencies/libhl.lib
+cmake --build --preset "SEE CMakePresets.json"
 ```
 
 SDL3 is built statically by CMake. Set `LIMEN_SDL3_SOURCE_DIR` to use a local
@@ -123,19 +221,3 @@ include directory, library, and runtime DLL can be overridden with
 `LIMEN_AFTERMATH_RUNTIME_DLL`.
 
 Enable `LIMEN_BUILD_TESTS` for the native event-translation tests.
-
-## HashLink integration
-
-HashLink NMB pins LIMEN as the `libs/limen` submodule and builds it directly
-with CMake. To test changes without updating that pin, configure HashLink
-against this checkout:
-
-```sh
-cmake -S /path/to/hashlink-nmb -B /path/to/hashlink-nmb/build \
-  -DLIMEN_SOURCE_DIR=/path/to/Limen
-```
-
-After a LIMEN revision passes CI, update HashLink's `libs/limen` submodule.
-The gitlink is the single source of truth for the pinned revision. HashLink's
-manual `Pin LIMEN revision` workflow updates it after the integration matrix
-succeeds.

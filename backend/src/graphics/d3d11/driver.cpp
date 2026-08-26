@@ -20,7 +20,7 @@
 	{                                       \
 		HRESULT __ret = cmd;                \
 		if (__ret == E_OUTOFMEMORY)         \
-			return NULL;                    \
+			return nullptr;                    \
 		if (__ret != S_OK)                  \
 			ReportDxError(__ret, __LINE__); \
 	}
@@ -32,16 +32,16 @@ public:
 	T value;
 };
 
-typedef ID3D11Resource dx_resource;
-typedef ID3D11DeviceChild dx_pointer;
+using dx_resource = ID3D11Resource;
+using dx_pointer = ID3D11DeviceChild;
 
-static dx_driver* driver = NULL;
-static IDXGIFactory* factory = NULL;
-static vclosure* on_dx_error = NULL;
+static dx_driver* driver = nullptr;
+static IDXGIFactory* factory = nullptr;
+static vclosure* on_dx_error = nullptr;
 static const int BACK_BUFFER_COUNT = 2;
 
 static IDXGIFactory* GetDXGI() {
-	if (factory == NULL && CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory) != S_OK) {
+	if (factory == nullptr && CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory) != S_OK) {
 		hl_error("Failed to init DXGI");
 	}
 	return factory;
@@ -49,14 +49,14 @@ static IDXGIFactory* GetDXGI() {
 
 #ifdef HL_WIN_DESKTOP
 static IDXGIFactory2* CreateDXGIFactory2Instance() {
-	IDXGIFactory2* factory2 = NULL;
+	IDXGIFactory2* factory2 = nullptr;
 	if (CreateDXGIFactory(__uuidof(IDXGIFactory2), (void**)&factory2) != S_OK)
-		return NULL;
+		return nullptr;
 	return factory2;
 }
 
 static bool CheckTearingSupport() {
-	IDXGIFactory5* factory5 = NULL;
+	IDXGIFactory5* factory5 = nullptr;
 	BOOL allowTearing = FALSE;
 	if (CreateDXGIFactory(__uuidof(IDXGIFactory5), (void**)&factory5) == S_OK) {
 		if (factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing)) != S_OK) {
@@ -138,34 +138,34 @@ static dx_driver* create_driver(HWND window, int format, int flags, int minimumF
 #ifdef HL_WIN_DESKTOP
 	d->allow_tearing = CheckTearingSupport();
 	d->init_flags = flags;
-	result = D3D11CreateDevice(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, flags, levels, levelCount, D3D11_SDK_VERSION, &d->device, &d->feature, &d->context);
+	result = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, levels, levelCount, D3D11_SDK_VERSION, &d->device, &d->feature, &d->context);
 
 	if (result == E_INVALIDARG) {
 		flags &= ~D3D11_CREATE_DEVICE_DISABLE_GPU_TIMEOUT;
 		d->init_flags = flags;
-		result = D3D11CreateDevice(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, flags, levels, levelCount, D3D11_SDK_VERSION, &d->device, &d->feature, &d->context);
+		result = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, levels, levelCount, D3D11_SDK_VERSION, &d->device, &d->feature, &d->context);
 		if (result == E_INVALIDARG && levelCount > 1) {
-			result = D3D11CreateDevice(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, flags, levels + 1, 1, D3D11_SDK_VERSION, &d->device, &d->feature, &d->context);
+			result = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, levels + 1, 1, D3D11_SDK_VERSION, &d->device, &d->feature, &d->context);
 		}
 	}
 	if (result == DXGI_ERROR_SDK_COMPONENT_MISSING && (flags & D3D11_CREATE_DEVICE_DEBUG) != 0) {
 		flags &= ~D3D11_CREATE_DEVICE_DEBUG;
 		d->init_flags = flags;
-		result = D3D11CreateDevice(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, flags, levels, levelCount, D3D11_SDK_VERSION, &d->device, &d->feature, &d->context);
+		result = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, levels, levelCount, D3D11_SDK_VERSION, &d->device, &d->feature, &d->context);
 		if (result == E_INVALIDARG && levelCount > 1) {
-			result = D3D11CreateDevice(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, flags, levels + 1, 1, D3D11_SDK_VERSION, &d->device, &d->feature, &d->context);
+			result = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, levels + 1, 1, D3D11_SDK_VERSION, &d->device, &d->feature, &d->context);
 		}
 	}
 
 	if (result == S_OK) {
-		IDXGIDevice1* dxgiDevice = NULL;
+		IDXGIDevice1* dxgiDevice = nullptr;
 		if (d->device->QueryInterface(__uuidof(IDXGIDevice1), (void**)&dxgiDevice) == S_OK) {
 			dxgiDevice->SetMaximumFrameLatency(1);
 			dxgiDevice->Release();
 		}
 
 		IDXGIFactory2* factory2 = CreateDXGIFactory2Instance();
-		if (factory2 != NULL) {
+		if (factory2 != nullptr) {
 			DXGI_SWAP_CHAIN_DESC1 desc1;
 			ZeroMemory(&desc1, sizeof(desc1));
 			desc1.Width = r.right;
@@ -179,8 +179,8 @@ static dx_driver* create_driver(HWND window, int format, int flags, int minimumF
 			desc1.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
 			desc1.Flags = d->allow_tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
 
-			IDXGISwapChain1* swapchain1 = NULL;
-			result = factory2->CreateSwapChainForHwnd(d->device, window, &desc1, NULL, NULL, &swapchain1);
+			IDXGISwapChain1* swapchain1 = nullptr;
+			result = factory2->CreateSwapChainForHwnd(d->device, window, &desc1, nullptr, nullptr, &swapchain1);
 			if (result == S_OK) {
 				result = swapchain1->QueryInterface(__uuidof(IDXGISwapChain), (void**)&d->swapchain);
 				swapchain1->Release();
@@ -217,24 +217,24 @@ static dx_driver* create_driver(HWND window, int format, int flags, int minimumF
 #endif
 		desc.OutputWindow = window;
 		d->init_flags = flags;
-		result = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, flags, levels, levelCount, D3D11_SDK_VERSION, &desc, &d->swapchain, &d->device, &d->feature, &d->context);
+		result = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, levels, levelCount, D3D11_SDK_VERSION, &desc, &d->swapchain, &d->device, &d->feature, &d->context);
 
 #ifdef HL_WIN_DESKTOP
 		if (result == E_INVALIDARG) {
 			flags &= ~D3D11_CREATE_DEVICE_DISABLE_GPU_TIMEOUT;
 			d->init_flags = flags;
-			result = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, flags, levels, levelCount, D3D11_SDK_VERSION, &desc, &d->swapchain, &d->device, &d->feature, &d->context);
+			result = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, levels, levelCount, D3D11_SDK_VERSION, &desc, &d->swapchain, &d->device, &d->feature, &d->context);
 			if (result == E_INVALIDARG && levelCount > 1) {
-				result = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, flags, levels + 1, 1, D3D11_SDK_VERSION, &desc, &d->swapchain, &d->device, &d->feature, &d->context);
+				result = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, levels + 1, 1, D3D11_SDK_VERSION, &desc, &d->swapchain, &d->device, &d->feature, &d->context);
 			}
 		}
 		if (result == DXGI_ERROR_SDK_COMPONENT_MISSING && (flags & D3D11_CREATE_DEVICE_DEBUG) != 0) {
 			// no debug driver available, retry
 			flags &= ~D3D11_CREATE_DEVICE_DEBUG;
 			d->init_flags = flags;
-			result = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, flags, levels, levelCount, D3D11_SDK_VERSION, &desc, &d->swapchain, &d->device, &d->feature, &d->context);
+			result = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, levels, levelCount, D3D11_SDK_VERSION, &desc, &d->swapchain, &d->device, &d->feature, &d->context);
 			if (result == E_INVALIDARG && levelCount > 1) {
-				result = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, flags, levels + 1, 1, D3D11_SDK_VERSION, &desc, &d->swapchain, &d->device, &d->feature, &d->context);
+				result = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, levels + 1, 1, D3D11_SDK_VERSION, &desc, &d->swapchain, &d->device, &d->feature, &d->context);
 			}
 		}
 #endif
@@ -262,7 +262,7 @@ HL_PRIM void HL_NAME(dispose_driver)(dx_driver* d) {
 	d->device->Release();
 	d->context->Release();
 	if (driver == d)
-		driver = NULL;
+		driver = nullptr;
 }
 
 HL_PRIM dx_driver* HL_NAME(get_driver)() {
@@ -288,7 +288,7 @@ HL_PRIM bool HL_NAME(resize)(int width, int height, int format) {
 
 HL_PRIM dx_pointer* HL_NAME(create_render_target_view)(dx_resource* r, dx_struct<D3D11_RENDER_TARGET_VIEW_DESC>* desc) {
 	ID3D11RenderTargetView* rt;
-	DXERR(driver->device->CreateRenderTargetView(r, desc ? &desc->value : NULL, &rt));
+	DXERR(driver->device->CreateRenderTargetView(r, desc ? &desc->value : nullptr, &rt));
 	return rt;
 }
 
@@ -344,7 +344,7 @@ HL_PRIM const uchar* HL_NAME(get_device_name)() {
 }
 
 HL_PRIM double HL_NAME(get_supported_version)() {
-	if (driver == NULL)
+	if (driver == nullptr)
 		return 0.;
 	return (driver->feature >> 12) + ((driver->feature & 0xFFF) / 2560.);
 }
@@ -363,8 +363,8 @@ HL_PRIM dx_resource* HL_NAME(create_buffer)(int size, int usage, int bind, int a
 	res.SysMemPitch = 0;
 	res.SysMemSlicePitch = 0;
 	if (size == 0)
-		return NULL;
-	DXERR(driver->device->CreateBuffer(&desc, data ? &res : NULL, &buffer));
+		return nullptr;
+	DXERR(driver->device->CreateBuffer(&desc, data ? &res : nullptr, &buffer));
 	return buffer;
 }
 
@@ -374,16 +374,16 @@ HL_PRIM dx_resource* HL_NAME(create_texture_2d)(dx_struct<D3D11_TEXTURE2D_DESC>*
 	res.pSysMem = data;
 	res.SysMemPitch = 0;
 	res.SysMemSlicePitch = 0;
-	DXERR(driver->device->CreateTexture2D(&desc->value, data ? &res : NULL, &tex));
+	DXERR(driver->device->CreateTexture2D(&desc->value, data ? &res : nullptr, &tex));
 	return tex;
 }
 
 HL_PRIM void HL_NAME(update_subresource)(dx_resource* r, int index, dx_struct<D3D11_BOX>* box, vbyte* data, int srcRowPitch, int srcDstPitch) {
-	driver->context->UpdateSubresource(r, index, box ? &box->value : NULL, data, srcRowPitch, srcDstPitch);
+	driver->context->UpdateSubresource(r, index, box ? &box->value : nullptr, data, srcRowPitch, srcDstPitch);
 }
 
 HL_PRIM void HL_NAME(copy_subresource_region)(dx_resource* r, int index, int dx, int dy, int dz, dx_resource* src, int sindex, dx_struct<D3D11_BOX>* box) {
-	driver->context->CopySubresourceRegion(r, index, dx, dy, dz, src, sindex, box ? &box->value : NULL);
+	driver->context->CopySubresourceRegion(r, index, dx, dy, dz, src, sindex, box ? &box->value : nullptr);
 }
 
 HL_PRIM void* HL_NAME(map)(dx_resource* r, int subRes, int type, bool waitGpu, int* pitch) {
@@ -406,7 +406,7 @@ HL_PRIM vbyte* HL_NAME(compile_shader)(vbyte* data, int dataSize, char* source, 
 	ID3DBlob* code;
 	ID3DBlob* errorMessage;
 	vbyte* ret;
-	if (D3DCompile(data, dataSize, source, NULL, NULL, entry, target, flags, 0, &code, &errorMessage) != S_OK) {
+	if (D3DCompile(data, dataSize, source, nullptr, nullptr, entry, target, flags, 0, &code, &errorMessage) != S_OK) {
 		*error = true;
 		code = errorMessage;
 	}
@@ -420,7 +420,7 @@ HL_PRIM vbyte* HL_NAME(disassemble_shader)(vbyte* data, int dataSize, int flags,
 	ID3DBlob* out;
 	vbyte* ret;
 	if (D3DDisassemble(data, dataSize, flags, (char*)comments, &out) != S_OK)
-		return NULL;
+		return nullptr;
 	*size = (int)out->GetBufferSize();
 	ret = hl_copy_bytes((vbyte*)out->GetBufferPointer(), *size);
 	out->Release();
@@ -429,13 +429,13 @@ HL_PRIM vbyte* HL_NAME(disassemble_shader)(vbyte* data, int dataSize, int flags,
 
 HL_PRIM dx_pointer* HL_NAME(create_vertex_shader)(vbyte* code, int size) {
 	ID3D11VertexShader* shader;
-	DXERR(driver->device->CreateVertexShader(code, size, NULL, &shader));
+	DXERR(driver->device->CreateVertexShader(code, size, nullptr, &shader));
 	return shader;
 }
 
 HL_PRIM dx_pointer* HL_NAME(create_pixel_shader)(vbyte* code, int size) {
 	ID3D11PixelShader* shader;
-	DXERR(driver->device->CreatePixelShader(code, size, NULL, &shader));
+	DXERR(driver->device->CreatePixelShader(code, size, nullptr, &shader));
 	return shader;
 }
 
@@ -452,7 +452,7 @@ HL_PRIM void HL_NAME(draw_indexed_instanced_indirect)(dx_resource* r, int offset
 }
 
 HL_PRIM void HL_NAME(vs_set_shader)(dx_pointer* s) {
-	driver->context->VSSetShader((ID3D11VertexShader*)s, NULL, 0);
+	driver->context->VSSetShader((ID3D11VertexShader*)s, nullptr, 0);
 }
 
 HL_PRIM void HL_NAME(vs_set_constant_buffers)(int start, int count, dx_resource** a) {
@@ -460,7 +460,7 @@ HL_PRIM void HL_NAME(vs_set_constant_buffers)(int start, int count, dx_resource*
 }
 
 HL_PRIM void HL_NAME(ps_set_shader)(dx_pointer* s) {
-	driver->context->PSSetShader((ID3D11PixelShader*)s, NULL, 0);
+	driver->context->PSSetShader((ID3D11PixelShader*)s, nullptr, 0);
 }
 
 HL_PRIM void HL_NAME(ps_set_constant_buffers)(int start, int count, dx_resource** a) {
@@ -496,7 +496,7 @@ HL_PRIM dx_pointer* HL_NAME(create_input_layout)(varray* arr, vbyte* bytecode, i
 	D3D11_INPUT_ELEMENT_DESC desc[32];
 	int i;
 	if (arr->size > 32)
-		return NULL;
+		return nullptr;
 	for (i = 0; i < arr->size; i++)
 		desc[i] = hl_aptr(arr, dx_struct<D3D11_INPUT_ELEMENT_DESC>*)[i]->value;
 	DXERR(driver->device->CreateInputLayout(desc, arr->size, bytecode, bytecodeLength, &input));
@@ -579,12 +579,12 @@ HL_PRIM void HL_NAME(generate_mips)(dx_pointer* t) {
 }
 
 HL_PRIM bool HL_NAME(set_fullscreen_state)(bool fs) {
-	return driver->swapchain->SetFullscreenState(fs, NULL) == S_OK;
+	return driver->swapchain->SetFullscreenState(fs, nullptr) == S_OK;
 }
 
 HL_PRIM bool HL_NAME(get_fullscreen_state)() {
 	BOOL ret;
-	if (driver->swapchain->GetFullscreenState(&ret, NULL) != S_OK)
+	if (driver->swapchain->GetFullscreenState(&ret, nullptr) != S_OK)
 		return false;
 	return ret != 0;
 }

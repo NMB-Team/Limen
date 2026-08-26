@@ -4,9 +4,9 @@ static bool relative_mouse_mode = false;
 
 HL_PRIM int HL_NAME(set_relative_mouse_mode)(bool enable) {
 	int result = 0;
-	SDL_Window** windows = SDL_GetWindows(NULL);
-	if (windows != NULL) {
-		for (int i = 0; windows[i] != NULL; i++)
+	SDL_Window** windows = SDL_GetWindows(nullptr);
+	if (windows != nullptr) {
+		for (int i = 0; windows[i] != nullptr; i++)
 			if (!SDL_SetWindowRelativeMouseMode(windows[i], enable))
 				result = -1;
 		SDL_free(windows);

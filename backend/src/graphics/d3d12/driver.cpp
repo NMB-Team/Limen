@@ -49,7 +49,7 @@ inline bool operator<(const GFSDK_Aftermath_ShaderDebugInfoIdentifier& lhs, cons
 	{                                       \
 		HRESULT __ret = cmd;                \
 		if (__ret == E_OUTOFMEMORY)         \
-			return NULL;                    \
+			return nullptr;                    \
 		if (__ret != S_OK)                  \
 			ReportDxError(__ret, __LINE__); \
 	}
@@ -268,13 +268,13 @@ typedef struct {
 #endif
 } dx_driver;
 
-static dx_driver* static_driver = NULL;
+static dx_driver* static_driver = nullptr;
 static int CURRENT_NODEMASK = 0;
 static LARGE_INTEGER driver_version = { 0 };
 
-typedef ID3D12Device2 dx_device;
-typedef IDXGIFactory4 dx_factory;
-typedef IDXGIAdapter dx_adapter;
+using dx_device = ID3D12Device2;
+using dx_factory = IDXGIFactory4;
+using dx_adapter = IDXGIAdapter;
 
 #define _DEVICE _ABSTRACT(dx_device)
 #define _FACTORY _ABSTRACT(dx_factory)
@@ -338,8 +338,8 @@ HL_PRIM varray* HL_NAME(list_devices)() {
 #ifndef HL_XBS
 	static int MAX_DEVICES = 64;
 	int index = 0, write = 0;
-	IDXGIAdapter1* adapter = NULL;
-	IDXGIFactory4* factory = NULL;
+	IDXGIAdapter1* adapter = nullptr;
+	IDXGIFactory4* factory = nullptr;
 	varray* arr = hl_alloc_array(&hlt_bytes, MAX_DEVICES);
 	if (static_driver)
 		factory = static_driver->factory;
@@ -368,7 +368,7 @@ HL_PRIM dx_driver* HL_NAME(create_sdl)(void* window, DriverInitFlag flags, uchar
 	UINT dxgiFlags = 0;
 	limen_native_window native;
 	dx_driver* drv = (dx_driver*)hl_gc_alloc_raw(sizeof(dx_driver));
-	memset(drv, 0, sizeof(dx_driver));
+	*drv = {};
 	if (!limen_get_native_window(window, &native) || native.type != LIMEN_NATIVE_WIN32) {
 		hl_error("Could not get Win32 window handle from SDL window");
 	}
@@ -394,8 +394,8 @@ HL_PRIM dx_driver* HL_NAME(create_sdl)(void* window, DriverInitFlag flags, uchar
 	CHKERR(CreateDXGIFactory2(dxgiFlags, IID_PPV_ARGS(&drv->factory)));
 
 	UINT index = 0;
-	IDXGIAdapter1* adapter = NULL;
-	IDXGIAdapter3* adapter3 = NULL;
+	IDXGIAdapter1* adapter = nullptr;
+	IDXGIAdapter3* adapter3 = nullptr;
 	while (drv->factory->EnumAdapters1(index++, &adapter) != DXGI_ERROR_NOT_FOUND) {
 		DXGI_ADAPTER_DESC1 desc;
 		adapter->GetDesc1(&desc);
@@ -415,7 +415,7 @@ HL_PRIM dx_driver* HL_NAME(create_sdl)(void* window, DriverInitFlag flags, uchar
 		adapter->Release();
 	}
 	if (!drv->device)
-		return NULL;
+		return nullptr;
 	drv->device->SetName(L"HL_DX12");
 	if (drv->debug) {
 		CHKERR(drv->device->QueryInterface(IID_PPV_ARGS(&drv->debugDevice)));
@@ -465,7 +465,7 @@ HL_PRIM dx_driver* HL_NAME(create_sdl)(void* window, DriverInitFlag flags, uchar
 }
 
 HL_PRIM void HL_NAME(dispose_driver)(dx_driver* drv) {
-	if (drv == NULL)
+	if (drv == nullptr)
 		return;
 	delete drv->gpuCrashTracker;
 #ifndef HL_XBS
@@ -500,7 +500,7 @@ HL_PRIM void HL_NAME(dispose_driver)(dx_driver* drv) {
 		drv->adapter->Release();
 #endif
 	if (static_driver == drv)
-		static_driver = NULL;
+		static_driver = nullptr;
 }
 
 #ifdef HL_XBS
@@ -545,8 +545,8 @@ HL_PRIM void HL_NAME(resize)(ID3D12CommandQueue* directQueue, int width, int hei
 		desc.SampleDesc.Count = 1;
 		desc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
 
-		IDXGISwapChain1* swapchain = NULL;
-		drv->factory->CreateSwapChainForHwnd(directQueue, drv->wnd, &desc, NULL, NULL, &swapchain);
+		IDXGISwapChain1* swapchain = nullptr;
+		drv->factory->CreateSwapChainForHwnd(directQueue, drv->wnd, &desc, nullptr, nullptr, &swapchain);
 		if (!swapchain)
 			CHKERR(E_INVALIDARG);
 		swapchain->QueryInterface(IID_PPV_ARGS(&drv->swapchain));
@@ -598,9 +598,9 @@ HL_PRIM void HL_NAME(flush_messages)() {
 	int i;
 	for (i = 0; i < count; i++) {
 		SIZE_T len = 0;
-		drv->infoQueue->GetMessage(i, NULL, &len);
+		drv->infoQueue->GetMessage(i, nullptr, &len);
 		D3D12_MESSAGE* msg = (D3D12_MESSAGE*)malloc(len);
-		if (msg == NULL)
+		if (msg == nullptr)
 			break;
 		drv->infoQueue->GetMessage(i, msg, &len);
 		printf("%s\n", msg->pDescription);
@@ -614,9 +614,9 @@ HL_PRIM void HL_NAME(flush_messages)() {
 HL_PRIM const uchar* HL_NAME(get_device_name)() {
 	DXGI_ADAPTER_DESC desc;
 #ifndef HL_XBS
-	IDXGIAdapter* adapter = NULL;
+	IDXGIAdapter* adapter = nullptr;
 	if (!static_driver) {
-		IDXGIFactory4* factory = NULL;
+		IDXGIFactory4* factory = nullptr;
 		CreateDXGIFactory2(0, IID_PPV_ARGS(&factory));
 		if (factory)
 			factory->EnumAdapters(0, &adapter);
@@ -750,7 +750,7 @@ inline UINT64 UpdateSubresources(_In_ ID3D12GraphicsCommandList* pCmdList, _In_ 
 // ---- RESOURCES
 
 HL_PRIM ID3D12Resource* HL_NAME(get_back_buffer)(int index) {
-	ID3D12Resource* buf = NULL;
+	ID3D12Resource* buf = nullptr;
 #ifndef HL_XBS
 	static_driver->swapchain->GetBuffer(index, IID_PPV_ARGS(&buf));
 #else
@@ -760,7 +760,7 @@ HL_PRIM ID3D12Resource* HL_NAME(get_back_buffer)(int index) {
 }
 
 HL_PRIM ID3D12Resource* HL_NAME(create_committed_resource)(D3D12_HEAP_PROPERTIES* heapProperties, D3D12_HEAP_FLAGS heapFlags, D3D12_RESOURCE_DESC* desc, D3D12_RESOURCE_STATES initialState, D3D12_CLEAR_VALUE* clearValue) {
-	ID3D12Resource* res = NULL;
+	ID3D12Resource* res = nullptr;
 #ifdef HL_XBS
 	// In normal dx, INDIRECT_ARGUMENT is included in GENERIC_READ (but we never
 	// use it alone) , so we remove it to obtain GENERIC_READ in xbox
@@ -809,7 +809,7 @@ HL_PRIM void HL_NAME(resource_set_name)(ID3D12Resource* res, vbyte* name) {
 }
 
 HL_PRIM void* HL_NAME(resource_map)(ID3D12Resource* res, int subres, D3D12_RANGE* range) {
-	void* data = NULL;
+	void* data = nullptr;
 	DXERR(res->Map(subres, range, &data));
 	return data;
 }
@@ -821,7 +821,7 @@ HL_PRIM void HL_NAME(resource_unmap)(ID3D12Resource* res, int subres, D3D12_RANG
 HL_PRIM int64 HL_NAME(get_required_intermediate_size)(ID3D12Resource* res, int first, int count) {
 	auto desc = res->GetDesc();
 	UINT64 size = 0;
-	static_driver->device->GetCopyableFootprints(&desc, first, count, 0, NULL, NULL, NULL, &size);
+	static_driver->device->GetCopyableFootprints(&desc, first, count, 0, nullptr, nullptr, nullptr, &size);
 	return size;
 }
 
@@ -874,7 +874,7 @@ typedef struct {
 
 HL_PRIM dx_compiler* HL_NAME(compiler_create)() {
 	dx_compiler* comp = (dx_compiler*)hl_gc_alloc_raw(sizeof(dx_compiler));
-	memset(comp, 0, sizeof(dx_compiler));
+	*comp = {};
 #ifndef HL_XBS
 	CHKERR(DxcCreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&comp->library)));
 	CHKERR(DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&comp->compiler)));
@@ -886,17 +886,17 @@ HL_PRIM dx_compiler* HL_NAME(compiler_create)() {
 }
 
 HL_PRIM vbyte* HL_NAME(compiler_compile)(dx_compiler* comp, uchar* source, uchar* profile, varray* args, int* dataLen) {
-	IDxcBlobEncoding* blob = NULL;
-	IDxcOperationResult* result = NULL;
+	IDxcBlobEncoding* blob = nullptr;
+	IDxcOperationResult* result = nullptr;
 #ifndef HL_XBS
 	comp->library->CreateBlobWithEncodingFromPinned(source, (int)ustrlen(source) * 2, 1200 /*DXC_CP_UTF16*/, &blob);
 #else
 	comp->utils->CreateBlobFromPinned(source, (int)ustrlen(source) * 2, 1200 /*DXC_CP_UTF16*/, &blob);
 #endif
-	if (blob == NULL)
+	if (blob == nullptr)
 		hl_error("Could not create blob");
 #ifndef HL_XBS
-	comp->compiler->Compile(blob, L"", L"main", profile, hl_aptr(args, LPCWSTR), args->size, NULL, 0, NULL, &result);
+	comp->compiler->Compile(blob, L"", L"main", profile, hl_aptr(args, LPCWSTR), args->size, nullptr, 0, nullptr, &result);
 #else
 	BOOL knownEncoding = FALSE;
 	UINT32 encoding = 0U;
@@ -904,12 +904,12 @@ HL_PRIM vbyte* HL_NAME(compiler_compile)(dx_compiler* comp, uchar* source, uchar
 	DxcBuffer dxcBuffer = { blob->GetBufferPointer(), blob->GetBufferSize(), encoding };
 	std::vector<LPCWSTR> arguments(hl_aptr(args, LPCWSTR), hl_aptr(args, LPCWSTR) + args->size);
 	arguments.insert(arguments.end(), { L"-E", L"main", L"-T", profile, L"-D", L"__XBOX_DISABLE_PRECOMPILE" });
-	CHKERR(comp->compiler->Compile(&dxcBuffer, arguments.data(), arguments.size(), NULL, IID_PPV_ARGS_OLD(&result)));
+	CHKERR(comp->compiler->Compile(&dxcBuffer, arguments.data(), arguments.size(), nullptr, IID_PPV_ARGS_OLD(&result)));
 #endif
 	HRESULT hr;
 	result->GetStatus(&hr);
 	if (!SUCCEEDED(hr)) {
-		IDxcBlobEncoding* error = NULL;
+		IDxcBlobEncoding* error = nullptr;
 		result->GetErrorBuffer(&error);
 		uchar* c = hl_to_utf16((char*)error->GetBufferPointer());
 		blob->Release();
@@ -917,7 +917,7 @@ HL_PRIM vbyte* HL_NAME(compiler_compile)(dx_compiler* comp, uchar* source, uchar
 		error->Release();
 		hl_error("%s", c);
 	}
-	IDxcBlob* out = NULL;
+	IDxcBlob* out = nullptr;
 	result->GetResult(&out);
 	*dataLen = (int)out->GetBufferSize();
 	vbyte* bytes = hl_copy_bytes((vbyte*)out->GetBufferPointer(), *dataLen);
@@ -928,8 +928,8 @@ HL_PRIM vbyte* HL_NAME(compiler_compile)(dx_compiler* comp, uchar* source, uchar
 }
 
 HL_PRIM vbyte* HL_NAME(serialize_root_signature)(D3D12_ROOT_SIGNATURE_DESC* signature, D3D_ROOT_SIGNATURE_VERSION version, int* dataLen) {
-	ID3DBlob* data = NULL;
-	ID3DBlob* error = NULL;
+	ID3DBlob* data = nullptr;
+	ID3DBlob* error = nullptr;
 	HRESULT r = D3D12SerializeRootSignature(signature, version, &data, &error);
 	if (!SUCCEEDED(r)) {
 		const uchar* c = error ? hl_to_utf16((char*)error->GetBufferPointer()) : USTR("Invalid argument");
@@ -944,7 +944,7 @@ HL_PRIM vbyte* HL_NAME(serialize_root_signature)(D3D12_ROOT_SIGNATURE_DESC* sign
 }
 
 HL_PRIM ID3D12RootSignature* HL_NAME(rootsignature_create)(vbyte* bytes, int len) {
-	ID3D12RootSignature* sign = NULL;
+	ID3D12RootSignature* sign = nullptr;
 	DXERR(static_driver->device->CreateRootSignature(CURRENT_NODEMASK, bytes, len, IID_PPV_ARGS(&sign)));
 	return sign;
 }
@@ -952,7 +952,7 @@ HL_PRIM ID3D12RootSignature* HL_NAME(rootsignature_create)(vbyte* bytes, int len
 HL_PRIM ID3D12PipelineState* HL_NAME(create_graphics_pipeline_state)(D3D12_GRAPHICS_PIPELINE_STATE_DESC* desc) {
 	if (static_driver->gpuCrashTracker)
 		static_driver->gpuCrashTracker->onCreateGraphicsPipeline(desc);
-	ID3D12PipelineState* state = NULL;
+	ID3D12PipelineState* state = nullptr;
 	// if shader is considered invalid, maybe you're missing dxil.dll
 	DXERR(static_driver->device->CreateGraphicsPipelineState(desc, IID_PPV_ARGS(&state)));
 	return state;
@@ -961,14 +961,14 @@ HL_PRIM ID3D12PipelineState* HL_NAME(create_graphics_pipeline_state)(D3D12_GRAPH
 HL_PRIM ID3D12PipelineState* HL_NAME(create_compute_pipeline_state)(D3D12_COMPUTE_PIPELINE_STATE_DESC* desc) {
 	if (static_driver->gpuCrashTracker)
 		static_driver->gpuCrashTracker->onCreateComputePipeline(desc);
-	ID3D12PipelineState* state = NULL;
+	ID3D12PipelineState* state = nullptr;
 	// if shader is considered invalid, maybe you're missing dxil.dll
 	DXERR(static_driver->device->CreateComputePipelineState(desc, IID_PPV_ARGS(&state)));
 	return state;
 }
 
 HL_PRIM ID3D12CommandSignature* HL_NAME(create_command_signature)(D3D12_COMMAND_SIGNATURE_DESC* desc, ID3D12RootSignature* rootSign) {
-	ID3D12CommandSignature* sign = NULL;
+	ID3D12CommandSignature* sign = nullptr;
 	DXERR(static_driver->device->CreateCommandSignature(desc, rootSign, IID_PPV_ARGS(&sign)));
 	return sign;
 }
@@ -985,7 +985,7 @@ DEFINE_PRIM(_RES, create_command_signature, _STRUCT _RES);
 // ---- HEAPS
 
 HL_PRIM ID3D12DescriptorHeap* HL_NAME(descriptor_heap_create)(D3D12_DESCRIPTOR_HEAP_DESC* desc) {
-	ID3D12DescriptorHeap* heap = NULL;
+	ID3D12DescriptorHeap* heap = nullptr;
 	DXERR(static_driver->device->CreateDescriptorHeap(desc, IID_PPV_ARGS(&heap)));
 	return heap;
 }
@@ -1000,7 +1000,7 @@ HL_PRIM int64 HL_NAME(descriptor_heap_get_handle)(ID3D12DescriptorHeap* heap, bo
 }
 
 HL_PRIM ID3D12QueryHeap* HL_NAME(create_query_heap)(D3D12_QUERY_HEAP_DESC* desc) {
-	ID3D12QueryHeap* heap = NULL;
+	ID3D12QueryHeap* heap = nullptr;
 	DXERR(static_driver->device->CreateQueryHeap(desc, IID_PPV_ARGS(&heap)));
 	return heap;
 }
@@ -1013,7 +1013,7 @@ DEFINE_PRIM(_RES, create_query_heap, _STRUCT);
 // ---- SYNCHRO
 
 HL_PRIM ID3D12Fence* HL_NAME(fence_create)(int64 value, D3D12_FENCE_FLAGS flags) {
-	ID3D12Fence* f = NULL;
+	ID3D12Fence* f = nullptr;
 	DXERR(static_driver->device->CreateFence(value, flags, IID_PPV_ARGS(&f)));
 	return f;
 }
@@ -1027,7 +1027,7 @@ HL_PRIM void HL_NAME(fence_set_event)(ID3D12Fence* fence, int64 value, HANDLE ev
 }
 
 HL_PRIM HANDLE HL_NAME(waitevent_create)(bool initState) {
-	return CreateEvent(NULL, FALSE, initState, NULL);
+	return CreateEvent(nullptr, FALSE, initState, nullptr);
 }
 
 HL_PRIM bool HL_NAME(waitevent_wait)(HANDLE event, int time) {
@@ -1049,7 +1049,7 @@ HL_PRIM ID3D12CommandQueue* HL_NAME(command_queue_create)(D3D12_COMMAND_LIST_TYP
 	desc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
 	desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 	desc.NodeMask = CURRENT_NODEMASK;
-	ID3D12CommandQueue* q = NULL;
+	ID3D12CommandQueue* q = nullptr;
 	CHKERR(static_driver->device->CreateCommandQueue(&desc, IID_PPV_ARGS(&q)));
 	return q;
 }
@@ -1112,7 +1112,7 @@ HL_PRIM int64 HL_NAME(command_queue_get_timestamp_frequency)(ID3D12CommandQueue*
 }
 
 HL_PRIM ID3D12CommandAllocator* HL_NAME(command_allocator_create)(D3D12_COMMAND_LIST_TYPE type) {
-	ID3D12CommandAllocator* a = NULL;
+	ID3D12CommandAllocator* a = nullptr;
 	DXERR(static_driver->device->CreateCommandAllocator(type, IID_PPV_ARGS(&a)));
 	return a;
 }
@@ -1122,7 +1122,7 @@ HL_PRIM void HL_NAME(command_allocator_reset)(ID3D12CommandAllocator* a) {
 }
 
 HL_PRIM ID3D12GraphicsCommandList* HL_NAME(command_list_create)(D3D12_COMMAND_LIST_TYPE type, ID3D12CommandAllocator* alloc, ID3D12PipelineState* initState) {
-	ID3D12GraphicsCommandList* l = NULL;
+	ID3D12GraphicsCommandList* l = nullptr;
 	DXERR(static_driver->device->CreateCommandList(CURRENT_NODEMASK, type, alloc, initState, IID_PPV_ARGS(&l)));
 	return l;
 }
@@ -1144,11 +1144,11 @@ HL_PRIM void HL_NAME(command_list_resource_barriers)(ID3D12GraphicsCommandList* 
 }
 
 HL_PRIM void HL_NAME(command_list_clear_render_target_view)(ID3D12GraphicsCommandList* l, D3D12_CPU_DESCRIPTOR_HANDLE view, FLOAT* colors) {
-	l->ClearRenderTargetView(view, colors, 0, NULL);
+	l->ClearRenderTargetView(view, colors, 0, nullptr);
 }
 
 HL_PRIM void HL_NAME(command_list_clear_depth_stencil_view)(ID3D12GraphicsCommandList* l, D3D12_CPU_DESCRIPTOR_HANDLE view, D3D12_CLEAR_FLAGS flags, FLOAT depth, int stencil) {
-	l->ClearDepthStencilView(view, flags, depth, (UINT8)stencil, 0, NULL);
+	l->ClearDepthStencilView(view, flags, depth, (UINT8)stencil, 0, nullptr);
 }
 
 HL_PRIM void HL_NAME(command_list_draw_instanced)(ID3D12GraphicsCommandList* l, int vertexCountPerInstance, int instanceCount, int startVertexLocation, int startInstanceLocation) {

@@ -48,7 +48,7 @@ HL_PRIM SDL_Window* HL_NAME(win_create_ex)(int x, int y, int width, int height, 
 #else
 	SDL_PropertiesID properties = SDL_CreateProperties();
 	if (properties == 0)
-		return NULL;
+		return nullptr;
 	SDL_SetStringProperty(properties, SDL_PROP_WINDOW_CREATE_TITLE_STRING, "");
 	SDL_SetNumberProperty(properties, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, width);
 	SDL_SetNumberProperty(properties, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, height);
@@ -59,8 +59,8 @@ HL_PRIM SDL_Window* HL_NAME(win_create_ex)(int x, int y, int width, int height, 
 	SDL_Window* window = SDL_CreateWindowWithProperties(properties);
 	SDL_DestroyProperties(properties);
 #endif
-	if (window == NULL)
-		return NULL;
+	if (window == nullptr)
+		return nullptr;
 
 #ifdef HL_WIN
 	if (!(window_flags & SDL_WINDOW_HIDDEN) && !(SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS)) {
@@ -92,16 +92,16 @@ HL_PRIM bool HL_NAME(win_set_fullscreen)(SDL_Window* window, int mode) {
 		bool result = SDL_SetWindowFullscreen(window, false);
 		if (result) {
 			sync_window_state(window);
-			SDL_SetWindowFullscreenMode(window, NULL);
+			SDL_SetWindowFullscreenMode(window, nullptr);
 		}
 		return result;
 	}
 	if (normalized == LIMEN_FULLSCREEN_EXCLUSIVE) {
 		const SDL_DisplayMode* fullscreen_mode = SDL_GetWindowFullscreenMode(window);
-		if (fullscreen_mode == NULL) {
+		if (fullscreen_mode == nullptr) {
 			SDL_DisplayID display = SDL_GetDisplayForWindow(window);
 			fullscreen_mode = SDL_GetDesktopDisplayMode(display);
-			if (fullscreen_mode != NULL)
+			if (fullscreen_mode != nullptr)
 				SDL_SetWindowFullscreenMode(window, fullscreen_mode);
 		}
 		bool result = SDL_SetWindowFullscreen(window, true);
@@ -115,7 +115,7 @@ HL_PRIM bool HL_NAME(win_set_fullscreen)(SDL_Window* window, int mode) {
 		return limen_windows_set_borderless_fixed(window);
 #endif
 	}
-	SDL_SetWindowFullscreenMode(window, NULL);
+	SDL_SetWindowFullscreenMode(window, nullptr);
 	return SDL_SetWindowFullscreen(window, true);
 }
 DEFINE_PRIM(_BOOL, win_set_fullscreen, TWIN _I32);

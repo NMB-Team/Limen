@@ -9,25 +9,27 @@ endif()
 
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(MSVC)
-    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
-    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
-    add_compile_options(
-        $<$<CONFIG:Release>:/Oi>
-        $<$<CONFIG:Release>:/Gy>
-        $<$<CONFIG:Release>:/Ot>
-        $<$<CONFIG:Release>:/Oy>
-        $<$<CONFIG:Release>:/GT>
-        $<$<CONFIG:Release>:/GS->
-        $<$<CONFIG:Release>:/Zc:inline>
-    )
-    add_link_options(
-        $<$<CONFIG:Release>:/OPT:REF>
-        $<$<CONFIG:Release>:/OPT:ICF>
-    )
+	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+	add_compile_options(
+		$<$<CONFIG:Release>:/Oi>
+		$<$<CONFIG:Release>:/Gy>
+		$<$<CONFIG:Release>:/Ot>
+		$<$<CONFIG:Release>:/Oy>
+		$<$<CONFIG:Release>:/GT>
+		$<$<CONFIG:Release>:/GS->
+		$<$<CONFIG:Release>:/Zc:inline>
+	)
+	add_link_options(
+		$<$<CONFIG:Release>:/OPT:REF>
+		$<$<CONFIG:Release>:/OPT:ICF>
+	)
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -40,6 +42,12 @@ include(Platform)
 
 limen_resolve_hashlink()
 limen_resolve_sdl3()
+
+function(limen_enable_c23_nullptr target)
+	if(MSVC)
+		target_compile_definitions("${target}" PRIVATE nullptr=0)
+	endif()
+endfunction()
 
 set(_LIMEN_MODULE_PROXY_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/limen_module_proxies.c")
 set(_LIMEN_MODULE_PROXY_CONTENT "#include \"module_loader.h\"\n")
@@ -96,6 +104,7 @@ add_library(limen SHARED
 )
 limen_set_native_library(limen limen .hdll)
 target_compile_definitions(limen PRIVATE LIMEN_PLATFORM_BUILD)
+limen_enable_c23_nullptr(limen)
 target_include_directories(limen
 	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/backend/include"
 	PRIVATE
@@ -124,6 +133,7 @@ if(LIMEN_BUILD_OPENGL)
 		backend/src/graphics/opengl/gl.c
 	)
 	limen_set_native_library(limen_opengl opengl .limen)
+	limen_enable_c23_nullptr(limen_opengl)
 	target_include_directories(limen_opengl PRIVATE
 		"${CMAKE_CURRENT_SOURCE_DIR}/backend/include"
 		"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/platform"
@@ -154,6 +164,7 @@ if(LIMEN_BUILD_VULKAN)
 		backend/src/graphics/vulkan/shaderc.c
 	)
 	limen_set_native_library(limen_vulkan vulkan .limen)
+	limen_enable_c23_nullptr(limen_vulkan)
 	target_include_directories(limen_vulkan PRIVATE
 		"${CMAKE_CURRENT_SOURCE_DIR}/backend/include"
 		"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/platform"
@@ -386,7 +397,6 @@ if(LIMEN_WINDOWS_X64 AND LIMEN_BUILD_D3D12)
 
 		add_library(limen_dlss SHARED backend/src/graphics/d3d12/dlss.cpp)
 		limen_set_native_library(limen_dlss dlss .limen)
-		target_compile_features(limen_dlss PRIVATE cxx_std_23)
 		target_include_directories(limen_dlss PRIVATE
 			"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/graphics/d3d12/streamline"
 		)

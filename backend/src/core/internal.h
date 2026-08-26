@@ -6,7 +6,6 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_gamepad.h>
 #include <hl.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 

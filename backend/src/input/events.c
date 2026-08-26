@@ -1,8 +1,8 @@
 #include "../core/internal.h"
 
 static bool text_editing = false;
-static vclosure* window_event_watch_callback = NULL;
-static limen_event* window_event_watch_event = NULL;
+static vclosure* window_event_watch_callback = nullptr;
+static limen_event* window_event_watch_event = nullptr;
 static bool window_event_watch_registered = false;
 
 static bool translate_window_event(const SDL_Event* source, limen_event* destination) {
@@ -280,19 +280,19 @@ static bool SDLCALL window_event_watch(void* userdata, SDL_Event* event) {
 }
 
 HL_PRIM void HL_NAME(set_window_event_watch)(vclosure* callback, limen_event* event) {
-	if (window_event_watch_callback == NULL)
+	if (window_event_watch_callback == nullptr)
 		hl_add_root(&window_event_watch_callback);
-	if (window_event_watch_event == NULL)
+	if (window_event_watch_event == nullptr)
 		hl_add_root(&window_event_watch_event);
-	if (callback != NULL && !window_event_watch_registered) {
-		SDL_AddEventWatch(window_event_watch, NULL);
+	if (callback != nullptr && !window_event_watch_registered) {
+		SDL_AddEventWatch(window_event_watch, nullptr);
 		window_event_watch_registered = true;
-	} else if (callback == NULL && window_event_watch_registered) {
-		SDL_RemoveEventWatch(window_event_watch, NULL);
+	} else if (callback == nullptr && window_event_watch_registered) {
+		SDL_RemoveEventWatch(window_event_watch, nullptr);
 		window_event_watch_registered = false;
 	}
 	window_event_watch_callback = callback;
-	window_event_watch_event = callback != NULL ? event : NULL;
+	window_event_watch_event = callback != nullptr ? event : nullptr;
 }
 
 HL_PRIM bool HL_NAME(is_text_input_shown)() {

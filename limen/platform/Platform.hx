@@ -1,7 +1,7 @@
 package limen.platform;
 
 import limen.platform.window.Window;
-import limen.platform.window.Window.WinPtr;
+import limen.platform.internal.NativeTypes.WinPtr;
 import limen.graphics.GraphicsDriver;
 import limen.platform.display.Display;
 import limen.platform.event.Event;
@@ -34,18 +34,23 @@ class Platform {
 		if (!SdlBindings.initOnce())
 			throw "Failed to init SDL";
 
-		var supported = 0;
-		if (supportedGraphicsDrivers == null)
-			supported = 0x1E;
-		else
-			for (driver in supportedGraphicsDrivers)
-				supported |= 1 << (driver : Int);
+		if (preferredGraphicsDriver != None) {
+			var supported = 0;
 
-		graphicsDriver = SdlBindings.selectGraphicsDriver(preferredGraphicsDriver, supported);
-		if (graphicsDriver == None) {
-			SdlBindings.quit();
-			throw "No LIMEN graphics driver was found";
-		}
+			if (supportedGraphicsDrivers == null)
+				supported = 0x1E; // opengl
+			else
+				for (driver in supportedGraphicsDrivers)
+					supported |= 1 << (driver : Int);
+
+			graphicsDriver = SdlBindings.selectGraphicsDriver(preferredGraphicsDriver, supported);
+
+			if (graphicsDriver == None) {
+				SdlBindings.quit();
+				throw "No LIMEN graphics driver was found";
+			}
+		} else
+			graphicsDriver = None;
 
 		initDone = true;
 		isWin32 = SdlBindings.detectWin32();
@@ -177,8 +182,8 @@ class Platform {
 		return Keyboard.layout();
 	}
 
-	public static inline function getFramerate(window:WinPtr):Int {
-		return SdlBindings.getFramerate(window);
+	public static inline function getRefreshRate(window:WinPtr):Int {
+		return SdlBindings.getRefreshRate(window);
 	}
 
 	public static inline function setDragAndDropEnabled(enabled:Bool):Void {

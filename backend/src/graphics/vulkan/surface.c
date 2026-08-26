@@ -8,7 +8,7 @@ extern VkInstance vk_get_instance(void);
 HL_PRIM void* HL_NAME(win_get_vulkan)(void* window) {
 	uint64_t surface = 0;
 	if (!limen_vulkan_create_surface(window, vk_get_instance(), &surface))
-		return NULL;
+		return nullptr;
 	return (void*)(uintptr_t)surface;
 }
 

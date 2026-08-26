@@ -106,7 +106,7 @@ HL_PRIM int HL_NAME(get_optimal_settings)(DLSSOptions* options, DLSSOptimalSetti
 	return static_cast<int>(res);
 }
 
-typedef sl::FrameToken dlss_frametoken;
+using dlss_frametoken = sl::FrameToken;
 
 #define _FRAMETOKEN _ABSTRACT(dlss_frametoken)
 

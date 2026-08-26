@@ -35,7 +35,7 @@ HL_PRIM void HL_NAME(quit)() {
 
 HL_PRIM void HL_NAME(message_box)(vbyte* title, vbyte* text, int icon) {
 	hl_blocking(true);
-	SDL_ShowSimpleMessageBox((SDL_MessageBoxFlags)icon, (char*)title, (char*)text, NULL);
+	SDL_ShowSimpleMessageBox((SDL_MessageBoxFlags)icon, (char*)title, (char*)text, nullptr);
 	hl_blocking(false);
 }
 

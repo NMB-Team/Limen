@@ -58,7 +58,7 @@ void* limen_gl_get_proc_address(const char* name) {
 bool limen_vulkan_create_surface(void* window, void* instance, uint64_t* surface) {
 #if defined(LIMEN_HAS_VULKAN)
 	VkSurfaceKHR result = VK_NULL_HANDLE;
-	if (!SDL_Vulkan_CreateSurface(window, instance, NULL, &result))
+	if (!SDL_Vulkan_CreateSurface(window, instance, nullptr, &result))
 		return false;
 	*surface = (uint64_t)result;
 	return true;

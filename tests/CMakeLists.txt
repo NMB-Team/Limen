@@ -2,12 +2,14 @@ add_executable(limen_event_translation_test
 	event_translation.c
 	../backend/src/input/events.c
 )
+limen_enable_c23_nullptr(limen_event_translation_test)
 target_include_directories(limen_event_translation_test PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/../backend/src"
 )
 target_link_libraries(limen_event_translation_test PRIVATE libhl SDL3::SDL3)
 
 add_executable(limen_window_flags_test window_flags.c)
+limen_enable_c23_nullptr(limen_window_flags_test)
 target_include_directories(limen_window_flags_test PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/../backend/src"
 )
