@@ -377,29 +377,16 @@ if(LIMEN_WINDOWS_X64 AND LIMEN_BUILD_D3D12)
 		if(DEFINED ENV{STREAMLINE_SDK})
 			list(APPEND _LIMEN_STREAMLINE_ROOT_HINTS "$ENV{STREAMLINE_SDK}")
 		endif()
-		if(NOT LIMEN_STREAMLINE_INTERPOSER_LIBRARY)
-			unset(LIMEN_STREAMLINE_INTERPOSER_LIBRARY CACHE)
-			find_library(LIMEN_STREAMLINE_INTERPOSER_LIBRARY
-				NAMES sl.interposer
-				HINTS ${_LIMEN_STREAMLINE_ROOT_HINTS}
-				PATH_SUFFIXES lib/x64 x64
-				REQUIRED
-			)
-		endif()
-		get_filename_component(_LIMEN_STREAMLINE_LIBRARY_DIR
-			"${LIMEN_STREAMLINE_INTERPOSER_LIBRARY}" DIRECTORY
-		)
-		get_filename_component(_LIMEN_STREAMLINE_LIBRARY_ROOT
-			"${_LIMEN_STREAMLINE_LIBRARY_DIR}/../.." ABSOLUTE
-		)
-		list(APPEND _LIMEN_STREAMLINE_ROOT_HINTS "${_LIMEN_STREAMLINE_LIBRARY_ROOT}")
 		set(_LIMEN_STREAMLINE_RUNTIME_FILES)
 		foreach(_runtime_name
 			sl.interposer.dll
 			sl.common.dll
 			sl.pcl.dll
+			sl.reflex.dll
 			sl.dlss.dll
+			sl.dlss_g.dll
 			nvngx_dlss.dll
+			nvngx_dlssg.dll
 		)
 			string(MAKE_C_IDENTIFIER "${_runtime_name}" _runtime_id)
 			find_file(_LIMEN_STREAMLINE_RUNTIME_${_runtime_id}
@@ -422,7 +409,7 @@ if(LIMEN_WINDOWS_X64 AND LIMEN_BUILD_D3D12)
 			libhl
 			d3d12
 			dxgi
-			"${LIMEN_STREAMLINE_INTERPOSER_LIBRARY}"
+			user32
 		)
 		add_dependencies(limen_dlss limen_d3d12)
 		add_custom_command(TARGET limen_dlss POST_BUILD

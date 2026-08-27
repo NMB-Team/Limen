@@ -4,6 +4,7 @@ import limen.graphics.GraphicsDriver;
 import limen.graphics.d3d12.command.Commands.CommandList;
 import limen.graphics.d3d12.internal.D3D12Bindings.Adapter;
 import limen.graphics.d3d12.internal.D3D12Bindings.Device;
+import limen.graphics.d3d12.internal.D3D12Bindings.Factory;
 import limen.graphics.d3d12.resource.Resources.Dx12Resource;
 import limen.graphics.d3d12.resource.Resources.ResourceState;
 import limen.platform.Platform;
@@ -54,9 +55,69 @@ enum abstract DLSSResult(Int) {
 	final WarnOutOfVRAM = 39;
 }
 
-enum abstract DLSSFeature(Int) {
+enum abstract DLSSFeature(Int) to Int {
 	final DLSS = 0;
 	final FRAMEGEN = 1;
+	final PCL = 2;
+	final REFLEX = 3;
+}
+
+enum abstract PCLMarker(Int) {
+	final SIMULATION_START = 0;
+	final SIMULATION_END = 1;
+	final RENDER_SUBMIT_START = 2;
+	final RENDER_SUBMIT_END = 3;
+	final PRESENT_START = 4;
+	final PRESENT_END = 5;
+	final TRIGGER_FLASH = 7;
+	final PCLATENCY_PING = 8;
+	final CONTROLLER_INPUT_SAMPLE = 13;
+	final DELTA_T_CALCULATION = 14;
+}
+
+enum abstract PCLHotKey(Int) {
+	final USE_PING_MESSAGE = 0;
+	final VK_F13 = 0x7C;
+	final VK_F14 = 0x7D;
+	final VK_F15 = 0x7E;
+}
+
+enum abstract ReflexModeNative(Int) {
+	final OFF = 0;
+	final LOW_LATENCY = 1;
+	final LOW_LATENCY_WITH_BOOST = 2;
+}
+
+@:struct class ReflexStateInfo {
+	public var lowLatencyAvailable:Int;
+	public var latencyReportAvailable:Int;
+	public var flashIndicatorDriverControlled:Int;
+	public var statsWindowMessage:Int;
+
+	public function new() {}
+}
+
+@:struct class ReflexFrameReport {
+	public var frameID:Float;
+	public var inputSampleTime:Float;
+	public var simStartTime:Float;
+	public var simEndTime:Float;
+	public var renderSubmitStartTime:Float;
+	public var renderSubmitEndTime:Float;
+	public var presentStartTime:Float;
+	public var presentEndTime:Float;
+	public var driverStartTime:Float;
+	public var driverEndTime:Float;
+	public var osRenderQueueStartTime:Float;
+	public var osRenderQueueEndTime:Float;
+	public var gpuRenderStartTime:Float;
+	public var gpuRenderEndTime:Float;
+	public var cameraConstructedTime:Float;
+	public var gpuActiveRenderTimeUs:Int;
+	public var gpuFrameTimeUs:Int;
+	public var crossAdapterCopyTimeUs:Int;
+
+	public function new() {}
 }
 
 enum abstract DLSSPreset(Int) {
@@ -110,6 +171,16 @@ enum abstract DLSSBufferType(Int) {
 	final MOTIONVECTORS = 1;
 	final COLORIN = 2;
 	final COLOROUT = 3;
+	final HUDLESSCOLOR = 4;
+	final UICOLORANDALPHA = 5;
+	final UIALPHA = 6;
+	final BACKBUFFER = 7;
+}
+
+enum abstract DLSSResourceLifecycle(Int) {
+	final ONLY_VALID_NOW = 0;
+	final VALID_UNTIL_PRESENT = 1;
+	final VALID_UNTIL_EVALUATE = 2;
 }
 
 @:struct class DLSSResource {
@@ -118,6 +189,54 @@ enum abstract DLSSBufferType(Int) {
 	public var height:Int;
 	public var type:DLSSBufferType;
 	public var state:ResourceState;
+	public var lifecycle:DLSSResourceLifecycle;
+
+	public function new() {}
+}
+
+enum abstract DLSSGModeNative(Int) {
+	final OFF = 0;
+	final ON = 1;
+	final AUTO = 2;
+	final DYNAMIC = 3;
+}
+
+enum abstract DLSSGFlag(Int) to Int {
+	final SHOW_ONLY_INTERPOLATED_FRAME = 1;
+	final DYNAMIC_RESOLUTION_ENABLED = 2;
+	final REQUEST_VRAM_ESTIMATE = 4;
+	final RETAIN_RESOURCES_WHEN_OFF = 8;
+	final ENABLE_FULLSCREEN_MENU_DETECTION = 16;
+}
+
+enum abstract DLSSGStatus(Int) from Int {
+	final OK = 0;
+	final FAIL_RESOLUTION_TOO_LOW = 1;
+	final FAIL_REFLEX_NOT_DETECTED_AT_RUNTIME = 2;
+	final FAIL_HDR_FORMAT_NOT_SUPPORTED = 4;
+	final FAIL_COMMON_CONSTANTS_INVALID = 8;
+	final FAIL_GET_CURRENT_BACK_BUFFER_INDEX_NOT_CALLED = 16;
+}
+
+@:struct class DLSSGOptions {
+	public var mode:DLSSGModeNative;
+	public var numFramesToGenerate:Int;
+	public var flags:Int;
+	public var dynamicResWidth:Int;
+	public var dynamicResHeight:Int;
+	public var dynamicTargetFrameRate:Single;
+	public var enableUserInterfaceRecomposition:Bool;
+
+	public function new() {}
+}
+
+@:struct class DLSSGStateInfo {
+	public var status:Int;
+	public var minWidthOrHeight:Int;
+	public var numFramesActuallyPresented:Int;
+	public var numFramesToGenerateMax:Int;
+	public var dynamicMFGSupported:Int;
+	public var vsyncSupportAvailable:Int;
 
 	public function new() {}
 }
@@ -186,11 +305,13 @@ enum abstract DLSSBufferType(Int) {
 
 @:hlNative("limen", "dlss_")
 class DLSS {
+	public static inline var REFLEX_FRAME_REPORT_COUNT = 64;
+
 	public static function isAvailable():Bool {
 		return Platform.graphicsDriver == GraphicsDriver.D3D12 && SdlBindings.isDlssAvailable();
 	}
 
-	public static function init(showConsole:Bool):Int {
+	public static function init(showConsole:Bool, features:hl.NativeArray<Int>, checkSignature:Bool):Int {
 		return 0;
 	}
 
@@ -200,6 +321,14 @@ class DLSS {
 
 	public static function setDevice(device:Device):Int {
 		return 0;
+	}
+
+	public static function upgradeDevice(nativeDevice:Device):Device {
+		return null;
+	}
+
+	public static function upgradeFactory(nativeFactory:Factory):Factory {
+		return null;
 	}
 
 	public static function isFeatureSupported(adapter:Adapter, feature:DLSSFeature):Int {
@@ -214,6 +343,34 @@ class DLSS {
 		return null;
 	}
 
+	public static function pclInitStats():Int {
+		return 0;
+	}
+
+	public static function pclSetMarker(frameToken:DLSSFrameToken, marker:PCLMarker):Int {
+		return 0;
+	}
+
+	public static function pclPollPing(frameToken:DLSSFrameToken):Bool {
+		return false;
+	}
+
+	public static function reflexSetOptions(mode:ReflexModeNative, frameLimitUs:Int, useMarkersToOptimize:Bool, virtualKey:PCLHotKey, threadId:Int):Int {
+		return 0;
+	}
+
+	public static function reflexSleep(frameToken:DLSSFrameToken):Int {
+		return 0;
+	}
+
+	public static function reflexGetState(outState:ReflexStateInfo):Int {
+		return 0;
+	}
+
+	public static function reflexGetFrameReport(index:Int, outReport:ReflexFrameReport):Int {
+		return 0;
+	}
+
 	public static function setTagForFrame(frameToken:DLSSFrameToken, resources:hl.CArray<DLSSResource>, count:Int, commandList:CommandList):Int {
 		return 0;
 	}
@@ -223,6 +380,22 @@ class DLSS {
 	}
 
 	public static function setConstants(frameToken:DLSSFrameToken, constants:DLSSConstants):Int {
+		return 0;
+	}
+
+	public static function dlssgSetOptions(options:DLSSGOptions):Int {
+		return 0;
+	}
+
+	public static function dlssgGetState(outState:DLSSGStateInfo):Int {
+		return 0;
+	}
+
+	public static function setFeatureLoaded(feature:DLSSFeature, loaded:Bool):Int {
+		return 0;
+	}
+
+	public static function freeResources(feature:DLSSFeature):Int {
 		return 0;
 	}
 

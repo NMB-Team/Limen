@@ -23,7 +23,6 @@ set(LIMEN_DXCOMPILER_LIBRARY "" CACHE FILEPATH "Path to the DirectX Shader Compi
 set(LIMEN_DXCOMPILER_RUNTIME_DLL "" CACHE FILEPATH "Path to dxcompiler.dll to package beside the Limen modules.")
 set(LIMEN_DXIL_RUNTIME_DLL "" CACHE FILEPATH "Path to dxil.dll to package beside the Limen modules.")
 set(LIMEN_STREAMLINE_SDK_ROOT "" CACHE PATH "Path to the NVIDIA Streamline SDK.")
-set(LIMEN_STREAMLINE_INTERPOSER_LIBRARY "" CACHE FILEPATH "Path to the NVIDIA Streamline import library.")
 set(LIMEN_AFTERMATH_SDK_ROOT "" CACHE PATH "Path to the NVIDIA Nsight Aftermath SDK.")
 set(LIMEN_AFTERMATH_LIBRARY "" CACHE FILEPATH "Path to the NVIDIA Nsight Aftermath import library.")
 set(LIMEN_AFTERMATH_RUNTIME_DLL "" CACHE FILEPATH "Path to the NVIDIA Nsight Aftermath runtime DLL.")
