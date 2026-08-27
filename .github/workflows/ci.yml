@@ -21,7 +21,7 @@ jobs:
             platform: windows-x64
             cmake_arch: -A x64
             hashlink_library: bin/libhl.lib
-            graphics_options: -DLIMEN_BUILD_OPENGL=ON -DLIMEN_BUILD_VULKAN=ON -DLIMEN_BUILD_D3D11=ON -DLIMEN_BUILD_D3D12=ON
+            graphics_options: -DLIMEN_BUILD_OPENGL=ON -DLIMEN_BUILD_VULKAN=ON -DLIMEN_BUILD_SHADERC=OFF -DLIMEN_BUILD_D3D11=ON -DLIMEN_BUILD_D3D12=ON
           - name: Windows x64 MinGW
             runner: windows-latest
             platform: windows-x64-mingw

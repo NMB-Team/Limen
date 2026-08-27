@@ -71,6 +71,9 @@ set(_LIMEN_MODULE_PROXY_MODULE "")
 foreach(_input IN LISTS _LIMEN_MODULE_PROXY_INPUTS)
 	if(NOT _input MATCHES "\\.(c|cpp)$")
 		set(_LIMEN_MODULE_PROXY_MODULE "${_input}")
+		if(MSVC)
+			set(_LIMEN_HLC_DEF_CONTENT_${_input} "LIBRARY ${_input}.limen\nEXPORTS\n")
+		endif()
 		continue()
 	endif()
 	set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${_input}")
@@ -78,9 +81,21 @@ foreach(_input IN LISTS _LIMEN_MODULE_PROXY_INPUTS)
 	foreach(_primitive_line IN LISTS _primitive_lines)
 		string(REGEX REPLACE "^[ \t]*DEFINE_PRIM\\([^,]+,[ \t]*([A-Za-z0-9_]+).*$" "\\1" _primitive_name "${_primitive_line}")
 		string(APPEND _LIMEN_MODULE_PROXY_CONTENT "LIMEN_MODULE_PROXY(${_LIMEN_MODULE_PROXY_MODULE}, ${_primitive_name})\n")
+		if(MSVC)
+			string(APPEND _LIMEN_HLC_DEF_CONTENT_${_LIMEN_MODULE_PROXY_MODULE}
+				"\tlimen_${_LIMEN_MODULE_PROXY_MODULE}_${_primitive_name}\n"
+			)
+		endif()
 	endforeach()
 endforeach()
 file(WRITE "${_LIMEN_MODULE_PROXY_SOURCE}" "${_LIMEN_MODULE_PROXY_CONTENT}")
+
+if(MSVC)
+	foreach(_module opengl vulkan d3d11 d3d12 dlss)
+		set(_LIMEN_HLC_DEF_${_module} "${CMAKE_CURRENT_BINARY_DIR}/limen_${_module}_hlc.def")
+		file(WRITE "${_LIMEN_HLC_DEF_${_module}}" "${_LIMEN_HLC_DEF_CONTENT_${_module}}")
+	endforeach()
+endif()
 
 add_library(limen SHARED
 	backend/src/core/hints.c
@@ -103,6 +118,9 @@ add_library(limen SHARED
 	"${_LIMEN_MODULE_PROXY_SOURCE}"
 )
 limen_set_native_library(limen limen .hdll)
+if(MSVC)
+	set_target_properties(limen PROPERTIES ARCHIVE_OUTPUT_NAME limen_core)
+endif()
 target_compile_definitions(limen PRIVATE LIMEN_PLATFORM_BUILD)
 limen_enable_c23_nullptr(limen)
 target_include_directories(limen
@@ -422,12 +440,66 @@ foreach(_target limen_opengl limen_vulkan limen_d3d11 limen_d3d12 limen_dlss)
 	endif()
 endforeach()
 
-install(
-	TARGETS ${_LIMEN_INSTALL_TARGETS}
-	RUNTIME DESTINATION "${LIMEN_HDLL_DESTINATION}"
-	LIBRARY DESTINATION "${LIMEN_HDLL_DESTINATION}"
-	ARCHIVE DESTINATION "${LIMEN_HDLL_DESTINATION}"
-)
+if(MSVC)
+	string(TOUPPER "${CMAKE_C_COMPILER_ARCHITECTURE_ID}" _LIMEN_MSVC_MACHINE)
+	if(_LIMEN_MSVC_MACHINE STREQUAL "WIN32")
+		set(_LIMEN_MSVC_MACHINE X86)
+	elseif(NOT _LIMEN_MSVC_MACHINE)
+		if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+			set(_LIMEN_MSVC_MACHINE X64)
+		else()
+			set(_LIMEN_MSVC_MACHINE X86)
+		endif()
+	endif()
+
+	set(_LIMEN_IMPORT_LIBRARY_TARGETS limen)
+	set(_LIMEN_IMPORT_LIBRARIES "$<TARGET_LINKER_FILE:limen>")
+	foreach(_module opengl vulkan d3d11 d3d12 dlss)
+		set(_target limen_${_module})
+		if(TARGET ${_target})
+			set(_hlc_target ${_target}_hlc_import_library)
+			set(_hlc_library "$<TARGET_LINKER_FILE_DIR:limen>/${_target}_hlc.lib")
+			add_custom_target(${_hlc_target}
+				COMMAND "${CMAKE_AR}" /NOLOGO
+					"/DEF:${_LIMEN_HLC_DEF_${_module}}"
+					"/OUT:${_hlc_library}"
+					"/MACHINE:${_LIMEN_MSVC_MACHINE}"
+				DEPENDS ${_target} "${_LIMEN_HLC_DEF_${_module}}"
+				VERBATIM
+			)
+			list(APPEND _LIMEN_IMPORT_LIBRARY_TARGETS ${_hlc_target})
+			list(APPEND _LIMEN_IMPORT_LIBRARIES "${_hlc_library}")
+		endif()
+	endforeach()
+
+	add_custom_target(limen_import_library ALL
+		COMMAND "${CMAKE_AR}" /NOLOGO /IGNORE:4006
+			"/OUT:$<TARGET_LINKER_FILE_DIR:limen>/limen.lib"
+			${_LIMEN_IMPORT_LIBRARIES}
+		DEPENDS ${_LIMEN_IMPORT_LIBRARY_TARGETS}
+		COMMAND_EXPAND_LISTS
+		VERBATIM
+	)
+	install(
+		FILES "$<TARGET_LINKER_FILE_DIR:limen>/limen.lib"
+		DESTINATION "${LIMEN_HDLL_DESTINATION}"
+	)
+endif()
+
+if(MSVC)
+	install(
+		TARGETS ${_LIMEN_INSTALL_TARGETS}
+		RUNTIME DESTINATION "${LIMEN_HDLL_DESTINATION}"
+		LIBRARY DESTINATION "${LIMEN_HDLL_DESTINATION}"
+	)
+else()
+	install(
+		TARGETS ${_LIMEN_INSTALL_TARGETS}
+		RUNTIME DESTINATION "${LIMEN_HDLL_DESTINATION}"
+		LIBRARY DESTINATION "${LIMEN_HDLL_DESTINATION}"
+		ARCHIVE DESTINATION "${LIMEN_HDLL_DESTINATION}"
+	)
+endif()
 
 if(LIMEN_BUILD_TESTS)
 	target_compile_definitions(limen PRIVATE LIMEN_BUILD_TESTS)
