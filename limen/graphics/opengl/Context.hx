@@ -22,6 +22,8 @@ class Context {
 
 	public var vsync(default, set):Bool;
 
+	private var vsyncApplied:Bool = false;
+
 	final window:Window;
 	var handle:ContextHandle;
 	var lastFrame:Float;
@@ -90,9 +92,16 @@ class Context {
 
 	@:noCompletion
 	private function set_vsync(enabled:Bool):Bool {
+		if (vsyncApplied && vsync == enabled)
+			return enabled;
+
 		makeCurrent();
 		OpenGLBindings.setVsync(enabled);
-		return vsync = enabled;
+
+		vsync = enabled;
+		vsyncApplied = true;
+
+		return enabled;
 	}
 
 	static function versionsInRange(minimumMajor:Int, minimumMinor:Int, maximumMajor:Int, maximumMinor:Int, es:Bool):Array<Version> {
