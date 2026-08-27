@@ -242,7 +242,7 @@ static bool translate_drop_event(const SDL_Event* source, limen_event* destinati
 }
 
 bool limen_translate_event(const SDL_Event* source, limen_event* destination) {
-	destination->timestamp = (double)source->common.timestamp / 1000000000.0;
+	destination->timestamp = (int64_t)source->common.timestamp;
 	if (source->type == SDL_EVENT_QUIT) {
 		destination->type = Quit;
 		return true;

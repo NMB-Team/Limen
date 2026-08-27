@@ -1,5 +1,7 @@
 package limen.platform.event;
 
+import haxe.Int64;
+
 @:keep class Event {
 	public var type:EventType;
 	public var mouseX:Int;
@@ -21,13 +23,21 @@ package limen.platform.event;
 	public var inputChar:hl.Bytes;
 
 	/**
-		Monotonic timestamp of the native SDL event, in seconds.
+		Monotonic timestamp of the native SDL event, in nanoseconds.
 
 		The value originates from SDL_Event.common.timestamp and shares the
-		SDL_GetTicksNS() clock domain with Platform.getTime(). It is unrelated to
-		wall-clock time and is not necessarily the hardware interrupt time.
+		SDL_GetTicksNS() clock domain with Platform.getTimestamp(). It is intended
+		for comparing timestamps and durations, not as wall-clock or Unix time.
 	**/
-	public var timestamp:Float;
+	public var timestamp:Int64;
+
+	/**
+		Convenience conversion for display and simple gameplay use.
+
+		For precise timing differences, subtract Int64 nanosecond timestamps first,
+		then convert the resulting delta to milliseconds.
+	**/
+	public var timestampMs(get, never):Float;
 
 	// for compile-time backward compatibility
 	public var controller(get, never):Int;
@@ -49,5 +59,10 @@ package limen.platform.event;
 	@:noCompletion
 	inline function get_fingerId() {
 		return reference;
+	}
+
+	@:noCompletion
+	inline function get_timestampMs():Float {
+		return timestamp.toFloat() / 1_000_000.0;
 	}
 }

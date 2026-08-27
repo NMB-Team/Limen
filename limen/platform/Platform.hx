@@ -1,5 +1,7 @@
 package limen.platform;
 
+import haxe.Int64;
+
 import limen.platform.window.Window;
 import limen.platform.internal.NativeTypes.WinPtr;
 import limen.graphics.GraphicsDriver;
@@ -91,6 +93,10 @@ class Platform {
 
 	public static inline function getTime():Float {
 		return Time.now();
+	}
+
+	public static inline function getTimestamp():Int64 {
+		return Time.timestamp();
 	}
 
 	public static function getScreenWidth(?window:Window):Int {

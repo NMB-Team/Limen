@@ -4,7 +4,7 @@
 static limen_event translate(SDL_Event* source) {
 	limen_event destination = {};
 	assert(limen_translate_event(source, &destination));
-	assert(destination.timestamp == (double)source->common.timestamp / 1000000000.0);
+	assert(destination.timestamp == (int64_t)source->common.timestamp);
 	return destination;
 }
 

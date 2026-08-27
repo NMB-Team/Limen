@@ -87,7 +87,7 @@ typedef struct {
 	int window;
 	vbyte* dropFile;
 	uchar* inputChar;
-	double timestamp;
+	int64_t timestamp;
 } limen_event;
 
 extern bool limen_hint_window_grab_keyboard;

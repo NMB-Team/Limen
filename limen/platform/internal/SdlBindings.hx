@@ -1,5 +1,7 @@
 package limen.platform.internal;
 
+import haxe.Int64;
+
 import limen.platform.Platform.DisplayId;
 import limen.platform.internal.NativeTypes.WinPtr;
 import limen.platform.internal.NativeTypes.CursorPtr;
@@ -42,6 +44,11 @@ class SdlBindings {
 
 	public static function getTime():Float {
 		return 0.;
+	}
+
+	@:hlNative("limen", "get_timestamp") // runtime validation showed getTimestamp() was not resolved and executed its fallback body 0
+	public static function getTimestamp():Int64 {
+		return 0;
 	}
 
 	public static function getPrefPath(org:hl.Bytes, app:hl.Bytes):hl.Bytes {
