@@ -14,6 +14,8 @@ class Window {
 	public var title(default, set):String;
 	public var width(get, never):Int;
 	public var height(get, never):Int;
+	public var pixelWidth(get, never):Int;
+	public var pixelHeight(get, never):Int;
 	public var windowToPixelRatio(get, never):Float;
 	public var minWidth(get, never):Int;
 	public var minHeight(get, never):Int;
@@ -165,6 +167,20 @@ class Window {
 	private function get_height():Int {
 		var value = 0;
 		SdlBindings.winGetSize(win, null, value);
+		return value;
+	}
+
+	@:noCompletion
+	private function get_pixelWidth():Int {
+		var value = 0;
+		SdlBindings.winGetPixelSize(win, value, null);
+		return value;
+	}
+
+	@:noCompletion
+	private function get_pixelHeight():Int {
+		var value = 0;
+		SdlBindings.winGetPixelSize(win, null, value);
 		return value;
 	}
 

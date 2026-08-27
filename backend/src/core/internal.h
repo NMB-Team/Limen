@@ -64,6 +64,7 @@ typedef enum {
 	Focus,
 	Blur,
 	Close,
+	PixelResize,
 } limen_window_state_change;
 
 typedef struct {

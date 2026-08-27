@@ -14,4 +14,5 @@ enum abstract WindowStateChange(Int) {
 	final Focus = 10;
 	final Blur = 11;
 	final Close = 12;
+	final PixelResize = 13;
 }

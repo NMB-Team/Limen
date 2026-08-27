@@ -21,6 +21,7 @@ static bool translate_window_event(const SDL_Event* source, limen_event* destina
 			break;
 		case SDL_EVENT_WINDOW_EXPOSED:
 			destination->state = Expose;
+			destination->value = source->window.data1;
 			break;
 		case SDL_EVENT_WINDOW_MOVED:
 			destination->state = Move;
@@ -28,8 +29,12 @@ static bool translate_window_event(const SDL_Event* source, limen_event* destina
 			destination->mouseY = source->window.data2;
 			break;
 		case SDL_EVENT_WINDOW_RESIZED:
-		case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
 			destination->state = Resize;
+			destination->mouseX = source->window.data1;
+			destination->mouseY = source->window.data2;
+			break;
+		case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+			destination->state = PixelResize;
 			destination->mouseX = source->window.data1;
 			destination->mouseY = source->window.data2;
 			break;
@@ -266,10 +271,7 @@ static bool SDLCALL window_event_watch(void* userdata, SDL_Event* event) {
 		case SDL_EVENT_WINDOW_RESIZED:
 		case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
 			if (window_event_watch_callback && window_event_watch_event && limen_translate_event(event, window_event_watch_event)) {
-				vdynamic argument;
-				vdynamic* arguments[1] = { &argument };
-				argument.t = window_event_watch_event->t;
-				argument.v.ptr = window_event_watch_event;
+				vdynamic* arguments[1] = {(vdynamic*)window_event_watch_event};
 				hl_dyn_call(window_event_watch_callback, arguments, 1);
 			}
 			break;
