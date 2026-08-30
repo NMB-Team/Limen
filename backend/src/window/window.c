@@ -1,4 +1,5 @@
 #include "../core/internal.h"
+#include "../platform/native_window.h"
 
 #ifdef HL_WIN_DESKTOP
 #include "../platform/windows/borderless.h"
@@ -137,6 +138,46 @@ HL_PRIM int HL_NAME(win_display_handle)(SDL_Window* window) {
 	return limen_display_index_from_id(SDL_GetDisplayForWindow(window));
 }
 DEFINE_PRIM(_I32, win_display_handle, TWIN);
+
+HL_PRIM bool HL_NAME(win_get_native_window_info)(SDL_Window* window, int* type, int64_t* display, int64_t* handle, int64_t* extra) {
+	if (window == nullptr || type == nullptr || display == nullptr || handle == nullptr || extra == nullptr)
+		return false;
+
+	limen_native_window info;
+	if (!limen_get_native_window(window, &info))
+		return false;
+
+	*type = (int)info.type;
+	*display = 0;
+	*handle = 0;
+	*extra = 0;
+
+	switch (info.type) {
+		case LIMEN_NATIVE_WIN32:
+			*handle = (int64_t)(uintptr_t)info.win32.window;
+			*extra = (int64_t)(uintptr_t)info.win32.instance;
+			break;
+		case LIMEN_NATIVE_COCOA:
+			*handle = (int64_t)(uintptr_t)info.cocoa.window;
+			break;
+		case LIMEN_NATIVE_X11:
+			*display = (int64_t)(uintptr_t)info.x11.display;
+			*handle = (int64_t)info.x11.window;
+			break;
+		case LIMEN_NATIVE_WAYLAND:
+			*display = (int64_t)(uintptr_t)info.wayland.display;
+			*handle = (int64_t)(uintptr_t)info.wayland.surface;
+			break;
+		case LIMEN_NATIVE_ANDROID:
+			*handle = (int64_t)(uintptr_t)info.android.window;
+			break;
+		default:
+			return false;
+	}
+
+	return true;
+}
+DEFINE_PRIM(_BOOL, win_get_native_window_info, TWIN _REF(_I32) _REF(_I64) _REF(_I64) _REF(_I64));
 
 HL_PRIM void HL_NAME(win_set_title)(SDL_Window* window, vbyte* title) {
 	SDL_SetWindowTitle(window, (char*)title);

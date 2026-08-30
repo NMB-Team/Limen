@@ -10,6 +10,10 @@ import limen.platform.internal.NativeTypes.WinPtr;
 
 class Window {
 	public var id(get, never):Int;
+	/**
+		The internal `SDL_Window*`. This is not an OS-native HWND, X11 Window, or Wayland surface.
+		Use `getNativeWindowInfo()` to query the current platform-native handles.
+	**/
 	public var nativeHandle(get, never):WinPtr;
 	public var title(default, set):String;
 	public var width(get, never):Int;
@@ -132,6 +136,27 @@ class Window {
 
 	public inline function setAlwaysOnTop(enabled:Bool):Bool {
 		return SdlBindings.winSetAlwaysOnTop(win, enabled);
+	}
+
+	public function getNativeWindowInfo():Null<NativeWindowInfo> {
+		if (win == null)
+			return null;
+
+		var type = 0;
+		var display:haxe.Int64 = 0;
+		var handle:haxe.Int64 = 0;
+		var extra:haxe.Int64 = 0;
+		if (!SdlBindings.winGetNativeWindowInfo(win, type, display, handle, extra))
+			return null;
+
+		return switch (type) {
+			case 1: Win32(handle, extra);
+			case 2: Cocoa(handle);
+			case 3: X11(display, handle);
+			case 4: Wayland(display, handle);
+			case 5: Android(handle);
+			default: null;
+		};
 	}
 
 	@:noCompletion

@@ -221,6 +221,10 @@ class SdlBindings {
 		return 0;
 	}
 
+	public static function winGetNativeWindowInfo(win:WinPtr, type:hl.Ref<Int>, display:hl.Ref<Int64>, handle:hl.Ref<Int64>, extra:hl.Ref<Int64>):Bool {
+		return false;
+	}
+
 	public static function winGetId(win:WinPtr):Int {
 		return 0;
 	}

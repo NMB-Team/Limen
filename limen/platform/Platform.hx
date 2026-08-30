@@ -27,7 +27,7 @@ class Platform {
 
 	static var initDone = false;
 	static var isWin32 = false;
-	static var isGrubLinux = false;
+	static var isLinuxPlatform = false;
 
 	static final event = new Event();
 	static final watchEvent = new Event();
@@ -62,7 +62,7 @@ class Platform {
 
 		// detecting for actual system
 		isWin32 = SdlBindings.detectWin32();
-		isGrubLinux = SdlBindings.detectLinux();
+		isLinuxPlatform = SdlBindings.detectLinux();
 	}
 
 	public static function setHint(name:String, value:String):Bool {
@@ -90,7 +90,10 @@ class Platform {
 		if (!initDone)
 			return;
 		SdlBindings.quit();
+
 		graphicsDriver = None;
+		videoBackend = Unknown;
+
 		initDone = false;
 	}
 
@@ -217,7 +220,7 @@ class Platform {
 	}
 
 	public static inline function isLinux():Bool {
-		return isGrubLinux;
+		return isLinuxPlatform;
 	}
 
 	static function detectVideoBackend():VideoBackend {
