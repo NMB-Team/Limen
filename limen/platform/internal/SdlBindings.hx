@@ -20,6 +20,10 @@ class SdlBindings {
 		return 0;
 	}
 
+	public static function getVideoBackend():Int {
+		return 0;
+	}
+
 	public static function isDlssAvailable():Bool {
 		return false;
 	}
@@ -29,6 +33,10 @@ class SdlBindings {
 	public static function delay(milliseconds:Int):Void {}
 
 	public static function detectWin32():Bool {
+		return false;
+	}
+
+	public static function detectLinux():Bool {
 		return false;
 	}
 

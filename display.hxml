@@ -1,0 +1,6 @@
+-cp .
+
+--macro include('limen')
+--no-output
+
+-hl limen.hl

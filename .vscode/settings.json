@@ -19,11 +19,12 @@
 	"files.eol": "\n",
 
 	"haxe.enableCompilationServer": false,
-	"haxe.displayPort": "auto",
-	"haxe.enableServerView": true,
-	"haxe.disableInlineValue": true,
 
 	"haxecheckstyle.configurationFile": "checkstyle.json",
 	"haxecheckstyle.sourceFolders": ["limen"],
-	"haxecheckstyle.codeSimilarityBufferSize": 100
+	"haxecheckstyle.codeSimilarityBufferSize": 100,
+
+	"haxe.configurations": [
+		["display.hxml"]
+	]
 }

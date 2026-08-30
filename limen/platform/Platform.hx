@@ -23,9 +23,11 @@ typedef DisplayMode = limen.platform.display.DisplayMode;
 
 class Platform {
 	public static var graphicsDriver(default, null):GraphicsDriver = None;
+	public static var videoBackend(default, null):VideoBackend = Unknown;
 
 	static var initDone = false;
 	static var isWin32 = false;
+	static var isGrubLinux = false;
 
 	static final event = new Event();
 	static final watchEvent = new Event();
@@ -35,6 +37,8 @@ class Platform {
 			return;
 		if (!SdlBindings.initOnce())
 			throw "Failed to init SDL";
+
+		videoBackend = detectVideoBackend();
 
 		if (preferredGraphicsDriver != None) {
 			var supported = 0;
@@ -55,7 +59,10 @@ class Platform {
 			graphicsDriver = None;
 
 		initDone = true;
+
+		// detecting for actual system
 		isWin32 = SdlBindings.detectWin32();
+		isGrubLinux = SdlBindings.detectLinux();
 	}
 
 	public static function setHint(name:String, value:String):Bool {
@@ -207,6 +214,14 @@ class Platform {
 
 	public static inline function isWindows():Bool {
 		return isWin32;
+	}
+
+	public static inline function isLinux():Bool {
+		return isGrubLinux;
+	}
+
+	static function detectVideoBackend():VideoBackend {
+		return SdlBindings.getVideoBackend();
 	}
 }
 

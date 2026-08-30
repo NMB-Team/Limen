@@ -33,6 +33,23 @@ class ExampleWindow {
 		// supported platforms may use a native dark title bar, but sdl adapt it by system prefer
 		window.setDarkMode(true);
 
+		if (Platform.isLinux())
+			trace("App working on linux, yay");
+		else if (Platform.isWindows())
+			trace("App workin on windows , woohoo");
+
+		trace(Platform.videoBackend);
+
+		switch (Platform.videoBackend) {
+			case Wayland:
+				trace("Wayland session");
+
+			case X11:
+				trace("X11 session");
+
+			default:
+		}
+
 		final event = new Event();
 		var running = true;
 
