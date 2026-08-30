@@ -38,5 +38,4 @@ HL_PRIM vbyte* HL_NAME(compile_shader)(vbyte* source, vbyte* shaderFile, vbyte* 
 	return data;
 #endif
 }
-
 DEFINE_PRIM(_BYTES, compile_shader, _BYTES _BYTES _BYTES _I32 _REF(_I32));

@@ -15,6 +15,7 @@ HL_PRIM void HL_NAME(text_input)(bool enable) {
 			SDL_StopTextInput(windows[i]);
 	SDL_free(windows);
 }
+DEFINE_PRIM(_VOID, text_input, _BOOL);
 
 HL_PRIM const char* HL_NAME(detect_keyboard_layout)() {
 	char q = SDL_GetKeyFromScancode(SDL_SCANCODE_Q, SDL_KMOD_NONE, false);
@@ -31,6 +32,4 @@ HL_PRIM const char* HL_NAME(detect_keyboard_layout)() {
 		return "qzerty";
 	return "unknown";
 }
-
-DEFINE_PRIM(_VOID, text_input, _BOOL);
 DEFINE_PRIM(_BYTES, detect_keyboard_layout, _NO_ARG);

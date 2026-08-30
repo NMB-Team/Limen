@@ -7,5 +7,4 @@ HL_PRIM bool HL_NAME(hint_value)(vbyte* name, vbyte* value) {
 		limen_hint_window_grab_keyboard = value != nullptr;
 	return SDL_SetHint((char*)name, (char*)value);
 }
-
 DEFINE_PRIM(_BOOL, hint_value, _BYTES _BYTES);

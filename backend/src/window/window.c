@@ -7,20 +7,22 @@
 #endif
 
 typedef enum {
-	LIMEN_FULLSCREEN_WINDOWED,
-	LIMEN_FULLSCREEN_BORDERLESS,
+	LIMEN_WINDOWED,
 	LIMEN_FULLSCREEN_EXCLUSIVE,
+	LIMEN_FULLSCREEN_WINDOWED,
+	LIMEN_FULLSCREEN_DESKTOP,
 } limen_fullscreen_mode;
 
-static limen_fullscreen_mode normalize_fullscreen_mode(int mode) {
+static limen_fullscreen_mode fullscreen_mode_from_int(int mode) {
 	switch (mode) {
 		case 1:
 			return LIMEN_FULLSCREEN_EXCLUSIVE;
 		case 2:
-		case 3:
-			return LIMEN_FULLSCREEN_BORDERLESS;
-		default:
 			return LIMEN_FULLSCREEN_WINDOWED;
+		case 3:
+			return LIMEN_FULLSCREEN_DESKTOP;
+		default:
+			return LIMEN_WINDOWED;
 	}
 }
 
@@ -84,12 +86,12 @@ HL_PRIM SDL_Window* HL_NAME(win_create)(int width, int height) {
 DEFINE_PRIM(TWIN, win_create, _I32 _I32);
 
 HL_PRIM bool HL_NAME(win_set_fullscreen)(SDL_Window* window, int mode) {
-	limen_fullscreen_mode normalized = normalize_fullscreen_mode(mode);
+	limen_fullscreen_mode requested_mode = fullscreen_mode_from_int(mode);
 #ifdef HL_WIN_DESKTOP
 	if (!limen_windows_prepare_fullscreen(window, mode))
 		return false;
 #endif
-	if (normalized == LIMEN_FULLSCREEN_WINDOWED) {
+	if (requested_mode == LIMEN_WINDOWED) {
 		bool result = SDL_SetWindowFullscreen(window, false);
 		if (result) {
 			sync_window_state(window);
@@ -97,7 +99,7 @@ HL_PRIM bool HL_NAME(win_set_fullscreen)(SDL_Window* window, int mode) {
 		}
 		return result;
 	}
-	if (normalized == LIMEN_FULLSCREEN_EXCLUSIVE) {
+	if (requested_mode == LIMEN_FULLSCREEN_EXCLUSIVE) {
 		const SDL_DisplayMode* fullscreen_mode = SDL_GetWindowFullscreenMode(window);
 		if (fullscreen_mode == nullptr) {
 			SDL_DisplayID display = SDL_GetDisplayForWindow(window);
@@ -111,9 +113,14 @@ HL_PRIM bool HL_NAME(win_set_fullscreen)(SDL_Window* window, int mode) {
 		return result;
 	}
 
-	if (mode == 2) {
+	if (requested_mode == LIMEN_FULLSCREEN_WINDOWED) {
 #ifdef HL_WIN_DESKTOP
 		return limen_windows_set_borderless_fixed(window);
+#else
+		// alias to desktop fullscreen
+		// TODO: add native X11 EWMH support
+		SDL_SetWindowFullscreenMode(window, nullptr);
+		return SDL_SetWindowFullscreen(window, true);
 #endif
 	}
 	SDL_SetWindowFullscreenMode(window, nullptr);

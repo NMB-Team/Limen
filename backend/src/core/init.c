@@ -24,6 +24,7 @@ HL_PRIM bool HL_NAME(init_once)() {
 #endif
 	return true;
 }
+DEFINE_PRIM(_BOOL, init_once, _NO_ARG);
 
 HL_PRIM void HL_NAME(quit)() {
 	limen_modules_unload();
@@ -32,12 +33,14 @@ HL_PRIM void HL_NAME(quit)() {
 	timeEndPeriod(1);
 #endif
 }
+DEFINE_PRIM(_VOID, quit, _NO_ARG);
 
 HL_PRIM void HL_NAME(message_box)(vbyte* title, vbyte* text, int icon) {
 	hl_blocking(true);
 	SDL_ShowSimpleMessageBox((SDL_MessageBoxFlags)icon, (char*)title, (char*)text, nullptr);
 	hl_blocking(false);
 }
+DEFINE_PRIM(_VOID, message_box, _BYTES _BYTES _I32);
 
 HL_PRIM int HL_NAME(get_video_backend)() {
 	const char* driver = SDL_GetCurrentVideoDriver();
@@ -59,6 +62,7 @@ HL_PRIM int HL_NAME(get_video_backend)() {
 
 	return 0;
 }
+DEFINE_PRIM(_I32, get_video_backend, _NO_ARG);
 
 HL_PRIM bool HL_NAME(detect_win32)() {
 #ifdef _WIN32
@@ -67,6 +71,7 @@ HL_PRIM bool HL_NAME(detect_win32)() {
 	return false;
 #endif
 }
+DEFINE_PRIM(_BOOL, detect_win32, _NO_ARG);
 
 HL_PRIM bool HL_NAME(detect_linux)() {
 #ifdef __linux__
@@ -75,20 +80,14 @@ HL_PRIM bool HL_NAME(detect_linux)() {
 	return false;
 #endif
 }
+DEFINE_PRIM(_BOOL, detect_linux, _NO_ARG);
 
 HL_PRIM const char* HL_NAME(get_pref_path)(const char* org, const char* app) {
 	return SDL_GetPrefPath(org, app);
 }
+DEFINE_PRIM(_BYTES, get_pref_path, _BYTES _BYTES);
 
 HL_PRIM vbyte* HL_NAME(get_error)() {
 	return (vbyte*)SDL_GetError();
 }
-
-DEFINE_PRIM(_BOOL, init_once, _NO_ARG);
-DEFINE_PRIM(_VOID, quit, _NO_ARG);
-DEFINE_PRIM(_VOID, message_box, _BYTES _BYTES _I32);
-DEFINE_PRIM(_I32, get_video_backend, _NO_ARG);
-DEFINE_PRIM(_BOOL, detect_win32, _NO_ARG);
-DEFINE_PRIM(_BOOL, detect_linux, _NO_ARG);
-DEFINE_PRIM(_BYTES, get_pref_path, _BYTES _BYTES);
 DEFINE_PRIM(_BYTES, get_error, _NO_ARG);

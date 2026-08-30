@@ -55,6 +55,7 @@ HL_PRIM int HL_NAME(select_graphics_driver)(int preferred, int supported) {
 	SDL_SetError("No LIMEN graphics driver was found");
 	return LIMEN_GRAPHICS_NONE;
 }
+DEFINE_PRIM(_I32, select_graphics_driver, _I32 _I32);
 
 HL_PRIM bool HL_NAME(is_dlss_available)() {
 	if (limen_selected_graphics_driver != LIMEN_GRAPHICS_D3D12)
@@ -63,6 +64,4 @@ HL_PRIM bool HL_NAME(is_dlss_available)() {
 	SDL_ClearError();
 	return available;
 }
-
-DEFINE_PRIM(_I32, select_graphics_driver, _I32 _I32);
 DEFINE_PRIM(_BOOL, is_dlss_available, _NO_ARG);

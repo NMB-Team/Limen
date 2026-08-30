@@ -251,8 +251,22 @@ bool limen_translate_event(const SDL_Event* source, limen_event* destination) {
 	       translate_joystick_event(source, destination) || translate_drop_event(source, destination);
 }
 
-HL_PRIM int HL_NAME(event_poll)(SDL_Event* event) {
-	return SDL_PollEvent(event);
+static bool SDLCALL window_event_watch(void* userdata, SDL_Event* event) {
+	(void)userdata;
+	switch (event->type) {
+		case SDL_EVENT_WINDOW_EXPOSED:
+		case SDL_EVENT_WINDOW_MOVED:
+		case SDL_EVENT_WINDOW_RESIZED:
+		case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+			if (window_event_watch_callback && window_event_watch_event && limen_translate_event(event, window_event_watch_event)) {
+				vdynamic* arguments[1] = { (vdynamic*)window_event_watch_event };
+				hl_dyn_call(window_event_watch_callback, arguments, 1);
+			}
+			break;
+		default:
+			break;
+	}
+	return true;
 }
 
 HL_PRIM bool HL_NAME(event_loop)(limen_event* event) {
@@ -262,24 +276,12 @@ HL_PRIM bool HL_NAME(event_loop)(limen_event* event) {
 			return true;
 	return false;
 }
+DEFINE_PRIM(_BOOL, event_loop, _DYN);
 
-static bool SDLCALL window_event_watch(void* userdata, SDL_Event* event) {
-	(void)userdata;
-	switch (event->type) {
-		case SDL_EVENT_WINDOW_EXPOSED:
-		case SDL_EVENT_WINDOW_MOVED:
-		case SDL_EVENT_WINDOW_RESIZED:
-		case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
-			if (window_event_watch_callback && window_event_watch_event && limen_translate_event(event, window_event_watch_event)) {
-				vdynamic* arguments[1] = {(vdynamic*)window_event_watch_event};
-				hl_dyn_call(window_event_watch_callback, arguments, 1);
-			}
-			break;
-		default:
-			break;
-	}
-	return true;
+HL_PRIM int HL_NAME(event_poll)(SDL_Event* event) {
+	return SDL_PollEvent(event);
 }
+DEFINE_PRIM(_I32, event_poll, _STRUCT);
 
 HL_PRIM void HL_NAME(set_window_event_watch)(vclosure* callback, limen_event* event) {
 	if (window_event_watch_callback == nullptr)
@@ -296,14 +298,11 @@ HL_PRIM void HL_NAME(set_window_event_watch)(vclosure* callback, limen_event* ev
 	window_event_watch_callback = callback;
 	window_event_watch_event = callback != nullptr ? event : nullptr;
 }
+DEFINE_PRIM(_VOID, set_window_event_watch, _DYN _DYN);
 
 HL_PRIM bool HL_NAME(is_text_input_shown)() {
 	bool result = text_editing;
 	text_editing = false;
 	return result;
 }
-
-DEFINE_PRIM(_BOOL, event_loop, _DYN);
-DEFINE_PRIM(_I32, event_poll, _STRUCT);
-DEFINE_PRIM(_VOID, set_window_event_watch, _DYN _DYN);
 DEFINE_PRIM(_BOOL, is_text_input_shown, _NO_ARG);

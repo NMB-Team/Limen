@@ -11,5 +11,4 @@ HL_PRIM void* HL_NAME(win_get_vulkan)(void* window) {
 		return nullptr;
 	return (void*)(uintptr_t)surface;
 }
-
 DEFINE_PRIM(_BYTES, win_get_vulkan, _ABSTRACT(limen_window));

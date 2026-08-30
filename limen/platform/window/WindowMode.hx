@@ -15,11 +15,13 @@ enum abstract WindowMode(Int) {
 	final ExclusiveFullscreen:WindowMode = 1;
 
 	/**
-		Fills the entire display using a borderless Win32 window
-		while remaining in windowed presentation mode.
+		Fills the entire display while remaining in windowed presentation mode.
 
-		On Windows, this avoids fullscreen presentation throttling
-		across graphics backends, which may improve performance.
+		On Windows, this uses the native Win32 borderless-windowed implementation,
+		which avoids fullscreen presentation throttling across graphics backends.
+		On Wayland, this aliases to `DesktopFullscreen` because the compositor
+		controls top-level window placement. X11 currently uses the same fallback;
+		native EWMH support may be added later.
 	**/
 	final WindowedFullscreen:WindowMode = 2;
 

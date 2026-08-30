@@ -8,10 +8,13 @@ import limen.graphics.opengl.internal.OpenGLBindings as GL;
 import limen.platform.Platform;
 import limen.platform.window.Window;
 import limen.platform.window.WindowFlags;
+import limen.platform.window.WindowMode;
 import limen.platform.event.Event;
 import limen.platform.event.EventType;
 
 class ExampleGL {
+	static inline final F11_SCANCODE = 68;
+
 	static function main() {
 		// 1 - set by default, 2 - list of included, but its not need here
 		Platform.init(GraphicsDriver.OpenGL);
@@ -65,6 +68,9 @@ class ExampleGL {
 					case EventType.MouseMove:
 						mouseX = event.mouseX;
 						mouseY = event.mouseY;
+
+					case EventType.KeyDown if (event.scanCode == F11_SCANCODE && !event.keyRepeat):
+						window.displayMode = window.displayMode == WindowMode.WindowedFullscreen ? WindowMode.Windowed : WindowMode.WindowedFullscreen;
 
 					default:
 				}

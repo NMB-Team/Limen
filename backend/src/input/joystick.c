@@ -8,34 +8,42 @@ HL_PRIM int HL_NAME(joy_count)() {
 	SDL_free(joysticks);
 	return count;
 }
+DEFINE_PRIM(_I32, joy_count, _NO_ARG);
 
 HL_PRIM SDL_Joystick* HL_NAME(joy_open)(int id) {
 	return SDL_OpenJoystick(id);
 }
+DEFINE_PRIM(TJOY, joy_open, _I32);
 
 HL_PRIM void HL_NAME(joy_close)(SDL_Joystick* joystick) {
 	SDL_CloseJoystick(joystick);
 }
+DEFINE_PRIM(_VOID, joy_close, TJOY);
 
 HL_PRIM int HL_NAME(joy_get_axis)(SDL_Joystick* joystick, int axis) {
 	return SDL_GetJoystickAxis(joystick, axis);
 }
+DEFINE_PRIM(_I32, joy_get_axis, TJOY _I32);
 
 HL_PRIM int HL_NAME(joy_get_hat)(SDL_Joystick* joystick, int hat) {
 	return SDL_GetJoystickHat(joystick, hat);
 }
+DEFINE_PRIM(_I32, joy_get_hat, TJOY _I32);
 
 HL_PRIM bool HL_NAME(joy_get_button)(SDL_Joystick* joystick, int button) {
 	return SDL_GetJoystickButton(joystick, button);
 }
+DEFINE_PRIM(_BOOL, joy_get_button, TJOY _I32);
 
 HL_PRIM int HL_NAME(joy_get_id)(SDL_Joystick* joystick) {
 	return SDL_GetJoystickID(joystick);
 }
+DEFINE_PRIM(_I32, joy_get_id, TJOY);
 
 HL_PRIM vbyte* HL_NAME(joy_get_name)(SDL_Joystick* joystick) {
 	return (vbyte*)SDL_GetJoystickName(joystick);
 }
+DEFINE_PRIM(_BYTES, joy_get_name, TJOY);
 
 HL_PRIM varray* HL_NAME(get_joysticks)() {
 	int count;
@@ -47,13 +55,4 @@ HL_PRIM varray* HL_NAME(get_joysticks)() {
 	SDL_free(joysticks);
 	return result;
 }
-
-DEFINE_PRIM(_I32, joy_count, _NO_ARG);
-DEFINE_PRIM(TJOY, joy_open, _I32);
-DEFINE_PRIM(_VOID, joy_close, TJOY);
-DEFINE_PRIM(_I32, joy_get_axis, TJOY _I32);
-DEFINE_PRIM(_I32, joy_get_hat, TJOY _I32);
-DEFINE_PRIM(_BOOL, joy_get_button, TJOY _I32);
-DEFINE_PRIM(_I32, joy_get_id, TJOY);
-DEFINE_PRIM(_BYTES, joy_get_name, TJOY);
 DEFINE_PRIM(_ARR, get_joysticks, _NO_ARG);

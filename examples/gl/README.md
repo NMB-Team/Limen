@@ -2,6 +2,8 @@
 
 A compact interactive rendering example for LIMEN's OpenGL backend.
 
+Press F11 to toggle windowed fullscreen.
+
 ## Build
 
 Run the commands from **this directory**:
