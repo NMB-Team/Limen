@@ -7,7 +7,7 @@ HL_PRIM void HL_NAME(delay)(int time) {
 }
 
 HL_PRIM double HL_NAME(get_time)() {
-	return (double)SDL_GetTicksNS() * 0.000000001; // divide by 1_000_000
+	return (double)SDL_GetTicksNS() * 0.000000001; // divide by 1_000_000_000
 }
 
 HL_PRIM int64_t HL_NAME(get_timestamp)() {

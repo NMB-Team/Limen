@@ -62,7 +62,10 @@ import haxe.Int64;
 	}
 
 	@:noCompletion
-	inline function get_timestampMs():Float {
-		return timestamp.toFloat() / 1_000_000.0;
+	inline function get_timestampMs():Float { // haxe 4 fix
+		final high = timestamp.high;
+		final low = timestamp.low;
+		final value = high * 4294967296.0 + (low < 0 ? 4294967296.0 + low : low);
+		return value * 0.000001;
 	}
 }
