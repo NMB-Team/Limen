@@ -10,11 +10,13 @@ import limen.platform.internal.NativeTypes.WinPtr;
 
 class Window {
 	public var id(get, never):Int;
+
 	/**
 		The internal `SDL_Window*`. This is not an OS-native HWND, X11 Window, or Wayland surface.
 		Use `getNativeWindowInfo()` to query the current platform-native handles.
 	**/
 	public var nativeHandle(get, never):WinPtr;
+
 	public var title(default, set):String;
 	public var width(get, never):Int;
 	public var height(get, never):Int;
@@ -76,6 +78,14 @@ class Window {
 
 	public inline function setMaxSize(width:Int, height:Int):Void {
 		SdlBindings.winSetMaxSize(win, width, height);
+	}
+
+	public function isMaximized() {
+		return SdlBindings.winMaximized(win);
+	}
+
+	public function setMaximized(maximized:Bool):Void {
+		SdlBindings.winSetMaximized(win, maximized);
 	}
 
 	public inline function setDisplayMode(width:Int, height:Int, framerate:Int):Bool {

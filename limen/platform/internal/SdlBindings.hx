@@ -183,6 +183,12 @@ class SdlBindings {
 
 	public static function winGetMaxSize(win:WinPtr, width:hl.Ref<Int>, height:hl.Ref<Int>):Void {}
 
+	public static function winMaximized(win:WinPtr):Bool {
+		return false;
+	}
+
+	public static function winSetMaximized(win:WinPtr, maximized:Bool) {}
+
 	public static function winGetOpacity(win:WinPtr):Float {
 		return 0.;
 	}
