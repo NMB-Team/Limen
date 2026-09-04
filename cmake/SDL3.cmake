@@ -20,8 +20,8 @@ function(limen_resolve_sdl3)
 	else()
 		FetchContent_Declare(
 			SDL3
-			URL https://github.com/libsdl-org/SDL/releases/download/release-3.4.14/SDL3-3.4.14.tar.gz
-			URL_HASH SHA256=30d4aa2b3037718142b32dffd4e72f917ebb6cc5227150e7bb9c45efb2153aeb
+			URL https://github.com/libsdl-org/SDL/releases/download/release-3.4.16/SDL3-3.4.16.tar.gz
+			URL_HASH SHA256=7322236cd12090c3eb40b9728be4d49c76f66ad17d04369584d4ecad5cf77c68
 			EXCLUDE_FROM_ALL
 		)
 		FetchContent_MakeAvailable(SDL3)
