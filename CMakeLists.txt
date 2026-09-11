@@ -112,6 +112,7 @@ add_library(limen SHARED
 	backend/src/window/cursor.c
 	backend/src/window/display.c
 	backend/src/window/dragdrop.c
+	backend/src/window/file_dialog.c
 	backend/src/window/window.c
 	backend/src/platform/graphics.c
 	${LIMEN_PLATFORM_SOURCES}

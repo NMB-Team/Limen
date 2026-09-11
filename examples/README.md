@@ -12,6 +12,10 @@ A minimal platform example covering window creation, display enumeration and nat
 
 A small rendering example using LIMEN's OpenGL integration.
 
+### [File dialog](file-dialog/)
+
+A minimal asynchronous open-file dialog with multiple selection and filters.
+
 ## Requirements
 
 The examples target HashLink and expect LIMEN's native modules to be available to the runtime.
