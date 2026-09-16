@@ -24,6 +24,32 @@
 			"displayName": "Windows x64 Release"
 		},
 		{
+			"name": "windows-mingw",
+			"hidden": true,
+			"generator": "Ninja",
+			"binaryDir": "${sourceDir}/build/windows-mingw-${presetName}",
+			"cacheVariables": {
+				"CMAKE_C_COMPILER": "gcc",
+				"CMAKE_CXX_COMPILER": "g++"
+			}
+		},
+		{
+			"name": "windows-mingw-debug",
+			"inherits": "windows-mingw",
+			"displayName": "Windows MinGW x64 Debug",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Debug"
+			}
+		},
+		{
+			"name": "windows-mingw-release",
+			"inherits": "windows-mingw",
+			"displayName": "Windows MinGW x64 Release",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Release"
+			}
+		},
+		{
 			"name": "windows-arm64",
 			"hidden": true,
 			"generator": "Visual Studio 18 2026",
@@ -146,6 +172,14 @@
 			"name": "windows-x64-release",
 			"configurePreset": "windows-x64-release",
 			"configuration": "Release"
+		},
+		{
+			"name": "windows-mingw-debug",
+			"configurePreset": "windows-mingw-debug"
+		},
+		{
+			"name": "windows-mingw-release",
+			"configurePreset": "windows-mingw-release"
 		},
 		{
 			"name": "windows-arm64-debug",

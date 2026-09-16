@@ -3,6 +3,7 @@ package limen.graphics.vulkan.memory;
 import limen.graphics.vulkan.VulkanCore.ArrayStruct;
 import limen.graphics.vulkan.VulkanCore.IntArray;
 import limen.graphics.vulkan.VulkanCore.NextPtr;
+import limen.graphics.vulkan.VulkanCore.VkBool32;
 import limen.graphics.vulkan.VulkanCore.VkStructureType;
 import limen.graphics.vulkan.pipeline.Pipeline.VkComponentSwizzle;
 import limen.graphics.vulkan.format.Formats.VkFormat;
@@ -38,6 +39,24 @@ enum VkAccessFlag {
 	TRANSFORM_FEEDBACK_WRITE_EXT;
 	TRANSFORM_FEEDBACK_COUNTER_READ_EXT;
 	TRANSFORM_FEEDBACK_COUNTER_WRITE_EXT;
+}
+
+class VkAccess2 {
+	public static final NONE:hl.I64 = (Int64.ofInt(0) : hl.I64);
+	public static final INDIRECT_COMMAND_READ:hl.I64 = (Int64.ofInt(0x1) : hl.I64);
+	public static final INDEX_READ:hl.I64 = (Int64.ofInt(0x2) : hl.I64);
+	public static final VERTEX_ATTRIBUTE_READ:hl.I64 = (Int64.ofInt(0x4) : hl.I64);
+	public static final UNIFORM_READ:hl.I64 = (Int64.ofInt(0x8) : hl.I64);
+	public static final SHADER_READ:hl.I64 = (Int64.ofInt(0x20) : hl.I64);
+	public static final SHADER_WRITE:hl.I64 = (Int64.ofInt(0x40) : hl.I64);
+	public static final COLOR_ATTACHMENT_READ:hl.I64 = (Int64.ofInt(0x80) : hl.I64);
+	public static final COLOR_ATTACHMENT_WRITE:hl.I64 = (Int64.ofInt(0x100) : hl.I64);
+	public static final DEPTH_STENCIL_ATTACHMENT_READ:hl.I64 = (Int64.ofInt(0x200) : hl.I64);
+	public static final DEPTH_STENCIL_ATTACHMENT_WRITE:hl.I64 = (Int64.ofInt(0x400) : hl.I64);
+	public static final TRANSFER_READ:hl.I64 = (Int64.ofInt(0x800) : hl.I64);
+	public static final TRANSFER_WRITE:hl.I64 = (Int64.ofInt(0x1000) : hl.I64);
+	public static final HOST_READ:hl.I64 = (Int64.ofInt(0x2000) : hl.I64);
+	public static final HOST_WRITE:hl.I64 = (Int64.ofInt(0x4000) : hl.I64);
 }
 
 abstract VkBuffer(hl.Abstract<"vk_buffer">) {}
@@ -344,6 +363,23 @@ enum VkMemoryPropertyFlag {
 	PROTECTED;
 	DEVICE_COHERENT_AMD;
 	DEVICE_UNCACHED_AMD;
+}
+
+@:struct class VkMemoryRequirementsInfo {
+	public var size:hl.I64;
+	public var alignment:hl.I64;
+	public var memoryTypeBits:Int;
+	public var requiresDedicatedAllocation:VkBool32;
+	public var prefersDedicatedAllocation:VkBool32;
+
+	public function new() {}
+}
+
+@:struct class VkMemoryHeapBudgetInfo {
+	public var budget:hl.I64;
+	public var usage:hl.I64;
+
+	public function new() {}
 }
 
 @:struct class VkMemoryRequirements {

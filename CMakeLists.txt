@@ -39,6 +39,7 @@ include(HashLink)
 include(SDL3)
 include(Hdll)
 include(Platform)
+include(Vulkan)
 
 limen_resolve_hashlink()
 limen_resolve_sdl3()
@@ -59,6 +60,7 @@ set(_LIMEN_MODULE_PROXY_INPUTS
 		backend/src/graphics/vulkan/surface.c
 		backend/src/graphics/vulkan/vulkan.c
 		backend/src/graphics/vulkan/shaderc.c
+		backend/src/graphics/vulkan/spirv.c
 	d3d11
 		backend/src/graphics/d3d11/driver.cpp
 	d3d12
@@ -141,9 +143,12 @@ if(LIMEN_BUILD_DLSS AND (NOT LIMEN_WINDOWS_X64 OR NOT LIMEN_BUILD_D3D12))
 endif()
 
 if(LIMEN_BUILD_VULKAN)
-	find_package(Vulkan REQUIRED)
+	if(NOT LIMEN_BUILD_SHADERC)
+		message(FATAL_ERROR "LIMEN_BUILD_VULKAN requires LIMEN_BUILD_SHADERC because the Vulkan backend compiles shaders at runtime.")
+	endif()
+	limen_resolve_vulkan()
 	target_compile_definitions(limen PRIVATE LIMEN_HAS_VULKAN)
-	target_include_directories(limen PRIVATE ${Vulkan_INCLUDE_DIRS})
+	target_link_libraries(limen PRIVATE Vulkan::Headers)
 endif()
 
 if(LIMEN_BUILD_OPENGL)
@@ -181,45 +186,27 @@ if(LIMEN_BUILD_VULKAN)
 		backend/src/graphics/vulkan/surface.c
 		backend/src/graphics/vulkan/vulkan.c
 		backend/src/graphics/vulkan/shaderc.c
+		backend/src/graphics/vulkan/spirv.c
 	)
 	limen_set_native_library(limen_vulkan vulkan .limen)
 	limen_enable_c23_nullptr(limen_vulkan)
 	target_include_directories(limen_vulkan PRIVATE
 		"${CMAKE_CURRENT_SOURCE_DIR}/backend/include"
 		"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/platform"
-		${Vulkan_INCLUDE_DIRS}
 	)
-	target_link_libraries(limen_vulkan PRIVATE libhl limen Vulkan::Vulkan)
-
-	if(LIMEN_BUILD_SHADERC)
-		if(UNIX AND NOT APPLE)
-			find_library(LIMEN_SHADERC_LIBRARY
-				NAMES shaderc_shared shaderc
-				REQUIRED
-			)
-			target_link_libraries(limen_vulkan PRIVATE "${LIMEN_SHADERC_LIBRARY}")
-			get_filename_component(_LIMEN_SHADERC_RUNTIME "${LIMEN_SHADERC_LIBRARY}" REALPATH)
-			install(FILES "${_LIMEN_SHADERC_RUNTIME}" DESTINATION "${LIMEN_HDLL_DESTINATION}")
-		elseif(TARGET Vulkan::shaderc_combined)
-			target_link_libraries(limen_vulkan PRIVATE Vulkan::shaderc_combined)
-		else()
-			if(CMAKE_GENERATOR_PLATFORM STREQUAL "ARM64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "^(ARM64|aarch64)$")
-				set(_LIMEN_VULKAN_LIB_SUFFIX Lib-ARM64)
-			elseif(MSVC AND CMAKE_SIZEOF_VOID_P EQUAL 4)
-				set(_LIMEN_VULKAN_LIB_SUFFIX Lib32)
-			else()
-				set(_LIMEN_VULKAN_LIB_SUFFIX Lib)
-			endif()
-			find_library(LIMEN_SHADERC_LIBRARY
-				NAMES shaderc_combined
-				HINTS "$ENV{VULKAN_SDK}"
-				PATH_SUFFIXES ${_LIMEN_VULKAN_LIB_SUFFIX} lib
-				REQUIRED
-			)
-			target_link_libraries(limen_vulkan PRIVATE "${LIMEN_SHADERC_LIBRARY}")
-		endif()
-		target_compile_definitions(limen_vulkan PRIVATE HL_VULKAN_HAS_SHADERC)
+	target_link_libraries(limen_vulkan PRIVATE
+		libhl
+		limen
+		Vulkan::Headers
+		Vulkan::Vulkan
+		shaderc
+		SPIRV-Tools-static
+		limen_spirv_reflect
+	)
+	if(MINGW)
+		target_link_options(limen_vulkan PRIVATE -static-libgcc -static-libstdc++)
 	endif()
+	target_compile_definitions(limen_vulkan PRIVATE HL_VULKAN_HAS_SHADERC HL_VULKAN_HAS_SPIRV_REFLECT HL_VULKAN_HAS_SPIRV_TOOLS)
 endif()
 
 if(WIN32 AND LIMEN_BUILD_D3D11)
