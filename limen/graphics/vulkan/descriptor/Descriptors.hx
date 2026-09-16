@@ -91,6 +91,25 @@ abstract VkDescriptorSet(hl.Abstract<"vk_descriptor_set">) {}
 
 abstract VkDescriptorSetLayout(hl.Abstract<"vk_descriptor_layout">) {}
 
+enum abstract VkDescriptorBindingFlag(Int) from Int to Int {
+	final UPDATE_AFTER_BIND = 0x00000001;
+	final UPDATE_UNUSED_WHILE_PENDING = 0x00000002;
+	final PARTIALLY_BOUND = 0x00000004;
+	final VARIABLE_DESCRIPTOR_COUNT = 0x00000008;
+}
+
+@:struct class VkDescriptorSetLayoutBindingFlagsCreateInfo {
+	var type:VkStructureType;
+	var next:NextPtr;
+
+	public var bindingCount:Int;
+	public var bindingFlags:ArrayStruct<VkDescriptorBindingFlag>;
+
+	public function new() {
+		type = DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+	}
+}
+
 @:struct class VkDescriptorSetLayoutBinding {
 	public var binding:Int;
 	public var descriptorType:VkDescriptorType;
