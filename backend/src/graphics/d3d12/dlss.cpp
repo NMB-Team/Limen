@@ -308,7 +308,9 @@ HL_PRIM int HL_NAME(reflex_set_options)(int mode, int frameLimitUs, bool useMark
 
 HL_PRIM int HL_NAME(reflex_sleep)(sl::FrameToken* frameToken) {
 	CHECK_SL_FUNC(slReflexSleep);
+	hl_blocking(true);
 	sl::Result res = slFuncs::slReflexSleep(*frameToken);
+	hl_blocking(false);
 	return static_cast<int>(res);
 }
 
