@@ -82,7 +82,7 @@ enum abstract VkAttachmentStoreOp(Int) {
 
 	@:noCompletion
 	inline function set_stencil(v:Int) {
-		g = haxe.io.FPHelper.floatToI32(v);
+		g = haxe.io.FPHelper.i32ToFloat(v);
 		return v;
 	}
 }
@@ -134,7 +134,7 @@ typedef VkClearColorValue = VkClearValue;
 
 	@:noCompletion
 	inline function set_stencil(v:Int) {
-		g = haxe.io.FPHelper.floatToI32(v);
+		g = haxe.io.FPHelper.i32ToFloat(v);
 		return v;
 	}
 }

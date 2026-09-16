@@ -150,6 +150,22 @@ enum abstract VkDynamicState(Int) {
 	final DEPTH_BOUNDS_TEST_ENABLE_EXT = 1000267009;
 	final STENCIL_TEST_ENABLE_EXT = 1000267010;
 	final STENCIL_OP_EXT = 1000267011;
+	final DEPTH_BIAS_ENABLE_EXT = 1000377002;
+}
+
+@:struct class VkPipelineRenderingCreateInfo {
+	var type:VkStructureType;
+	var next:NextPtr;
+
+	public var viewMask:Int;
+	public var colorAttachmentCount:Int;
+	public var colorAttachmentFormats:IntArray<VkFormat>;
+	public var depthAttachmentFormat:VkFormat;
+	public var stencilAttachmentFormat:VkFormat;
+
+	public function new() {
+		type = PIPELINE_RENDERING_CREATE_INFO;
+	}
 }
 
 enum abstract VkFilter(Int) {
@@ -164,6 +180,22 @@ enum abstract VkFrontFace(Int) {
 }
 
 abstract VkGraphicsPipeline(hl.Abstract<"vk_gpipeline">) {}
+abstract VkComputePipeline(hl.Abstract<"vk_gpipeline">) {}
+
+@:struct class VkComputePipelineCreateInfo {
+	var type:VkStructureType;
+	var next:NextPtr;
+
+	public var flags:haxe.EnumFlags<VkPipelineCreateFlags>;
+	public var stage:VkPipelineShaderStage;
+	public var layout:VkPipelineLayout;
+	public var basePipelineHandle:VkComputePipeline;
+	public var basePipelineIndex:Int;
+
+	public function new() {
+		type = COMPUTE_PIPELINE_CREATE_INFO;
+	}
+}
 
 @:struct class VkGraphicsPipelineCreateInfo {
 	var type:VkStructureType;
@@ -284,14 +316,14 @@ enum VkPipelineCreateFlags {
 	public var frontFail:VkStencilOp;
 	public var frontPass:VkStencilOp;
 	public var frontDepthFail:VkStencilOp;
-	public var frontCompare:VkStencilOp;
+	public var frontCompare:VkCompareOp;
 	public var frontMask:Int;
 	public var frontWrite:Int;
 	public var frontReference:Int;
 	public var backFail:VkStencilOp;
 	public var backPass:VkStencilOp;
 	public var backDepthFail:VkStencilOp;
-	public var backCompare:VkStencilOp;
+	public var backCompare:VkCompareOp;
 	public var backMask:Int;
 	public var backWrite:Int;
 	public var backReference:Int;

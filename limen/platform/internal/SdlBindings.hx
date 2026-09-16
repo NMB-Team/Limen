@@ -153,7 +153,8 @@ class SdlBindings {
 
 	public static function messageBox(title:hl.Bytes, text:hl.Bytes, icon:Int):Void {}
 
-	public static function showOpenFileDialog(callback:Int -> hl.NativeArray<hl.Bytes> -> hl.Bytes -> Int -> Void, window:WinPtr, filterNames:hl.NativeArray<hl.Bytes>, filterPatterns:hl.NativeArray<hl.Bytes>, defaultLocation:hl.Bytes, allowMultiple:Bool):Void {}
+	public static function showOpenFileDialog(callback:Int -> hl.NativeArray<hl.Bytes> -> hl.Bytes -> Int -> Void, window:WinPtr, filterNames:hl.NativeArray<hl.Bytes>, filterPatterns:hl.NativeArray<hl.Bytes>, defaultLocation:hl.Bytes,
+		allowMultiple:Bool):Void {}
 
 	public static function showOpenFolderDialog(callback:Int -> hl.NativeArray<hl.Bytes> -> hl.Bytes -> Int -> Void, window:WinPtr, defaultLocation:hl.Bytes, allowMultiple:Bool):Void {}
 
