@@ -582,7 +582,7 @@ HL_PRIM void HL_NAME(gl_buffer_sub_data)(int target, int offset, vbyte* data, in
 }
 
 HL_PRIM void HL_NAME(gl_get_buffer_sub_data)(int target, int offset, vbyte* data, int srcOffset, int srcLength) {
-	glGetBufferSubData(target, srcOffset, srcLength, data + offset);
+	glGetBufferSubData(target, offset, srcLength, data + srcOffset);
 }
 
 HL_PRIM void HL_NAME(gl_enable_vertex_attrib_array)(int attrib) {
@@ -663,7 +663,7 @@ HL_PRIM void HL_NAME(gl_draw_elements)(int mode, int count, int type, int start)
 	glDrawElements(mode, count, type, (void*)(int_val)start);
 }
 
-HL_PRIM void HL_NAME(gl_draw_arrays)(int mode, int first, int count, int start) {
+HL_PRIM void HL_NAME(gl_draw_arrays)(int mode, int first, int count) {
 	glDrawArrays(mode, first, count);
 }
 
