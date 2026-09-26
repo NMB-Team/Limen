@@ -158,7 +158,7 @@ abstract CommandQueue(Dx12Resource) {
 
 	public function wait(fence:Fence, value:Int64) {}
 
-	public function present(vsync:Bool) {}
+	public function present(interval:Int) {}
 
 	public function suspend() {}
 

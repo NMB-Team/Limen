@@ -33,7 +33,8 @@ class Surface {
 		VulkanBindings.shutdown();
 	}
 
-	function get_disposed():Bool {
+	@:noCompletion
+	private function get_disposed():Bool {
 		return nativeHandle == null;
 	}
 }

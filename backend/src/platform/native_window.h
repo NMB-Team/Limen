@@ -56,7 +56,7 @@ LIMEN_PLATFORM_API void limen_gl_swap_window(void* window);
 LIMEN_PLATFORM_API void limen_gl_make_current(void* window, void* context);
 LIMEN_PLATFORM_API void limen_gl_destroy_context(void* context);
 LIMEN_PLATFORM_API void limen_gl_configure(int major, int minor, int depth, int stencil, int flags, int samples);
-LIMEN_PLATFORM_API void limen_gl_set_vsync(bool enabled);
+LIMEN_PLATFORM_API bool limen_gl_set_swap_interval(int interval);
 LIMEN_PLATFORM_API void* limen_gl_get_proc_address(const char* name);
 
 LIMEN_PLATFORM_API bool limen_vulkan_create_surface(void* window, void* instance, uint64_t* surface);

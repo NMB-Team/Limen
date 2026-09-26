@@ -21,8 +21,8 @@ HL_PRIM void HL_NAME(gl_options)(int major, int minor, int depth, int stencil, i
 	limen_gl_configure(major, minor, depth, stencil, flags, samples);
 }
 
-HL_PRIM void HL_NAME(set_vsync)(bool enabled) {
-	limen_gl_set_vsync(enabled);
+HL_PRIM bool HL_NAME(set_swap_interval)(int interval) {
+	return limen_gl_set_swap_interval(interval);
 }
 
 HL_PRIM void HL_NAME(gl_context_destroy)(void* context) {
@@ -30,7 +30,7 @@ HL_PRIM void HL_NAME(gl_context_destroy)(void* context) {
 }
 
 DEFINE_PRIM(_VOID, gl_options, _I32 _I32 _I32 _I32 _I32 _I32);
-DEFINE_PRIM(_VOID, set_vsync, _BOOL);
+DEFINE_PRIM(_BOOL, set_swap_interval, _I32);
 DEFINE_PRIM(_VOID, gl_context_destroy, TGL);
 DEFINE_PRIM(TGL, win_get_glcontext, TWIN);
 DEFINE_PRIM(_VOID, win_swap_window, TWIN);

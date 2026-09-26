@@ -1298,11 +1298,12 @@ static bool reserve_retired_swapchain(VkContext ctx) {
 typedef struct {
 	int width;
 	int height;
-	int vsync;
+	int present_mode;
 	VkFormat format;
 	int actual_width;
 	int actual_height;
 	int transfer_source;
+	int actual_present_mode;
 } VkSwapchainInfo;
 
 HL_PRIM int HL_NAME(vk_init_swapchain)(VkContext ctx, VkSwapchainInfo* info, varray* outImages) {
@@ -1374,7 +1375,14 @@ HL_PRIM int HL_NAME(vk_init_swapchain)(VkContext ctx, VkSwapchainInfo* info, var
 		return wsi_status(result);
 	}
 	VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
-	if (!info->vsync) {
+	if (info->present_mode == -1) {
+		for (uint32_t i = 0; i < present_mode_count; i++) {
+			if (present_modes[i] == VK_PRESENT_MODE_FIFO_RELAXED_KHR) {
+				present_mode = VK_PRESENT_MODE_FIFO_RELAXED_KHR;
+				break;
+			}
+		}
+	} else if (info->present_mode == 0) {
 		for (uint32_t i = 0; i < present_mode_count; i++) {
 			if (present_modes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR) {
 				present_mode = VK_PRESENT_MODE_IMMEDIATE_KHR;
@@ -1478,6 +1486,7 @@ HL_PRIM int HL_NAME(vk_init_swapchain)(VkContext ctx, VkSwapchainInfo* info, var
 	info->format = format.format;
 	info->actual_width = (int)extent.width;
 	info->actual_height = (int)extent.height;
+	info->actual_present_mode = (int)present_mode;
 	snprintf(
 		ctx->wsi_report,
 		sizeof(ctx->wsi_report),

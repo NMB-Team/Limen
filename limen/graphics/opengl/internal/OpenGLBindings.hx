@@ -35,8 +35,10 @@ class OpenGLBindings {
 	@:hlNative("limen", "opengl_gl_options")
 	public static function configureContext(major:Int, minor:Int, depth:Int, stencil:Int, flags:Int, samples:Int):Void {}
 
-	@:hlNative("limen", "opengl_set_vsync")
-	public static function setVsync(enabled:Bool):Void {}
+	@:hlNative("limen", "opengl_set_swap_interval")
+	public static function setSwapInterval(interval:Int):Bool {
+		return false;
+	}
 
 	public static function init():Bool {
 		return false;

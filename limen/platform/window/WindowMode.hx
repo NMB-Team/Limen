@@ -27,7 +27,6 @@ enum abstract WindowMode(Int) {
 
 	/**
 		Uses SDL-managed borderless fullscreen at the current desktop resolution.
-
 		The desktop display mode is preserved.
 	**/
 	final DesktopFullscreen:WindowMode = 3;

@@ -31,7 +31,7 @@ class ExampleGL {
 			minimumMajor: 3,
 			minimumMinor: 3,
 			flags: Context.DOUBLE_BUFFER | Context.CORE_PROFILE,
-			vsync: false
+			presentMode: Immediate
 		});
 
 		final path = Sys.getCwd() + "/shaders/";

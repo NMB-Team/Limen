@@ -47,8 +47,8 @@ void limen_gl_configure(int major, int minor, int depth, int stencil, int flags,
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, samples > 1 ? samples : 0);
 }
 
-void limen_gl_set_vsync(bool enabled) {
-	SDL_GL_SetSwapInterval(enabled ? 1 : 0);
+bool limen_gl_set_swap_interval(int interval) {
+	return SDL_GL_SetSwapInterval(interval);
 }
 
 void* limen_gl_get_proc_address(const char* name) {

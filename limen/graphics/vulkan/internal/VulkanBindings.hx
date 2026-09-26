@@ -51,8 +51,7 @@ import limen.graphics.vulkan.render.RenderPass.VkRenderPass;
 import limen.graphics.vulkan.render.RenderPass.VkRenderPassCreateInfo;
 import limen.graphics.vulkan.sampler.Samplers.VkSampler;
 import limen.graphics.vulkan.sampler.Samplers.VkSamplerCreateInfo;
-
-import haxe.Int64;
+import limen.graphics.PresentMode;
 
 enum abstract ShaderKind(Int) {
 	final Vertex = 0;
@@ -78,16 +77,17 @@ enum abstract VkWsiStatus(Int) from Int to Int {
 @:struct class VkSwapchainInfo {
 	public var width:Int;
 	public var height:Int;
-	public var vsync:Int;
+	public var presentMode:PresentMode;
 	public var format:VkFormat;
 	public var actualWidth:Int;
 	public var actualHeight:Int;
 	public var transferSource:Int;
+	public var actualPresentMode:Int;
 
-	public function new(width:Int, height:Int, vsync:Bool) {
+	public function new(width:Int, height:Int, presentMode:PresentMode) {
 		this.width = width;
 		this.height = height;
-		this.vsync = vsync ? 1 : 0;
+		this.presentMode = presentMode;
 	}
 }
 

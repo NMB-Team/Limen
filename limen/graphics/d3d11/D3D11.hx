@@ -18,7 +18,7 @@ class D3D11 {
 		return new D3D11(driver);
 	}
 
-	function new(driver:Dx11DriverInstance) {
+	private function new(driver:Dx11DriverInstance) {
 		this.driver = driver;
 	}
 

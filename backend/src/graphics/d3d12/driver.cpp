@@ -250,6 +250,7 @@ typedef struct {
 	IDXGIFactory4* factory;
 	IDXGIAdapter3* adapter;
 	IDXGISwapChain4* swapchain;
+	bool allow_tearing;
 	ID3D12Device* device;
 	ID3D12Debug1* debug;
 	ID3D12DebugDevice* debugDevice;
@@ -392,6 +393,13 @@ HL_PRIM dx_driver* HL_NAME(create_sdl)(void* window, DriverInitFlag flags, uchar
 
 #ifndef HL_XBS
 	CHKERR(CreateDXGIFactory2(dxgiFlags, IID_PPV_ARGS(&drv->factory)));
+	IDXGIFactory5* factory5 = nullptr;
+	if (SUCCEEDED(drv->factory->QueryInterface(IID_PPV_ARGS(&factory5)))) {
+		BOOL allowTearing = FALSE;
+		if (SUCCEEDED(factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing))))
+			drv->allow_tearing = allowTearing == TRUE;
+		factory5->Release();
+	}
 
 	UINT index = 0;
 	IDXGIAdapter1* adapter = nullptr;
@@ -533,7 +541,7 @@ HL_PRIM void HL_NAME(resize)(ID3D12CommandQueue* directQueue, int width, int hei
 	dx_driver* drv = static_driver;
 #ifndef HL_XBS
 	if (drv->swapchain) {
-		CHKERR(drv->swapchain->ResizeBuffers(buffer_count, width, height, format, DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING));
+		CHKERR(drv->swapchain->ResizeBuffers(buffer_count, width, height, format, drv->allow_tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0));
 	} else {
 		DXGI_SWAP_CHAIN_DESC1 desc = {};
 		desc.Width = width;
@@ -543,7 +551,7 @@ HL_PRIM void HL_NAME(resize)(ID3D12CommandQueue* directQueue, int width, int hei
 		desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 		desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 		desc.SampleDesc.Count = 1;
-		desc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+		desc.Flags = drv->allow_tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
 
 		IDXGISwapChain1* swapchain = nullptr;
 		drv->factory->CreateSwapChainForHwnd(directQueue, drv->wnd, &desc, nullptr, nullptr, &swapchain);
@@ -1075,11 +1083,11 @@ HL_PRIM void HL_NAME(command_queue_wait)(ID3D12CommandQueue* q, ID3D12Fence* fen
 	q->Wait(fence, value);
 }
 
-HL_PRIM void HL_NAME(command_queue_present)(ID3D12CommandQueue* q, bool vsync) {
+HL_PRIM void HL_NAME(command_queue_present)(ID3D12CommandQueue* q, int interval) {
 	dx_driver* drv = static_driver;
 #ifndef HL_XBS
-	UINT syncInterval = vsync ? 1 : 0;
-	UINT presentFlags = syncInterval == 0 ? DXGI_PRESENT_ALLOW_TEARING : 0;
+	UINT syncInterval = interval == 0 ? 0 : 1;
+	UINT presentFlags = syncInterval == 0 && drv->allow_tearing ? DXGI_PRESENT_ALLOW_TEARING : 0;
 	CHKERR(drv->swapchain->Present(syncInterval, presentFlags));
 #else
 	D3D12XBOX_PRESENT_PLANE_PARAMETERS planeParameters = {};
@@ -1283,7 +1291,7 @@ DEFINE_PRIM(_VOID, command_queue_execute_command_list, _RES _RES);
 DEFINE_PRIM(_VOID, command_queue_execute_command_lists, _RES _ABSTRACT(hl_carray) _I32);
 DEFINE_PRIM(_VOID, command_queue_signal, _RES _RES _I64);
 DEFINE_PRIM(_VOID, command_queue_wait, _RES _RES _I64);
-DEFINE_PRIM(_VOID, command_queue_present, _RES _BOOL);
+DEFINE_PRIM(_VOID, command_queue_present, _RES _I32);
 DEFINE_PRIM(_VOID, command_queue_suspend, _RES);
 DEFINE_PRIM(_VOID, command_queue_resume, _RES);
 DEFINE_PRIM(_I64, command_queue_get_timestamp_frequency, _RES);
