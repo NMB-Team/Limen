@@ -9,6 +9,5 @@ typedef ContextOptions = {
 	?stencilBits:Int,
 	?samples:Int,
 	?flags:Int,
-	?presentMode:PresentMode,
-	?vsync:Bool // compatibility wrapper
+	?presentMode:PresentMode
 }

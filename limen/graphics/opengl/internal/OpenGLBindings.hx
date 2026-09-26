@@ -30,10 +30,19 @@ class OpenGLBindings {
 	public static function makeCurrent(window:WinPtr, context:ContextHandle):Void {}
 
 	@:hlNative("limen", "opengl_win_swap_window")
-	public static function swapWindow(window:WinPtr):Void {}
+	public static function swapWindow(window:WinPtr):Bool {
+		return false;
+	}
 
 	@:hlNative("limen", "opengl_gl_options")
-	public static function configureContext(major:Int, minor:Int, depth:Int, stencil:Int, flags:Int, samples:Int):Void {}
+	public static function configureContext(major:Int, minor:Int, depth:Int, stencil:Int, flags:Int, samples:Int):Bool {
+		return false;
+	}
+
+	@:hlNative("limen", "opengl_gl_context_info")
+	public static function getContextInfo():hl.Bytes {
+		return null;
+	}
 
 	@:hlNative("limen", "opengl_set_swap_interval")
 	public static function setSwapInterval(interval:Int):Bool {

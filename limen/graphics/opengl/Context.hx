@@ -19,7 +19,6 @@ class Context {
 
 	public var presentMode(default, null):Null<PresentMode>;
 	public var requestedPresentMode(default, null):PresentMode = VSync;
-	public var vsync(get, set):Bool;
 
 	private var presentModeAttempted:Bool = false;
 
@@ -37,32 +36,62 @@ class Context {
 		final maximumMajor = options?.maximumMajor ?? 4;
 		final maximumMinor = options?.maximumMinor ?? 6;
 		final flags = options?.flags ?? DOUBLE_BUFFER;
+
 		final versions = versionsInRange(minimumMajor, minimumMinor, maximumMajor, maximumMinor, (flags & ES_PROFILE) != 0);
+
 		final depth = options?.depthBits ?? 24;
 		final stencil = options?.stencilBits ?? 8;
 		final samples = options?.samples ?? 1;
 
+		final attempts:Array<String> = [];
+
 		for (version in versions) {
-			OpenGLBindings.configureContext(version.major, version.minor, depth, stencil, flags, samples);
+			final requested = 'OpenGL ${version.major}.${version.minor}' + ' depth=$depth' + ' stencil=$stencil' + ' samples=$samples';
+
+			if (!OpenGLBindings.configureContext(version.major, version.minor, depth, stencil, flags, samples)) {
+				final error = Platform.getError();
+				attempts.push('$requested\n  configuration failed: ${(error == null || error.length == 0 ? "Unknown SDL error" : error)}');
+				continue;
+			}
 
 			final handle = OpenGLBindings.createContext(window.nativeHandle);
-			if (handle == null)
+			if (handle == null) {
+				final error = Platform.getError();
+				attempts.push('$requested\n  configuration failed: ${(error == null || error.length == 0 ? "Unknown SDL error" : error)}');
 				continue;
+			}
 
 			OpenGLBindings.makeCurrent(window.nativeHandle, handle);
 
+			final info = OpenGLBindings.getContextInfo();
+			final actual = if (info == null) {
+				final error = Platform.getError();
+				error == null
+				|| error.length == 0 ? "Unavailable" : 'Unavailable: $error';
+			} else {
+				@:privateAccess String.fromUTF8(info);
+			}
+
 			if (OpenGLBindings.init() && validate()) {
 				final context = new Context(window, handle);
-				context.setPresentMode(options?.presentMode ?? (options?.vsync == false ? Immediate : VSync));
+				context.setPresentMode(options?.presentMode ?? VSync);
 				return context;
 			}
+
+			attempts.push('$requested\n  actual: $actual\n  OpenGL initialization/validation failed');
 
 			OpenGLBindings.destroyContext(handle);
 		}
 
-		final currentVersion:String = OpenGLBindings.getParameter(OpenGLBindings.VERSION);
 		final device = Platform.getDevices()[0] ?? "Unknown";
-		final message = 'Unable to create an OpenGL context for $device. Current OpenGL version: ${currentVersion ?? "Unavailable"}. OpenGL $minimumMajor.$minimumMinor+ is required.';
+		final message = [
+			'Unable to create an OpenGL context for $device.',
+			'Required OpenGL range: $minimumMajor.$minimumMinor - $maximumMajor.$maximumMinor',
+			'Requested depth=$depth stencil=$stencil samples=$samples',
+			"",
+			"Attempts:",
+			attempts.join("\n\n")
+		].join("\n");
 		onError(message);
 
 		return null;
@@ -88,15 +117,6 @@ class Context {
 			}
 
 		return false;
-	}
-
-	function get_vsync():Bool {
-		return requestedPresentMode != Immediate;
-	}
-
-	function set_vsync(enabled:Bool):Bool {
-		setPresentMode(enabled ? VSync : Immediate);
-		return enabled;
 	}
 
 	public static dynamic function onError(message:String):Void {
