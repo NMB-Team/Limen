@@ -24,6 +24,7 @@ typedef DisplayMode = limen.platform.display.DisplayMode;
 class Platform {
 	public static var graphicsDriver(default, null):GraphicsDriver = None;
 	public static var videoBackend(default, null):VideoBackend = Unknown;
+	public static var isMobile(default, null):Bool = false;
 
 	static var initDone = false;
 	static var isWin32 = false;
@@ -63,6 +64,7 @@ class Platform {
 		// detecting for actual system
 		isWin32 = SdlBindings.detectWin32();
 		isLinuxPlatform = SdlBindings.detectLinux();
+		isMobile = SdlBindings.detectMobile();
 	}
 
 	public static function setHint(name:String, value:String):Bool {

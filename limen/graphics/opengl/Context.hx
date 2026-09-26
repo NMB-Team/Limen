@@ -31,13 +31,15 @@ class Context {
 	}
 
 	public static function create(window:Window, ?options:ContextOptions):Context {
+		final flags = options?.flags ?? DOUBLE_BUFFER;
+		final isES = Platform.isMobile || (flags & ES_PROFILE) != 0;
+		final resolvedFlags = isES ? flags | ES_PROFILE : flags;
 		final minimumMajor = options?.minimumMajor ?? 2;
-		final minimumMinor = options?.minimumMinor ?? 1;
+		final minimumMinor = options?.minimumMinor ?? (isES ? 0 : 1);
 		final maximumMajor = options?.maximumMajor ?? 4;
 		final maximumMinor = options?.maximumMinor ?? 6;
-		final flags = options?.flags ?? DOUBLE_BUFFER;
 
-		final versions = versionsInRange(minimumMajor, minimumMinor, maximumMajor, maximumMinor, (flags & ES_PROFILE) != 0);
+		final versions = versionsInRange(minimumMajor, minimumMinor, maximumMajor, maximumMinor, isES);
 
 		final depth = options?.depthBits ?? 24;
 		final stencil = options?.stencilBits ?? 8;
@@ -48,7 +50,7 @@ class Context {
 		for (version in versions) {
 			final requested = 'OpenGL ${version.major}.${version.minor}' + ' depth=$depth' + ' stencil=$stencil' + ' samples=$samples';
 
-			if (!OpenGLBindings.configureContext(version.major, version.minor, depth, stencil, flags, samples)) {
+			if (!OpenGLBindings.configureContext(version.major, version.minor, depth, stencil, resolvedFlags, samples)) {
 				final error = Platform.getError();
 				attempts.push('$requested\n  configuration failed: ${(error == null || error.length == 0 ? "Unknown SDL error" : error)}');
 				continue;

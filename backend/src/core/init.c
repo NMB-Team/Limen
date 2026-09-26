@@ -82,6 +82,15 @@ HL_PRIM bool HL_NAME(detect_linux)() {
 }
 DEFINE_PRIM(_BOOL, detect_linux, _NO_ARG);
 
+HL_PRIM bool HL_NAME(detect_mobile)() {
+#ifdef HL_MOBILE
+	return true;
+#else
+	return false;
+#endif
+}
+DEFINE_PRIM(_BOOL, detect_mobile, _NO_ARG);
+
 HL_PRIM const char* HL_NAME(get_pref_path)(const char* org, const char* app) {
 	return SDL_GetPrefPath(org, app);
 }

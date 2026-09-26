@@ -40,6 +40,10 @@ class SdlBindings {
 		return false;
 	}
 
+	public static function detectMobile():Bool {
+		return false;
+	}
+
 	public static function eventLoop(event:Dynamic):Bool {
 		return false;
 	}
