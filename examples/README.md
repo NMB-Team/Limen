@@ -20,6 +20,10 @@ A minimal asynchronous open-file dialog with multiple selection and filters.
 
 A binary clipboard round-trip using a custom MIME type, including availability and MIME enumeration.
 
+### [Tray](tray/)
+
+A system tray icon with callbacks, a checkbox, a submenu and Quit.
+
 ### [Touch and Pen](touch-pen/)
 
 A black-on-white drawing canvas with pressure-sensitive pen and touch strokes.

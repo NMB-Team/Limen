@@ -27,6 +27,7 @@ HL_PRIM bool HL_NAME(init_once)() {
 DEFINE_PRIM(_BOOL, init_once, _NO_ARG);
 
 HL_PRIM void HL_NAME(quit)() {
+	limen_tray_clear_callbacks(); // clean callbacks of tray
 	limen_modules_unload();
 	SDL_Quit();
 #ifdef _WIN32

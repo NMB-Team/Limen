@@ -8,6 +8,9 @@ import limen.platform.internal.types.CursorPtr;
 import limen.platform.internal.types.GamepadPtr;
 import limen.platform.internal.types.JoystickPtr;
 import limen.platform.internal.types.SurfacePtr;
+import limen.platform.internal.types.TrayPtr;
+import limen.platform.internal.types.TrayMenuPtr;
+import limen.platform.internal.types.TrayEntryPtr;
 import limen.platform.window.WindowMode;
 
 @:noDoc
@@ -31,6 +34,56 @@ class SdlBindings {
 	}
 
 	public static function quit():Void {}
+
+	public static function trayCreate(icon:SurfacePtr, tooltip:hl.Bytes):TrayPtr {
+		return null;
+	}
+
+	public static function trayDestroy(tray:TrayPtr):Void {}
+
+	public static function traySetIcon(tray:TrayPtr, icon:SurfacePtr):Void {}
+
+	public static function traySetTooltip(tray:TrayPtr, tooltip:hl.Bytes):Void {}
+
+	public static function trayCreateMenu(tray:TrayPtr):TrayMenuPtr {
+		return null;
+	}
+
+	public static function trayCreateSubmenu(entry:TrayEntryPtr):TrayMenuPtr {
+		return null;
+	}
+
+	public static function trayInsertEntry(menu:TrayMenuPtr, label:hl.Bytes, kind:Int, checked:Bool):TrayEntryPtr {
+		return null;
+	}
+
+	public static function trayRemoveEntry(entry:TrayEntryPtr):Void {}
+
+	public static function traySetEntryLabel(entry:TrayEntryPtr, label:hl.Bytes):Void {}
+
+	public static function trayGetEntryLabel(entry:TrayEntryPtr):hl.Bytes {
+		return null;
+	}
+
+	public static function traySetEntryEnabled(entry:TrayEntryPtr, enabled:Bool):Void {}
+
+	public static function trayGetEntryEnabled(entry:TrayEntryPtr):Bool {
+		return false;
+	}
+
+	public static function traySetEntryChecked(entry:TrayEntryPtr, checked:Bool):Void {}
+
+	public static function trayGetEntryChecked(entry:TrayEntryPtr):Bool {
+		return false;
+	}
+
+	public static function traySetEntryCallback(entry:TrayEntryPtr, id:Int, checkbox:Bool):Void {}
+
+	public static function trayPollCallback(checked:hl.Ref<Bool>):Int {
+		return 0;
+	}
+
+	public static function trayUpdate():Void {}
 
 	public static function delay(milliseconds:Int):Void {}
 

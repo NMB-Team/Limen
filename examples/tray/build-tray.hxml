@@ -1,0 +1,6 @@
+-cp .
+-cp ../../
+
+-main ExampleTray
+
+-hl extray.hl

@@ -18,6 +18,7 @@ import limen.platform.system.dialog.MessageBox;
 import limen.platform.system.dialog.MessageBoxIcon;
 import limen.platform.system.Paths;
 import limen.platform.system.Time;
+import limen.platform.system.tray.Tray;
 
 class Platform {
 	public static var graphicsDriver(default, null):GraphicsDriver = None;
@@ -82,13 +83,16 @@ class Platform {
 		return true;
 	}
 
-	public static inline function pollEvent(target:Event):Bool {
-		return SdlBindings.eventLoop(target);
+	public static function pollEvent(target:Event):Bool {
+		final available = SdlBindings.eventLoop(target);
+		Tray.dispatchCallbacks();
+		return available;
 	}
 
 	public static function quit():Void {
 		if (!initDone)
 			return;
+		Tray.destroyAll();
 		SdlBindings.quit();
 
 		graphicsDriver = None;
