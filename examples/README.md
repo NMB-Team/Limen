@@ -16,6 +16,10 @@ A small rendering example using LIMEN's OpenGL integration.
 
 A minimal asynchronous open-file dialog with multiple selection and filters.
 
+### [Clipboard](clipboard/)
+
+A binary clipboard round-trip using a custom MIME type, including availability and MIME enumeration.
+
 ### [Touch and Pen](touch-pen/)
 
 A black-on-white drawing canvas with pressure-sensitive pen and touch strokes.

@@ -2,8 +2,12 @@ package limen.graphics.renderer.opengl.internal;
 
 import limen.platform.internal.types.WinPtr;
 
+@:noDoc
+@:noCompletion
 abstract ContextHandle(hl.Abstract<"limen_gl">) {}
 
+@:noDoc
+@:noCompletion
 @:hlNative("limen", "opengl_gl_")
 class OpenGLBindings {
 	@:hlNative("limen", "opengl_win_get_glcontext")

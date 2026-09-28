@@ -62,6 +62,8 @@ enum abstract ShaderKind(Int) {
 	final TessellationEvaluation = 5;
 }
 
+@:noDoc
+@:noCompletion
 abstract VkShaderCompiler(hl.Abstract<"vk_shader_compiler">) {}
 
 enum abstract VkWsiStatus(Int) from Int to Int {
@@ -476,6 +478,8 @@ abstract VkContext(hl.Abstract<"vk_context">) {
 
 abstract VkSurface(hl.Bytes) {}
 
+@:noDoc
+@:noCompletion
 @:hlNative("limen", "vulkan_vk_")
 class VulkanBindings {
 	public static var ENABLE_VALIDATION = false;

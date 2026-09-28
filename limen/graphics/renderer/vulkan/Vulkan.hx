@@ -36,18 +36,22 @@ class Vulkan {
 		return detail.length == 0 ? prefix : '$prefix: $detail';
 	}
 
+	@:noCompletion
 	static function get_diagnostics():String {
 		return @:privateAccess String.fromUTF8(VulkanBindings.instanceReport());
 	}
 
+	@:noCompletion
 	static function get_loaderApiVersion():Int {
 		return VulkanBindings.loaderApiVersion();
 	}
 
+	@:noCompletion
 	static function get_instanceApiVersion():Int {
 		return VulkanBindings.instanceApiVersion();
 	}
 
+	@:noCompletion
 	static function get_validationEnabled():Bool {
 		return VulkanBindings.validationEnabled();
 	}

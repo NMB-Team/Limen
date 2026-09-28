@@ -10,6 +10,8 @@ import limen.platform.internal.types.JoystickPtr;
 import limen.platform.internal.types.SurfacePtr;
 import limen.platform.window.WindowMode;
 
+@:noDoc
+@:noCompletion
 @:hlNative("limen")
 class SdlBindings {
 	public static function initOnce():Bool {
@@ -144,6 +146,26 @@ class SdlBindings {
 	}
 
 	public static function getClipboardText():hl.Bytes {
+		return null;
+	}
+
+	public static function hasClipboardText():Bool {
+		return false;
+	}
+
+	public static function hasClipboardData(mimeType:hl.Bytes):Bool {
+		return false;
+	}
+
+	public static function getClipboardData(mimeType:hl.Bytes, size:hl.Ref<Int>):hl.Bytes {
+		return null;
+	}
+
+	public static function setClipboardData(mimeType:hl.Bytes, data:hl.Bytes, size:Int):Bool {
+		return false;
+	}
+
+	public static function getClipboardMimeTypes():hl.NativeArray<hl.Bytes> {
 		return null;
 	}
 

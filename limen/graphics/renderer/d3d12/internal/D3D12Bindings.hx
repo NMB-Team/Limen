@@ -40,15 +40,16 @@ import limen.platform.window.Window;
 abstract CompilerHandle(hl.Abstract<"dx_compiler">) {}
 typedef Adapter = hl.Abstract<"dx_adapter">;
 typedef Factory = hl.Abstract<"dx_factory">;
+typedef Device = hl.Abstract<"dx_device">;
 
+@:noDoc
+@:noCompletion
 enum abstract Constant(Int) to Int {
 	public final TEXTURE_DATA_PITCH_ALIGNMENT = 0;
 	public final TEXTURE_DATA_PLACEMENT_ALIGNMENT = 1;
 	public final DESCRIPTOR_RANGE_OFFSET_APPEND = 2;
 	public final RESOURCE_BARRIER_ALL_SUBRESOURCES = 3;
 }
-
-typedef Device = hl.Abstract<"dx_device">;
 
 @:hlNative("limen", "d3d12_")
 class D3D12Bindings {
@@ -201,6 +202,9 @@ enum Dx12DriverInitFlag {
 }
 
 typedef Dx12DriverInitFlags = haxe.EnumFlags<Dx12DriverInitFlag>;
+
+@:noDoc
+@:noCompletion
 typedef Dx12DriverInstance = hl.Abstract<"dx_driver">;
 
 enum abstract Dx12Feature(Int) {

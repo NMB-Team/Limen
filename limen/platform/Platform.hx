@@ -3,7 +3,6 @@ package limen.platform;
 import haxe.Int64;
 
 import limen.platform.window.Window;
-import limen.platform.internal.types.WinPtr;
 import limen.graphics.GraphicsDriver;
 import limen.platform.display.Display;
 import limen.platform.display.DisplayId;
@@ -199,8 +198,8 @@ class Platform {
 		return Keyboard.layout();
 	}
 
-	public static inline function getRefreshRate(window:WinPtr):Int {
-		return SdlBindings.getRefreshRate(window);
+	public static inline function getRefreshRate(window:Window):Int {
+		return SdlBindings.getRefreshRate(window.nativeHandle);
 	}
 
 	public static inline function setDragAndDropEnabled(enabled:Bool):Void {

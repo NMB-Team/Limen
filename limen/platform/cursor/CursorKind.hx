@@ -1,5 +1,12 @@
 package limen.platform.cursor;
 
+/**
+	Selects a standard system cursor shape for Cursor.createSystem().
+
+	Each shape communicates an interaction, such as selecting text, resizing,
+	or waiting for an operation. Its appearance depends on the platform and
+	the user's cursor theme. Use Cursor.set() to activate the created cursor.
+**/
 enum abstract CursorKind(Int) {
 	/**
 		The standard arrow pointer used for general pointing and selection.

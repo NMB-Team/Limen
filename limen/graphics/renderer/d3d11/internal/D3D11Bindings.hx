@@ -7,8 +7,12 @@ import limen.graphics.renderer.d3d11.DX11Core.PresentFlags;
 import limen.graphics.renderer.d3d11.resource.Resources.Resource;
 import limen.platform.window.Window;
 
+@:noDoc
+@:noCompletion
 typedef Dx11DriverInstance = hl.Abstract<"dx_driver">;
 
+@:noDoc
+@:noCompletion
 @:hlNative("limen", "d3d11_")
 class D3D11Bindings {
 	public static var fullScreen(get, set):Bool;
