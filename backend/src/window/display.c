@@ -120,7 +120,7 @@ HL_PRIM varray* HL_NAME(get_display_modes)(int display_index) {
 		vdynamic* object = (vdynamic*)hl_alloc_dynobj();
 		hl_dyn_seti(object, hl_hash_utf8("width"), &hlt_i32, modes[i]->w);
 		hl_dyn_seti(object, hl_hash_utf8("height"), &hlt_i32, modes[i]->h);
-		hl_dyn_seti(object, hl_hash_utf8("framerate"), &hlt_i32, (int)modes[i]->refresh_rate);
+		hl_dyn_setd(object, hl_hash_utf8("refreshRate"), modes[i]->refresh_rate);
 		hl_aptr(result, vdynamic*)[i] = object;
 	}
 	SDL_free(modes);
@@ -138,7 +138,7 @@ HL_PRIM vdynobj* HL_NAME(get_current_display_mode)(int display_index, bool deskt
 	vdynamic* object = (vdynamic*)hl_alloc_dynobj();
 	hl_dyn_seti(object, hl_hash_utf8("width"), &hlt_i32, mode->w);
 	hl_dyn_seti(object, hl_hash_utf8("height"), &hlt_i32, mode->h);
-	hl_dyn_seti(object, hl_hash_utf8("framerate"), &hlt_i32, (int)mode->refresh_rate);
+	hl_dyn_setd(object, hl_hash_utf8("refreshRate"), mode->refresh_rate);
 	return (vdynobj*)object;
 }
 DEFINE_PRIM(_DYN, get_current_display_mode, _I32 _BOOL);
