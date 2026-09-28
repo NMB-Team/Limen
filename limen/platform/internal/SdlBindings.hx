@@ -122,6 +122,45 @@ class SdlBindings {
 		return null;
 	}
 
+	public static function getPowerState():Int {
+		return 0;
+	}
+
+	public static function getBatteryPercent():Int {
+		return -1;
+	}
+
+	public static function getSystemTheme():Int {
+		return 0;
+	}
+
+	public static function getPlatform():hl.Bytes {
+		return null;
+	}
+
+	public static function getBasePath():hl.Bytes {
+		return null;
+	}
+
+	public static function getCurrentDirectory():hl.Bytes {
+		return null;
+	}
+
+	@:hlNative("limen", "get_ticks")
+	public static function getTicks():Int64 {
+		return 0;
+	}
+
+	@:hlNative("limen", "get_performance_counter")
+	public static function getPerformanceCounter():Int64 {
+		return 0;
+	}
+
+	@:hlNative("limen", "get_performance_frequency")
+	public static function getPerformanceFrequency():Int64 {
+		return 0;
+	}
+
 	public static function getDevices():hl.NativeArray<hl.Bytes> {
 		return null;
 	}

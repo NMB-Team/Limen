@@ -104,6 +104,7 @@ add_library(limen SHARED
 	backend/src/core/init.c
 	backend/src/core/graphics_driver.c
 	backend/src/core/module_loader.c
+	backend/src/core/system.c
 	backend/src/core/time.c
 	backend/src/input/events.c
 	backend/src/input/gamepad.c

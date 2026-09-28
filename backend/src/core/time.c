@@ -16,3 +16,18 @@ HL_PRIM int64_t HL_NAME(get_timestamp)() {
 	return (int64_t)SDL_GetTicksNS();
 }
 DEFINE_PRIM(_I64, get_timestamp, _NO_ARG);
+
+HL_PRIM int64_t HL_NAME(get_ticks)() {
+	return (int64_t)SDL_GetTicks();
+}
+DEFINE_PRIM(_I64, get_ticks, _NO_ARG);
+
+HL_PRIM int64_t HL_NAME(get_performance_counter)() {
+	return (int64_t)SDL_GetPerformanceCounter();
+}
+DEFINE_PRIM(_I64, get_performance_counter, _NO_ARG);
+
+HL_PRIM int64_t HL_NAME(get_performance_frequency)() {
+	return (int64_t)SDL_GetPerformanceFrequency();
+}
+DEFINE_PRIM(_I64, get_performance_frequency, _NO_ARG);
