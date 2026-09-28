@@ -2,7 +2,8 @@ package limen.platform.event;
 
 import haxe.Int64;
 
-@:keep class Event {
+@:keep
+class Event {
 	public var type:EventType;
 	public var mouseX:Int;
 	public var mouseY:Int;

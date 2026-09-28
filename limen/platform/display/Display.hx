@@ -2,17 +2,6 @@ package limen.platform.display;
 
 import limen.platform.internal.SdlBindings;
 
-abstract DisplayId(Int) from Int to Int {}
-
-typedef DisplayInfo = {
-	var id:DisplayId;
-	var name:String;
-	var x:Int;
-	var y:Int;
-	var width:Int;
-	var height:Int;
-}
-
 class Display {
 	public static function all():Array<DisplayInfo> {
 		final displays = SdlBindings.getDisplays();

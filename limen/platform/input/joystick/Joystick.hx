@@ -2,7 +2,7 @@ package limen.platform.input.joystick;
 
 import limen.platform.Platform;
 import limen.platform.internal.SdlBindings;
-import limen.platform.internal.NativeTypes.JoystickPtr;
+import limen.platform.internal.types.JoystickPtr;
 
 class Joystick {
 	var ptr:JoystickPtr;

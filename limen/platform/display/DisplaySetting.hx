@@ -1,7 +1,3 @@
 package limen.platform.display;
 
-typedef DisplaySetting = {
-	var width:Int;
-	var height:Int;
-	var framerate:Int;
-}
+typedef DisplaySetting = {width:Int, height:Int, refreshRate:Float}

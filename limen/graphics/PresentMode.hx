@@ -1,5 +1,12 @@
 package limen.graphics;
 
+/**
+	Controls how rendered frames are presented relative to the display refresh cycle.
+
+	The selected mode affects synchronization, presentation latency, and screen
+	tearing. Supported modes and fallback behavior depend on the graphics backend,
+	platform, and display configuration.
+**/
 enum abstract PresentMode(Int) from Int to Int {
 	/**
 		Presents frames immediately without waiting for vertical synchronization.

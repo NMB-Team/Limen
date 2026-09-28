@@ -2,12 +2,12 @@ package limen.platform.internal;
 
 import haxe.Int64;
 
-import limen.platform.Platform.DisplayId;
-import limen.platform.internal.NativeTypes.WinPtr;
-import limen.platform.internal.NativeTypes.CursorPtr;
-import limen.platform.internal.NativeTypes.GamepadPtr;
-import limen.platform.internal.NativeTypes.JoystickPtr;
-import limen.platform.internal.NativeTypes.SurfacePtr;
+import limen.platform.display.DisplayId;
+import limen.platform.internal.types.WinPtr;
+import limen.platform.internal.types.CursorPtr;
+import limen.platform.internal.types.GamepadPtr;
+import limen.platform.internal.types.JoystickPtr;
+import limen.platform.internal.types.SurfacePtr;
 import limen.platform.window.WindowMode;
 
 @:hlNative("limen")
@@ -230,7 +230,7 @@ class SdlBindings {
 
 	public static function winCenter(win:WinPtr, centerPrimary:Bool):Void {}
 
-	public static function winSetDisplayMode(win:WinPtr, width:Int, height:Int, framerate:Int):Bool {
+	public static function winSetDisplayMode(win:WinPtr, width:Int, height:Int, refreshRate:Float):Bool {
 		return false;
 	}
 

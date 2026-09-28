@@ -1,10 +1,12 @@
 package;
 
 import limen.graphics.GraphicsDriver;
-import limen.graphics.opengl.Context;
-import limen.graphics.opengl.OpenGLTypes.Program;
-import limen.graphics.opengl.OpenGLTypes.Shader;
-import limen.graphics.opengl.internal.OpenGLBindings as GL;
+import limen.graphics.renderer.opengl.OpenGL;
+import limen.graphics.renderer.opengl.shader.Shaders.Program;
+import limen.graphics.renderer.opengl.shader.Shaders.Shader;
+import limen.graphics.renderer.opengl.command.Commands;
+import limen.graphics.renderer.opengl.shader.Shaders;
+import limen.graphics.renderer.opengl.vertex.VertexArrays;
 import limen.platform.Platform;
 import limen.platform.window.Window;
 import limen.platform.window.WindowFlags;
@@ -27,10 +29,10 @@ class ExampleGL {
 			resizable: true
 		});
 
-		final context = Context.create(window, {
+		final context = OpenGL.create(window, {
 			minimumMajor: 3,
 			minimumMinor: 3,
-			flags: Context.DOUBLE_BUFFER | Context.CORE_PROFILE,
+			flags: OpenGL.DOUBLE_BUFFER | OpenGL.CORE_PROFILE,
 			presentMode: Immediate
 		});
 
@@ -39,14 +41,14 @@ class ExampleGL {
 		final fragmentSource = sys.io.File.getContent(path + "demo.frag");
 
 		final program = createProgram(vertexSource, fragmentSource);
-		final vao = GL.createVertexArray();
+		final vao = VertexArrays.createVertexArray();
 
-		GL.bindVertexArray(vao);
-		GL.useProgram(program);
+		VertexArrays.bindVertexArray(vao);
+		Shaders.useProgram(program);
 
-		final timeUniform = GL.getUniformLocation(program, "uTime");
-		final resolutionUniform = GL.getUniformLocation(program, "uResolution");
-		final mouseUniform = GL.getUniformLocation(program, "uMouse");
+		final timeUniform = Shaders.getUniformLocation(program, "uTime");
+		final resolutionUniform = Shaders.getUniformLocation(program, "uResolution");
+		final mouseUniform = Shaders.getUniformLocation(program, "uMouse");
 
 		final event = new Event();
 
@@ -79,19 +81,19 @@ class ExampleGL {
 			final width = window.width;
 			final height = window.height;
 
-			GL.viewport(0, 0, width, height);
+			Commands.viewport(0, 0, width, height);
 
-			GL.clearColor(0.02, 0.025, 0.05, 1.0);
-			GL.clear(GL.COLOR_BUFFER_BIT);
+			Commands.clearColor(0.02, 0.025, 0.05, 1.0);
+			Commands.clear(Commands.COLOR_BUFFER_BIT);
 
-			GL.useProgram(program);
+			Shaders.useProgram(program);
 
-			GL.uniform1f(timeUniform, Platform.getTime());
-			GL.uniform2f(resolutionUniform, width, height);
+			Shaders.uniform1f(timeUniform, Platform.getTime());
+			Shaders.uniform2f(resolutionUniform, width, height);
 
 			// SDL mouse coordinates start at the top-left, while OpenGL starts at the bottom-left
-			GL.uniform2f(mouseUniform, mouseX, height - mouseY);
-			GL.drawArrays(GL.TRIANGLES, 0, 3);
+			Shaders.uniform2f(mouseUniform, mouseX, height - mouseY);
+			Commands.drawArrays(Commands.TRIANGLES, 0, 3);
 
 			context.present();
 
@@ -111,8 +113,8 @@ class ExampleGL {
 			}
 		}
 
-		GL.deleteVertexArray(vao);
-		GL.deleteProgram(program);
+		VertexArrays.deleteVertexArray(vao);
+		Shaders.deleteProgram(program);
 
 		context.destroy();
 		window.destroy();
@@ -121,32 +123,32 @@ class ExampleGL {
 	}
 
 	static function createProgram(vertexSource:String, fragmentSource:String):Program {
-		final vertex = compileShader(GL.VERTEX_SHADER, vertexSource);
-		final fragment = compileShader(GL.FRAGMENT_SHADER, fragmentSource);
+		final vertex = compileShader(Shaders.VERTEX_SHADER, vertexSource);
+		final fragment = compileShader(Shaders.FRAGMENT_SHADER, fragmentSource);
 
-		final program = GL.createProgram();
+		final program = Shaders.createProgram();
 
-		GL.attachShader(program, vertex);
-		GL.attachShader(program, fragment);
-		GL.linkProgram(program);
+		Shaders.attachShader(program, vertex);
+		Shaders.attachShader(program, fragment);
+		Shaders.linkProgram(program);
 
-		if (GL.getProgramParameter(program, GL.LINK_STATUS) != 1)
-			throw 'Failed to link shader:\n${GL.getProgramInfoLog(program)}';
+		if (Shaders.getProgramParameter(program, Shaders.LINK_STATUS) != 1)
+			throw 'Failed to link shader:\n${Shaders.getProgramInfoLog(program)}';
 
-		GL.deleteShader(vertex);
-		GL.deleteShader(fragment);
+		Shaders.deleteShader(vertex);
+		Shaders.deleteShader(fragment);
 
 		return program;
 	}
 
 	static function compileShader(type:Int, source:String):Shader {
-		final shader = GL.createShader(type);
+		final shader = Shaders.createShader(type);
 
-		GL.shaderSource(shader, source);
-		GL.compileShader(shader);
+		Shaders.shaderSource(shader, source);
+		Shaders.compileShader(shader);
 
-		if (GL.getShaderParameter(shader, GL.COMPILE_STATUS) != 1)
-			throw 'Failed to compile shader:\n${GL.getShaderInfoLog(shader)}';
+		if (Shaders.getShaderParameter(shader, Shaders.COMPILE_STATUS) != 1)
+			throw 'Failed to compile shader:\n${Shaders.getShaderInfoLog(shader)}';
 
 		return shader;
 	}

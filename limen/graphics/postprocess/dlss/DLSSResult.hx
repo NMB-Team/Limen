@@ -1,0 +1,44 @@
+package limen.graphics.postprocess.dlss;
+
+enum abstract DLSSResult(Int) {
+	final Ok = 0;
+	final ErrorIO = 1;
+	final ErrorDriverOutOfDate = 2;
+	final ErrorOSOutOfDate = 3;
+	final ErrorOSDisabledHWS = 4;
+	final ErrorDeviceNotCreated = 5;
+	final ErrorNoSupportedAdapterFound = 6;
+	final ErrorAdapterNotSupported = 7;
+	final ErrorNoPlugins = 8;
+	final ErrorVulkanAPI = 9;
+	final ErrorDXGIAPI = 10;
+	final ErrorD3DAPI = 11;
+	final ErrorNRDAPI = 12;
+	final ErrorNVAPI = 13;
+	final ErrorReflexAPI = 14;
+	final ErrorNGXFailed = 15;
+	final ErrorJSONParsing = 16;
+	final ErrorMissingProxy = 17;
+	final ErrorMissingResourceState = 18;
+	final ErrorInvalidIntegration = 19;
+	final ErrorMissingInputParameter = 20;
+	final ErrorNotInitialized = 21;
+	final ErrorComputeFailed = 22;
+	final ErrorInitNotCalled = 23;
+	final ErrorExceptionHandler = 24;
+	final ErrorInvalidParameter = 25;
+	final ErrorMissingConstants = 26;
+	final ErrorDuplicatedConstants = 27;
+	final ErrorMissingOrInvalidAPI = 28;
+	final ErrorCommonConstantsMissing = 29;
+	final ErrorUnsupportedInterface = 30;
+	final ErrorFeatureMissing = 31;
+	final ErrorFeatureNotSupported = 32;
+	final ErrorFeatureMissingHooks = 33;
+	final ErrorFeatureFailedToLoad = 34;
+	final ErrorFeatureWrongPriority = 35;
+	final ErrorFeatureMissingDependency = 36;
+	final ErrorFeatureManagerInvalidState = 37;
+	final ErrorInvalidState = 38;
+	final WarnOutOfVRAM = 39;
+}

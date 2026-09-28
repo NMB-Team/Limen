@@ -1,5 +1,13 @@
 package limen.graphics;
 
+/**
+	Identifies the graphics API used by Limen for GPU rendering.
+
+	Platform.init() accepts a preferred driver and an optional list of supported
+	drivers. Platform.graphicsDriver reports the selected driver, which may differ
+	from the preference when a fallback is used. None disables graphics rendering
+	while keeping platform, window, and input functionality available.
+**/
 enum abstract GraphicsDriver(Int) from Int to Int {
 	/**
 		No graphics driver is selected or available.

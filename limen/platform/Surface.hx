@@ -1,7 +1,7 @@
 package limen.platform;
 
 import limen.platform.internal.SdlBindings;
-import limen.platform.internal.NativeTypes.SurfacePtr;
+import limen.platform.internal.types.SurfacePtr;
 
 abstract Surface(SurfacePtr) {
 	public inline function free() {

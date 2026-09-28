@@ -2,7 +2,7 @@ package limen.platform.cursor;
 
 import limen.platform.Surface;
 import limen.platform.internal.SdlBindings;
-import limen.platform.internal.NativeTypes.CursorPtr;
+import limen.platform.internal.types.CursorPtr;
 
 abstract Cursor(CursorPtr) {
 	public static function create(surface:Surface, hotX:Int, hotY:Int):Cursor {

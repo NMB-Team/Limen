@@ -70,11 +70,22 @@ Graphics backends own their context and device setup.
 For example, an OpenGL window uses `WindowFlags.SDL_WINDOW_OPENGL` and
 
 ```haxe
-limen.graphics.opengl.Context.create(window)
+limen.graphics.renderer.opengl.OpenGL.create(window)
 ```
 
+OpenGL rendering operations are public modules under
+`limen.graphics.renderer.opengl`: `command.Commands`, `device.Capabilities`,
+`format.Formats`, `pipeline.State`, `query.Queries`, `render.Framebuffers`,
+`resource.Buffers`, `resource.Textures`, `shader.Shaders`, and `vertex.VertexArrays`.
+Resource handles and related constants live in their owning modules;
+`internal.OpenGLBindings` handles context setup and lifecycle only.
+
 D3D12 concepts live under
-`limen.graphics.d3d12.command`, `descriptor`, `pipeline`, `query`, `resource`, and `shader`.
+`limen.graphics.renderer.d3d12.command`, `descriptor`, `pipeline`, `query`, `resource`, and `shader`.
+
+D3D11 uses matching `command`, `descriptor`, `pipeline`, `resource`, and `shader`
+packages under `limen.graphics.renderer.d3d11`. Shader compilation lives in
+`shader.ShaderCompiler`; rendering commands live in `command.Commands`.
 
 Vulkan follows the equivalent package structure.
 

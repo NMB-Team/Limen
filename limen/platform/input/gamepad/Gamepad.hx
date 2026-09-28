@@ -2,7 +2,7 @@ package limen.platform.input.gamepad;
 
 import limen.platform.Platform;
 import limen.platform.internal.SdlBindings;
-import limen.platform.internal.NativeTypes.GamepadPtr;
+import limen.platform.internal.types.GamepadPtr;
 
 class Gamepad {
 	var ptr:GamepadPtr;

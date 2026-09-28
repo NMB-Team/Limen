@@ -1,12 +1,11 @@
 package limen.platform.window;
 
-import limen.platform.Platform.DisplayId;
 import limen.platform.Surface;
+import limen.platform.display.DisplayId;
 import limen.platform.display.DisplaySetting;
 import limen.platform.internal.SdlBindings;
 import limen.platform.window.WindowFlags.*;
-import limen.platform.window.WindowMode.*;
-import limen.platform.internal.NativeTypes.WinPtr;
+import limen.platform.internal.types.WinPtr;
 
 class Window {
 	public var id(get, never):Int;
@@ -88,8 +87,8 @@ class Window {
 		SdlBindings.winSetMaximized(win, maximized);
 	}
 
-	public inline function setDisplayMode(width:Int, height:Int, framerate:Int):Bool {
-		return SdlBindings.winSetDisplayMode(win, width, height, framerate);
+	public inline function setDisplayMode(width:Int, height:Int, refreshRate:Float):Bool {
+		return SdlBindings.winSetDisplayMode(win, width, height, refreshRate);
 	}
 
 	public inline function setPosition(x:Int, y:Int):Void {
@@ -178,7 +177,7 @@ class Window {
 	@:noCompletion
 	private function set_displayMode(mode:WindowMode):WindowMode {
 		if (mode == ExclusiveFullscreen && displaySetting != null)
-			SdlBindings.winSetDisplayMode(win, displaySetting.width, displaySetting.height, displaySetting.framerate);
+			SdlBindings.winSetDisplayMode(win, displaySetting.width, displaySetting.height, displaySetting.refreshRate);
 		if (SdlBindings.winSetFullscreen(win, mode))
 			displayMode = mode;
 		return displayMode;

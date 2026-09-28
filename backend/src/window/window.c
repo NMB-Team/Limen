@@ -128,10 +128,10 @@ HL_PRIM bool HL_NAME(win_set_fullscreen)(SDL_Window* window, int mode) {
 }
 DEFINE_PRIM(_BOOL, win_set_fullscreen, TWIN _I32);
 
-HL_PRIM bool HL_NAME(win_set_display_mode)(SDL_Window* window, int width, int height, int framerate) {
+HL_PRIM bool HL_NAME(win_set_display_mode)(SDL_Window* window, int width, int height, double refresh_rate) {
 	SDL_DisplayMode mode;
 	SDL_DisplayID display = SDL_GetDisplayForWindow(window);
-	if (!SDL_GetClosestFullscreenDisplayMode(display, width, height, (float)framerate, true, &mode)) {
+	if (!SDL_GetClosestFullscreenDisplayMode(display, width, height, (float)refresh_rate, true, &mode)) {
 		return false;
 	}
 	bool result = SDL_SetWindowFullscreenMode(window, &mode);
@@ -139,7 +139,7 @@ HL_PRIM bool HL_NAME(win_set_display_mode)(SDL_Window* window, int width, int he
 		sync_window_state(window);
 	return result;
 }
-DEFINE_PRIM(_BOOL, win_set_display_mode, TWIN _I32 _I32 _I32);
+DEFINE_PRIM(_BOOL, win_set_display_mode, TWIN _I32 _I32 _F64);
 
 HL_PRIM int HL_NAME(win_display_handle)(SDL_Window* window) {
 	return limen_display_index_from_id(SDL_GetDisplayForWindow(window));
