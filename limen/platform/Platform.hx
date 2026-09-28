@@ -12,7 +12,7 @@ import limen.platform.event.Event;
 import limen.platform.input.Keyboard;
 import limen.platform.input.Mouse;
 import limen.platform.input.TextInput;
-import limen.platform.internal.SdlBindings;
+import limen.platform.internal.SDLBindings;
 import limen.platform.system.Clipboard;
 import limen.platform.system.dialog.MessageBox;
 import limen.platform.system.dialog.MessageBoxIcon;
@@ -35,7 +35,7 @@ class Platform {
 	public static function init(preferredGraphicsDriver:GraphicsDriver = OpenGL, ?supportedGraphicsDrivers:Array<GraphicsDriver>):Void {
 		if (initDone)
 			return;
-		if (!SdlBindings.initOnce())
+		if (!SDLBindings.initOnce())
 			throw "Failed to init SDL";
 
 		videoBackend = detectVideoBackend();
@@ -49,10 +49,10 @@ class Platform {
 				for (driver in supportedGraphicsDrivers)
 					supported |= 1 << (driver : Int);
 
-			graphicsDriver = SdlBindings.selectGraphicsDriver(preferredGraphicsDriver, supported);
+			graphicsDriver = SDLBindings.selectGraphicsDriver(preferredGraphicsDriver, supported);
 
 			if (graphicsDriver == None) {
-				SdlBindings.quit();
+				SDLBindings.quit();
 				throw "No LIMEN graphics driver was found";
 			}
 		} else
@@ -61,17 +61,17 @@ class Platform {
 		initDone = true;
 
 		// detecting for actual system
-		isWin32 = SdlBindings.detectWin32();
-		isLinuxPlatform = SdlBindings.detectLinux();
-		isMobile = SdlBindings.detectMobile();
+		isWin32 = SDLBindings.detectWin32();
+		isLinuxPlatform = SDLBindings.detectLinux();
+		isMobile = SDLBindings.detectMobile();
 	}
 
 	public static function setHint(name:SDLHint, value:String):Bool {
-		return @:privateAccess SdlBindings.hintValue((name : String).toUtf8(), value.toUtf8());
+		return @:privateAccess SDLBindings.hintValue((name : String).toUtf8(), value.toUtf8());
 	}
 
 	public static function watchWindowEvents(onEvent:Null<Event -> Void>):Void {
-		SdlBindings.setWindowEventWatch(onEvent, watchEvent);
+		SDLBindings.setWindowEventWatch(onEvent, watchEvent);
 	}
 
 	public static function processEvents(onEvent:Event -> Bool):Bool {
@@ -84,7 +84,7 @@ class Platform {
 	}
 
 	public static function pollEvent(target:Event):Bool {
-		final available = SdlBindings.eventLoop(target);
+		final available = SDLBindings.eventLoop(target);
 		Tray.dispatchCallbacks();
 		return available;
 	}
@@ -93,7 +93,7 @@ class Platform {
 		if (!initDone)
 			return;
 		Tray.destroyAll();
-		SdlBindings.quit();
+		SDLBindings.quit();
 
 		graphicsDriver = None;
 		videoBackend = Unknown;
@@ -114,11 +114,11 @@ class Platform {
 	}
 
 	public static function getScreenWidth(?window:Window):Int {
-		return window == null ? SdlBindings.getScreenWidth() : SdlBindings.getScreenWidthOfWindow(@:privateAccess window.win);
+		return window == null ? SDLBindings.getScreenWidth() : SDLBindings.getScreenWidthOfWindow(@:privateAccess window.win);
 	}
 
 	public static function getScreenHeight(?window:Window):Int {
-		return window == null ? SdlBindings.getScreenHeight() : SdlBindings.getScreenHeightOfWindow(@:privateAccess window.win);
+		return window == null ? SDLBindings.getScreenHeight() : SDLBindings.getScreenHeightOfWindow(@:privateAccess window.win);
 	}
 
 	public static inline function message(title:String, text:String, icon:MessageBoxIcon = None):Void {
@@ -139,7 +139,7 @@ class Platform {
 
 	public static function getDevices():Array<String> {
 		final devices = [];
-		final nativeDevices = SdlBindings.getDevices();
+		final nativeDevices = SDLBindings.getDevices();
 		final names = new Map<String, Bool>();
 		for (value in nativeDevices) {
 			if (value == null)
@@ -186,7 +186,7 @@ class Platform {
 	}
 
 	public static function getError():String {
-		final error = SdlBindings.getError();
+		final error = SDLBindings.getError();
 		return error == null ? null : @:privateAccess String.fromUTF8(error);
 	}
 
@@ -203,19 +203,19 @@ class Platform {
 	}
 
 	public static inline function getRefreshRate(window:Window):Int {
-		return SdlBindings.getRefreshRate(window.nativeHandle);
+		return SDLBindings.getRefreshRate(window.nativeHandle);
 	}
 
 	public static inline function setDragAndDropEnabled(enabled:Bool):Void {
-		SdlBindings.setDragAndDropEnabled(enabled);
+		SDLBindings.setDragAndDropEnabled(enabled);
 	}
 
 	public static inline function getDragAndDropEnabled():Bool {
-		return SdlBindings.getDragAndDropEnabled();
+		return SDLBindings.getDragAndDropEnabled();
 	}
 
 	public static function getJoysticks():Array<Int> {
-		final native = SdlBindings.getJoysticks();
+		final native = SDLBindings.getJoysticks();
 		return [for (index in 0...native.length) native[index]];
 	}
 
@@ -228,6 +228,6 @@ class Platform {
 	}
 
 	static function detectVideoBackend():VideoBackend {
-		return SdlBindings.getVideoBackend();
+		return SDLBindings.getVideoBackend();
 	}
 }

@@ -1,16 +1,16 @@
 package limen.platform.cursor;
 
 import limen.platform.Surface;
-import limen.platform.internal.SdlBindings;
+import limen.platform.internal.SDLBindings;
 import limen.platform.internal.types.CursorPtr;
 
 abstract Cursor(CursorPtr) {
 	public static function create(surface:Surface, hotX:Int, hotY:Int):Cursor {
-		return cast SdlBindings.cursorCreate(cast surface, hotX, hotY);
+		return cast SDLBindings.cursorCreate(cast surface, hotX, hotY);
 	}
 
 	public static function createSystem(kind:CursorKind):Cursor {
-		return cast SdlBindings.cursorCreateSystem(cast kind);
+		return cast SDLBindings.cursorCreateSystem(cast kind);
 	}
 
 	public inline function free() {
@@ -18,19 +18,19 @@ abstract Cursor(CursorPtr) {
 	}
 
 	public inline function destroy() {
-		SdlBindings.freeCursor(this);
+		SDLBindings.freeCursor(this);
 		this = null;
 	}
 
 	public function set() {
-		SdlBindings.setCursor(this);
+		SDLBindings.setCursor(this);
 	}
 
 	public static inline function show(visible:Bool) {
-		SdlBindings.showCursor(visible);
+		SDLBindings.showCursor(visible);
 	}
 
 	public static inline function isVisible():Bool {
-		return SdlBindings.isCursorVisible();
+		return SDLBindings.isCursorVisible();
 	}
 }

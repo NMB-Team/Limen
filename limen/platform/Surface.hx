@@ -1,6 +1,6 @@
 package limen.platform;
 
-import limen.platform.internal.SdlBindings;
+import limen.platform.internal.SDLBindings;
 import limen.platform.internal.types.SurfacePtr;
 
 abstract Surface(SurfacePtr) {
@@ -9,7 +9,7 @@ abstract Surface(SurfacePtr) {
 	}
 
 	public inline function destroy() {
-		SdlBindings.freeSurface(this);
+		SDLBindings.freeSurface(this);
 		this = null;
 	}
 
@@ -18,6 +18,6 @@ abstract Surface(SurfacePtr) {
 	}
 
 	public static function from(pixels:hl.Bytes, width:Int, height:Int, depth:Int, pitch:Int, rmask:Int, gmask:Int, bmask:Int, amask:Int):Surface {
-		return cast SdlBindings.surfaceFrom(pixels, width, height, depth, pitch, rmask, gmask, bmask, amask);
+		return cast SDLBindings.surfaceFrom(pixels, width, height, depth, pitch, rmask, gmask, bmask, amask);
 	}
 }

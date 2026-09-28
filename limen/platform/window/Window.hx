@@ -3,7 +3,7 @@ package limen.platform.window;
 import limen.platform.Surface;
 import limen.platform.display.DisplayId;
 import limen.platform.display.DisplaySetting;
-import limen.platform.internal.SdlBindings;
+import limen.platform.internal.SDLBindings;
 import limen.platform.window.WindowFlags.*;
 import limen.platform.internal.types.WinPtr;
 
@@ -55,7 +55,7 @@ class Window {
 		final actualFlags = flags ?? SDL_WINDOW_RESIZABLE;
 
 		final nativeFlags:hl.I64 = (actualFlags : haxe.Int64);
-		win = SdlBindings.winCreateEx(actualX, actualY, width, height, nativeFlags);
+		win = SDLBindings.winCreateEx(actualX, actualY, width, height, nativeFlags);
 		if (win == null)
 			throw "Failed to create window (" + getNativeError() + ")";
 		this.title = title;
@@ -64,39 +64,39 @@ class Window {
 	}
 
 	public inline function setIcon(surface:Surface):Void {
-		SdlBindings.winSetIcon(win, cast surface);
+		SDLBindings.winSetIcon(win, cast surface);
 	}
 
 	public inline function resize(width:Int, height:Int):Void {
-		SdlBindings.winSetSize(win, width, height);
+		SDLBindings.winSetSize(win, width, height);
 	}
 
 	public inline function setMinSize(width:Int, height:Int):Void {
-		SdlBindings.winSetMinSize(win, width, height);
+		SDLBindings.winSetMinSize(win, width, height);
 	}
 
 	public inline function setMaxSize(width:Int, height:Int):Void {
-		SdlBindings.winSetMaxSize(win, width, height);
+		SDLBindings.winSetMaxSize(win, width, height);
 	}
 
 	public function isMaximized() {
-		return SdlBindings.winMaximized(win);
+		return SDLBindings.winMaximized(win);
 	}
 
 	public function setMaximized(maximized:Bool):Void {
-		SdlBindings.winSetMaximized(win, maximized);
+		SDLBindings.winSetMaximized(win, maximized);
 	}
 
 	public inline function setDisplayMode(width:Int, height:Int, refreshRate:Float):Bool {
-		return SdlBindings.winSetDisplayMode(win, width, height, refreshRate);
+		return SDLBindings.winSetDisplayMode(win, width, height, refreshRate);
 	}
 
 	public inline function setPosition(x:Int, y:Int):Void {
-		SdlBindings.winSetPosition(win, x, y);
+		SDLBindings.winSetPosition(win, x, y);
 	}
 
 	public inline function center(centerPrimary:Bool = true):Void {
-		SdlBindings.winCenter(win, centerPrimary);
+		SDLBindings.winCenter(win, centerPrimary);
 	}
 
 	public inline function show():Void {
@@ -108,43 +108,43 @@ class Window {
 	}
 
 	public inline function raise():Void {
-		SdlBindings.winRaise(win);
+		SDLBindings.winRaise(win);
 	}
 
 	public inline function setDarkMode(enabled:Bool):Bool {
-		return SdlBindings.winSetDarkMode(win, enabled);
+		return SDLBindings.winSetDarkMode(win, enabled);
 	}
 
 	public inline function warpMouse(x:Int, y:Int):Void {
-		SdlBindings.warpMouseInWindow(win, x, y);
+		SDLBindings.warpMouseInWindow(win, x, y);
 	}
 
 	public inline function captureMouseEvents(enable:Bool):Int {
-		return SdlBindings.captureMouse(enable);
+		return SDLBindings.captureMouse(enable);
 	}
 
 	public function destroy():Void {
 		if (win == null)
 			return;
-		SdlBindings.windowDestroy(win);
+		SDLBindings.windowDestroy(win);
 		win = null;
 		windows.remove(this);
 	}
 
 	public inline function maximize():Void {
-		SdlBindings.winResize(win, 0);
+		SDLBindings.winResize(win, 0);
 	}
 
 	public inline function minimize():Void {
-		SdlBindings.winResize(win, 1);
+		SDLBindings.winResize(win, 1);
 	}
 
 	public inline function restore():Void {
-		SdlBindings.winResize(win, 2);
+		SDLBindings.winResize(win, 2);
 	}
 
 	public inline function setAlwaysOnTop(enabled:Bool):Bool {
-		return SdlBindings.winSetAlwaysOnTop(win, enabled);
+		return SDLBindings.winSetAlwaysOnTop(win, enabled);
 	}
 
 	public function getNativeWindowInfo():Null<WindowNativeInfo> {
@@ -155,7 +155,7 @@ class Window {
 		var display:haxe.Int64 = 0;
 		var handle:haxe.Int64 = 0;
 		var extra:haxe.Int64 = 0;
-		if (!SdlBindings.winGetNativeWindowInfo(win, type, display, handle, extra))
+		if (!SDLBindings.winGetNativeWindowInfo(win, type, display, handle, extra))
 			return null;
 
 		return switch (type) {
@@ -170,15 +170,15 @@ class Window {
 
 	@:noCompletion
 	private function set_title(name:String):String {
-		SdlBindings.winSetTitle(win, @:privateAccess name.toUtf8());
+		SDLBindings.winSetTitle(win, @:privateAccess name.toUtf8());
 		return title = name;
 	}
 
 	@:noCompletion
 	private function set_displayMode(mode:WindowMode):WindowMode {
 		if (mode == ExclusiveFullscreen && displaySetting != null)
-			SdlBindings.winSetDisplayMode(win, displaySetting.width, displaySetting.height, displaySetting.refreshRate);
-		if (SdlBindings.winSetFullscreen(win, mode))
+			SDLBindings.winSetDisplayMode(win, displaySetting.width, displaySetting.height, displaySetting.refreshRate);
+		if (SDLBindings.winSetFullscreen(win, mode))
 			displayMode = mode;
 		return displayMode;
 	}
@@ -186,122 +186,122 @@ class Window {
 	@:noCompletion
 	private function set_visible(value:Bool):Bool {
 		if (visible != value)
-			SdlBindings.winResize(win, value ? 3 : 4);
+			SDLBindings.winResize(win, value ? 3 : 4);
 		return visible = value;
 	}
 
 	@:noCompletion
 	private function get_width():Int {
 		var value = 0;
-		SdlBindings.winGetSize(win, value, null);
+		SDLBindings.winGetSize(win, value, null);
 		return value;
 	}
 
 	@:noCompletion
 	private function get_height():Int {
 		var value = 0;
-		SdlBindings.winGetSize(win, null, value);
+		SDLBindings.winGetSize(win, null, value);
 		return value;
 	}
 
 	@:noCompletion
 	private function get_pixelWidth():Int {
 		var value = 0;
-		SdlBindings.winGetPixelSize(win, value, null);
+		SDLBindings.winGetPixelSize(win, value, null);
 		return value;
 	}
 
 	@:noCompletion
 	private function get_pixelHeight():Int {
 		var value = 0;
-		SdlBindings.winGetPixelSize(win, null, value);
+		SDLBindings.winGetPixelSize(win, null, value);
 		return value;
 	}
 
 	@:noCompletion
 	private function get_windowToPixelRatio():Float {
 		var pixelHeight = 0;
-		SdlBindings.winGetPixelSize(win, null, pixelHeight);
+		SDLBindings.winGetPixelSize(win, null, pixelHeight);
 		return height / pixelHeight;
 	}
 
 	@:noCompletion
 	private function get_minWidth():Int {
 		var value = 0;
-		SdlBindings.winGetMinSize(win, value, null);
+		SDLBindings.winGetMinSize(win, value, null);
 		return value;
 	}
 
 	@:noCompletion
 	private function get_minHeight():Int {
 		var value = 0;
-		SdlBindings.winGetMinSize(win, null, value);
+		SDLBindings.winGetMinSize(win, null, value);
 		return value;
 	}
 
 	@:noCompletion
 	private function get_maxWidth():Int {
 		var value = 0;
-		SdlBindings.winGetMaxSize(win, value, null);
+		SDLBindings.winGetMaxSize(win, value, null);
 		return value;
 	}
 
 	@:noCompletion
 	private function get_maxHeight():Int {
 		var value = 0;
-		SdlBindings.winGetMaxSize(win, null, value);
+		SDLBindings.winGetMaxSize(win, null, value);
 		return value;
 	}
 
 	@:noCompletion
 	inline function get_displayScale():Float {
-		return SdlBindings.winGetDisplayScale(win);
+		return SDLBindings.winGetDisplayScale(win);
 	}
 
 	@:noCompletion
 	private function get_x():Int {
 		var value = 0;
-		SdlBindings.winGetPosition(win, value, null);
+		SDLBindings.winGetPosition(win, value, null);
 		return value;
 	}
 
 	@:noCompletion
 	private function get_y():Int {
 		var value = 0;
-		SdlBindings.winGetPosition(win, null, value);
+		SDLBindings.winGetPosition(win, null, value);
 		return value;
 	}
 
 	@:noCompletion
 	inline function get_currentMonitor():DisplayId {
-		return SdlBindings.winDisplayHandle(win);
+		return SDLBindings.winDisplayHandle(win);
 	}
 
 	@:noCompletion
 	inline function get_opacity():Float {
-		return SdlBindings.winGetOpacity(win);
+		return SDLBindings.winGetOpacity(win);
 	}
 
 	@:noCompletion
 	private function set_opacity(value:Float):Float {
-		SdlBindings.winSetOpacity(win, value);
+		SDLBindings.winSetOpacity(win, value);
 		return value;
 	}
 
 	@:noCompletion
 	inline function get_grab():Bool {
-		return SdlBindings.getWindowGrab(win);
+		return SDLBindings.getWindowGrab(win);
 	}
 
 	@:noCompletion
 	private function set_grab(value:Bool):Bool {
-		SdlBindings.setWindowGrab(win, value);
+		SDLBindings.setWindowGrab(win, value);
 		return value;
 	}
 
 	@:noCompletion
 	inline function get_id():Int {
-		return SdlBindings.winGetId(win);
+		return SDLBindings.winGetId(win);
 	}
 
 	@:noCompletion
@@ -311,7 +311,7 @@ class Window {
 
 	@:noCompletion
 	static function getNativeError():String {
-		final error = SdlBindings.winError();
+		final error = SDLBindings.winError();
 		return error == null ? "unknown error" : @:privateAccess String.fromUTF8(error);
 	}
 }

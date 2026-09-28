@@ -2,7 +2,7 @@ package limen.platform.system.tray;
 
 import limen.platform.Platform;
 import limen.platform.Surface;
-import limen.platform.internal.SdlBindings;
+import limen.platform.internal.SDLBindings;
 import limen.platform.internal.types.TrayPtr;
 
 /**
@@ -26,7 +26,7 @@ class Tray {
 	}
 
 	public static function create(icon:Surface, ?tooltip:String):Tray {
-		final handle = SdlBindings.trayCreate(cast icon, tooltip == null ? null : @:privateAccess tooltip.toUtf8());
+		final handle = SDLBindings.trayCreate(cast icon, tooltip == null ? null : @:privateAccess tooltip.toUtf8());
 		if (handle == null)
 			throw 'Failed to create tray (${Platform.getError()})';
 		return new Tray(handle);
@@ -34,18 +34,18 @@ class Tray {
 
 	public function setIcon(icon:Surface):Void {
 		requireAlive();
-		SdlBindings.traySetIcon(handle, cast icon);
+		SDLBindings.traySetIcon(handle, cast icon);
 	}
 
 	public function setTooltip(tooltip:String):Void {
 		requireAlive();
-		SdlBindings.traySetTooltip(handle, tooltip == null ? null : @:privateAccess tooltip.toUtf8());
+		SDLBindings.traySetTooltip(handle, tooltip == null ? null : @:privateAccess tooltip.toUtf8());
 	}
 
 	public function createMenu():TrayMenu {
 		requireAlive();
 		if (menu == null) {
-			final nativeMenu = SdlBindings.trayCreateMenu(handle);
+			final nativeMenu = SDLBindings.trayCreateMenu(handle);
 			if (nativeMenu == null)
 				throw 'Failed to create tray menu (${Platform.getError()})';
 			menu = new TrayMenu(nativeMenu, this, null);
@@ -59,7 +59,7 @@ class Tray {
 
 		menu?.invalidate();
 
-		SdlBindings.trayDestroy(handle);
+		SDLBindings.trayDestroy(handle);
 		handle = null;
 		menu = null;
 		trays.remove(this);
@@ -69,7 +69,7 @@ class Tray {
 		Pump trays and dispatch callbacks when not using Platform.pollEvent().
 	**/
 	public static function update():Void {
-		SdlBindings.trayUpdate();
+		SDLBindings.trayUpdate();
 		dispatchCallbacks();
 	}
 
@@ -96,7 +96,7 @@ class Tray {
 	static function dispatchCallbacks():Void {
 		var checked = false;
 		while (true) {
-			final id = SdlBindings.trayPollCallback(checked);
+			final id = SDLBindings.trayPollCallback(checked);
 			if (id == 0)
 				break;
 			final entry = callbacks.get(id);

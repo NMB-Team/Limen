@@ -18,14 +18,14 @@ import limen.graphics.postprocess.dlss.resource.DLSSResource;
 import limen.graphics.postprocess.dlss.upscaling.DLSSOptimalSettings;
 import limen.graphics.postprocess.dlss.upscaling.DLSSOptions;
 import limen.platform.Platform;
-import limen.platform.internal.SdlBindings;
+import limen.platform.internal.SDLBindings;
 
 @:hlNative("limen", "dlss_")
 class DLSS {
 	public static inline final REFLEX_FRAME_REPORT_COUNT = 64;
 
 	public static function isAvailable():Bool {
-		return Platform.graphicsDriver == GraphicsDriver.D3D12 && SdlBindings.isDlssAvailable();
+		return Platform.graphicsDriver == GraphicsDriver.D3D12 && SDLBindings.isDlssAvailable();
 	}
 
 	public static function init(showConsole:Bool, features:hl.NativeArray<Int>, checkSignature:Bool):Int {

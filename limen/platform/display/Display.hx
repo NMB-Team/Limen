@@ -1,10 +1,10 @@
 package limen.platform.display;
 
-import limen.platform.internal.SdlBindings;
+import limen.platform.internal.SDLBindings;
 
 class Display {
 	public static function all():Array<DisplayInfo> {
-		final displays = SdlBindings.getDisplays();
+		final displays = SDLBindings.getDisplays();
 		if (displays == null)
 			return [];
 		return [
@@ -22,11 +22,11 @@ class Display {
 	}
 
 	public static function modes(display:DisplayId):Array<DisplayMode> {
-		final modes = SdlBindings.getDisplayModes(display);
+		final modes = SDLBindings.getDisplayModes(display);
 		return modes == null ? [] : [for (mode in modes) mode];
 	}
 
 	public static function currentMode(display:DisplayId, desktop:Bool = false):Null<DisplayMode> {
-		return SdlBindings.getCurrentDisplayMode(display, desktop);
+		return SDLBindings.getCurrentDisplayMode(display, desktop);
 	}
 }

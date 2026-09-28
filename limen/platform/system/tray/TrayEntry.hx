@@ -1,7 +1,7 @@
 package limen.platform.system.tray;
 
 import limen.platform.Platform;
-import limen.platform.internal.SdlBindings;
+import limen.platform.internal.SDLBindings;
 import limen.platform.internal.types.TrayEntryPtr;
 
 /**
@@ -35,12 +35,12 @@ class TrayEntry {
 		final nativeEntry = handle;
 		menu.remove(this);
 		invalidate();
-		SdlBindings.trayRemoveEntry(nativeEntry);
+		SDLBindings.trayRemoveEntry(nativeEntry);
 	}
 
 	@:allow(limen.platform.system.tray.TrayMenu)
 	private function createSubmenu():TrayMenu {
-		final nativeMenu = SdlBindings.trayCreateSubmenu(handle);
+		final nativeMenu = SDLBindings.trayCreateSubmenu(handle);
 		if (nativeMenu == null)
 			throw 'Failed to create tray submenu (${Platform.getError()})';
 		submenu = new TrayMenu(nativeMenu, null, this);
@@ -52,7 +52,7 @@ class TrayEntry {
 		this.callback = callback;
 		if (callback != null) {
 			callbackId = Tray.register(this);
-			SdlBindings.traySetEntryCallback(handle, callbackId, isCheckbox);
+			SDLBindings.traySetEntryCallback(handle, callbackId, isCheckbox);
 		}
 	}
 
@@ -61,7 +61,7 @@ class TrayEntry {
 		submenu?.invalidate();
 
 		if (callbackId != 0) {
-			SdlBindings.traySetEntryCallback(handle, 0, isCheckbox);
+			SDLBindings.traySetEntryCallback(handle, 0, isCheckbox);
 			Tray.unregister(callbackId);
 			callbackId = 0;
 		}
@@ -86,7 +86,7 @@ class TrayEntry {
 	@:noCompletion
 	private function get_label():Null<String> {
 		requireAlive();
-		final value = SdlBindings.trayGetEntryLabel(handle);
+		final value = SDLBindings.trayGetEntryLabel(handle);
 		return value == null ? null : @:privateAccess String.fromUTF8(value);
 	}
 
@@ -95,20 +95,20 @@ class TrayEntry {
 		requireAlive();
 		if (isSeparator || value == null)
 			throw "Cannot change an entry into or from a separator";
-		SdlBindings.traySetEntryLabel(handle, @:privateAccess value.toUtf8());
+		SDLBindings.traySetEntryLabel(handle, @:privateAccess value.toUtf8());
 		return value;
 	}
 
 	@:noCompletion
 	private function get_enabled():Bool {
 		requireAlive();
-		return SdlBindings.trayGetEntryEnabled(handle);
+		return SDLBindings.trayGetEntryEnabled(handle);
 	}
 
 	@:noCompletion
 	private function set_enabled(value:Bool):Bool {
 		requireAlive();
-		SdlBindings.traySetEntryEnabled(handle, value);
+		SDLBindings.traySetEntryEnabled(handle, value);
 		return value;
 	}
 
@@ -117,7 +117,7 @@ class TrayEntry {
 		requireAlive();
 		if (!isCheckbox)
 			throw "Tray entry is not a checkbox";
-		return SdlBindings.trayGetEntryChecked(handle);
+		return SDLBindings.trayGetEntryChecked(handle);
 	}
 
 	@:noCompletion
@@ -125,7 +125,7 @@ class TrayEntry {
 		requireAlive();
 		if (!isCheckbox)
 			throw "Tray entry is not a checkbox";
-		SdlBindings.traySetEntryChecked(handle, value);
+		SDLBindings.traySetEntryChecked(handle, value);
 		return value;
 	}
 }

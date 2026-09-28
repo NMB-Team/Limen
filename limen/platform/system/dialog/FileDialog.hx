@@ -1,20 +1,20 @@
 package limen.platform.system.dialog;
 
-import limen.platform.internal.SdlBindings;
+import limen.platform.internal.SDLBindings;
 
 class FileDialog {
 	public static function openFile(callback:FileDialogResult -> Void, ?options:FileDialogOptions):Void {
 		final filters = prepareFilters(options?.filters);
-		SdlBindings.showOpenFileDialog(resultCallback(callback), options?.parent?.nativeHandle, filters.names, filters.patterns, utf8(options?.defaultLocation), options?.allowMultiple == true);
+		SDLBindings.showOpenFileDialog(resultCallback(callback), options?.parent?.nativeHandle, filters.names, filters.patterns, utf8(options?.defaultLocation), options?.allowMultiple == true);
 	}
 
 	public static function openFolder(callback:FileDialogResult -> Void, ?options:FileDialogOptions):Void {
-		SdlBindings.showOpenFolderDialog(resultCallback(callback), options?.parent?.nativeHandle, utf8(options?.defaultLocation), options?.allowMultiple == true);
+		SDLBindings.showOpenFolderDialog(resultCallback(callback), options?.parent?.nativeHandle, utf8(options?.defaultLocation), options?.allowMultiple == true);
 	}
 
 	public static function saveFile(callback:FileDialogResult -> Void, ?options:FileDialogOptions):Void {
 		final filters = prepareFilters(options?.filters);
-		SdlBindings.showSaveFileDialog(resultCallback(callback), options?.parent?.nativeHandle, filters.names, filters.patterns, utf8(options?.defaultLocation));
+		SDLBindings.showSaveFileDialog(resultCallback(callback), options?.parent?.nativeHandle, filters.names, filters.patterns, utf8(options?.defaultLocation));
 	}
 
 	static function resultCallback(callback:FileDialogResult -> Void):Int -> hl.NativeArray<hl.Bytes> -> hl.Bytes -> Int -> Void {

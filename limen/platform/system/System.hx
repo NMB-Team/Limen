@@ -1,6 +1,6 @@
 package limen.platform.system;
 
-import limen.platform.internal.SdlBindings;
+import limen.platform.internal.SDLBindings;
 
 /**
 	System information. Read power and theme properties on the main thread.
@@ -25,7 +25,7 @@ class System {
 
 	@:noCompletion
 	static function get_powerState():PowerState {
-		return switch (SdlBindings.getPowerState()) {
+		return switch (SDLBindings.getPowerState()) {
 			case PowerState.OnBattery: OnBattery;
 			case PowerState.NoBattery: NoBattery;
 			case PowerState.Charging: Charging;
@@ -36,13 +36,13 @@ class System {
 
 	@:noCompletion
 	static function get_batteryPercent():Null<Int> {
-		final percent = SdlBindings.getBatteryPercent();
+		final percent = SDLBindings.getBatteryPercent();
 		return percent < 0 || percent > 100 ? null : percent;
 	}
 
 	@:noCompletion
 	static function get_theme():SystemTheme {
-		return switch (SdlBindings.getSystemTheme()) {
+		return switch (SDLBindings.getSystemTheme()) {
 			case SystemTheme.Light: Light;
 			case SystemTheme.Dark: Dark;
 			default: Unknown;
@@ -51,7 +51,7 @@ class System {
 
 	@:noCompletion
 	static function get_platform():String {
-		final value = SdlBindings.getPlatform();
+		final value = SDLBindings.getPlatform();
 		return value == null ? "Unknown" : @:privateAccess String.fromUTF8(value);
 	}
 }

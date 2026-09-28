@@ -16,7 +16,7 @@ import limen.platform.window.WindowMode;
 @:noDoc
 @:noCompletion
 @:hlNative("limen")
-class SdlBindings {
+class SDLBindings {
 	public static function initOnce():Bool {
 		return false;
 	}

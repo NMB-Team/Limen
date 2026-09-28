@@ -1,13 +1,13 @@
 package limen.platform.system;
 
-import limen.platform.internal.SdlBindings;
+import limen.platform.internal.SDLBindings;
 
 class Paths {
 	/**
 		Application data directory with a trailing separator, or null when unavailable.
 	**/
 	public static function base():Null<String> {
-		final path = SdlBindings.getBasePath();
+		final path = SDLBindings.getBasePath();
 		return path == null ? null : @:privateAccess String.fromUTF8(path);
 	}
 
@@ -15,12 +15,12 @@ class Paths {
 		Current working directory with a trailing separator, or null when unavailable.
 	**/
 	public static function currentDirectory():Null<String> {
-		final path = SdlBindings.getCurrentDirectory();
+		final path = SDLBindings.getCurrentDirectory();
 		return path == null ? null : @:privateAccess String.fromUTF8(path);
 	}
 
 	public static function preference(organization:String, application:String):String {
-		final path = @:privateAccess SdlBindings.getPrefPath(organization.toUtf8(), application.toUtf8());
+		final path = @:privateAccess SDLBindings.getPrefPath(organization.toUtf8(), application.toUtf8());
 		return path == null ? null : @:privateAccess String.fromUTF8(path);
 	}
 }

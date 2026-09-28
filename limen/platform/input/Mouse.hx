@@ -1,33 +1,33 @@
 package limen.platform.input;
 
-import limen.platform.internal.SdlBindings;
+import limen.platform.internal.SDLBindings;
 
 class Mouse {
 	public static inline function setRelative(enabled:Bool):Int {
-		return SdlBindings.setRelativeMouseMode(enabled);
+		return SDLBindings.setRelativeMouseMode(enabled);
 	}
 
 	public static inline function isRelative():Bool {
-		return SdlBindings.getRelativeMouseMode();
+		return SDLBindings.getRelativeMouseMode();
 	}
 
 	public static inline function globalState(x:hl.Ref<Int>, y:hl.Ref<Int>):Int {
-		return SdlBindings.getGlobalMouseState(x, y);
+		return SDLBindings.getGlobalMouseState(x, y);
 	}
 
 	public static inline function relativeState(x:hl.Ref<Int>, y:hl.Ref<Int>):Int {
-		return SdlBindings.getRelativeMouseState(x, y);
+		return SDLBindings.getRelativeMouseState(x, y);
 	}
 
 	public static inline function warpGlobal(x:Int, y:Int):Int {
-		return SdlBindings.warpMouseGlobal(x, y);
+		return SDLBindings.warpMouseGlobal(x, y);
 	}
 
 	public static inline function setMotionEvents(enabled:Bool):Void {
-		SdlBindings.setMouseMotionEvents(enabled);
+		SDLBindings.setMouseMotionEvents(enabled);
 	}
 
 	public static inline function capture(enabled:Bool):Int {
-		return SdlBindings.captureMouse(enabled);
+		return SDLBindings.captureMouse(enabled);
 	}
 }

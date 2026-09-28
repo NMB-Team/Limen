@@ -1,9 +1,9 @@
 package limen.platform.input;
 
-import limen.platform.internal.SdlBindings;
+import limen.platform.internal.SDLBindings;
 
 class TextInput {
 	public static inline function isShown():Bool {
-		return SdlBindings.isTextInputShown();
+		return SDLBindings.isTextInputShown();
 	}
 }

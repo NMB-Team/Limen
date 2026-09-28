@@ -1,7 +1,7 @@
 package limen.platform.input.gamepad;
 
 import limen.platform.Platform;
-import limen.platform.internal.SdlBindings;
+import limen.platform.internal.SDLBindings;
 import limen.platform.internal.types.GamepadPtr;
 
 class Gamepad {
@@ -12,25 +12,25 @@ class Gamepad {
 	public var isOpen(get, never):Bool;
 
 	public static inline function count():Int {
-		return SdlBindings.gctrlCount();
+		return SDLBindings.gctrlCount();
 	}
 
 	public function new(id:Int) {
-		ptr = SdlBindings.gctrlOpen(id);
+		ptr = SDLBindings.gctrlOpen(id);
 		if (ptr == null)
 			throw 'Failed to open gamepad $id (${Platform.getError()})';
 	}
 
 	public inline function getAxis(axis:Int):Int {
-		return SdlBindings.gctrlGetAxis(ptr, axis);
+		return SDLBindings.gctrlGetAxis(ptr, axis);
 	}
 
 	public inline function getButton(button:Int):Bool {
-		return SdlBindings.gctrlGetButton(ptr, button);
+		return SDLBindings.gctrlGetButton(ptr, button);
 	}
 
 	public function rumble(strength:Float, duration:Int):Bool {
-		return SdlBindings.gctrlRumble(ptr, strength, duration);
+		return SDLBindings.gctrlRumble(ptr, strength, duration);
 	}
 
 	public function close() {
@@ -40,18 +40,18 @@ class Gamepad {
 	public function destroy() {
 		if (ptr == null)
 			return;
-		SdlBindings.gctrlClose(ptr);
+		SDLBindings.gctrlClose(ptr);
 		ptr = null;
 	}
 
 	@:noCompletion
 	inline function get_id():Int {
-		return SdlBindings.gctrlGetId(ptr);
+		return SDLBindings.gctrlGetId(ptr);
 	}
 
 	@:noCompletion
 	inline function get_name():String {
-		final value = SdlBindings.gctrlGetName(ptr);
+		final value = SDLBindings.gctrlGetName(ptr);
 		return value == null ? "" : @:privateAccess String.fromUTF8(value);
 	}
 

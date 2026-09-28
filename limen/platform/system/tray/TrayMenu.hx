@@ -1,7 +1,7 @@
 package limen.platform.system.tray;
 
 import limen.platform.Platform;
-import limen.platform.internal.SdlBindings;
+import limen.platform.internal.SDLBindings;
 import limen.platform.internal.types.TrayMenuPtr;
 
 /**
@@ -72,7 +72,7 @@ class TrayMenu {
 
 	private function insert(label:String, kind:Int, checked:Bool, callback:Bool -> Void):TrayEntry {
 		requireAlive();
-		final nativeEntry = SdlBindings.trayInsertEntry(handle, label == null ? null : @:privateAccess label.toUtf8(), kind, checked);
+		final nativeEntry = SDLBindings.trayInsertEntry(handle, label == null ? null : @:privateAccess label.toUtf8(), kind, checked);
 		if (nativeEntry == null)
 			throw 'Failed to create tray entry (${Platform.getError()})';
 		final entry = new TrayEntry(nativeEntry, this, kind == 2, label == null);

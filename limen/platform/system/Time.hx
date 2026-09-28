@@ -2,7 +2,7 @@ package limen.platform.system;
 
 import haxe.Int64;
 
-import limen.platform.internal.SdlBindings;
+import limen.platform.internal.SDLBindings;
 
 class Time {
 	/**
@@ -21,30 +21,30 @@ class Time {
 	public static var performanceFrequency(get, never):Int64;
 
 	public static inline function now():Float {
-		return SdlBindings.getTime();
+		return SDLBindings.getTime();
 	}
 
 	public static inline function timestamp():Int64 {
-		return SdlBindings.getTimestamp();
+		return SDLBindings.getTimestamp();
 	}
 
 	public static function delay(milliseconds:Int):Void {
 		if (milliseconds > 0)
-			SdlBindings.delay(milliseconds);
+			SDLBindings.delay(milliseconds);
 	}
 
 	@:noCompletion
 	static inline function get_ticks():Int64 {
-		return SdlBindings.getTicks();
+		return SDLBindings.getTicks();
 	}
 
 	@:noCompletion
 	static inline function get_performanceCounter():Int64 {
-		return SdlBindings.getPerformanceCounter();
+		return SDLBindings.getPerformanceCounter();
 	}
 
 	@:noCompletion
 	static inline function get_performanceFrequency():Int64 {
-		return SdlBindings.getPerformanceFrequency();
+		return SDLBindings.getPerformanceFrequency();
 	}
 }

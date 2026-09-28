@@ -2,7 +2,7 @@ package limen.graphics.renderer.vulkan;
 
 import limen.graphics.renderer.vulkan.internal.VulkanBindings;
 import limen.graphics.renderer.vulkan.internal.VulkanBindings.VkSurface;
-import limen.platform.internal.SdlBindings;
+import limen.platform.internal.SDLBindings;
 import limen.platform.window.Window;
 
 class Surface {
@@ -14,7 +14,7 @@ class Surface {
 			throw Vulkan.error("Failed to initialize Vulkan");
 		final handle = VulkanBindings.createWindowSurface(window.nativeHandle);
 		if (handle == null) {
-			final detail = @:privateAccess String.fromUTF8(SdlBindings.getError());
+			final detail = @:privateAccess String.fromUTF8(SDLBindings.getError());
 			VulkanBindings.shutdown();
 			throw detail.length == 0 ? "Failed to create Vulkan surface" : 'Failed to create Vulkan surface: $detail';
 		}
