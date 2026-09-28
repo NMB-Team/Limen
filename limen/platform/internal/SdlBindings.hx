@@ -343,4 +343,24 @@ class SdlBindings {
 	public static function getJoysticks():hl.NativeArray<Int> {
 		return null;
 	}
+
+	public static function getTouchDevices():hl.NativeArray<Int64> {
+		return null;
+	}
+
+	public static function getTouchDeviceName(id:Int64):hl.Bytes {
+		return null;
+	}
+
+	public static function getTouchDeviceType(id:Int64):Int {
+		return -1;
+	}
+
+	public static function getTouchFingers(id:Int64):hl.NativeArray<Dynamic> {
+		return null;
+	}
+
+	public static function getPenDeviceType(id:Int):Int {
+		return -1;
+	}
 }

@@ -1,0 +1,6 @@
+-cp .
+-cp ../../
+
+-main ExampleTouchPen
+
+-hl touch-pen.hl

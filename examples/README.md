@@ -16,11 +16,15 @@ A small rendering example using LIMEN's OpenGL integration.
 
 A minimal asynchronous open-file dialog with multiple selection and filters.
 
+### [Touch and Pen](touch-pen/)
+
+A black-on-white drawing canvas with pressure-sensitive pen and touch strokes.
+
 ## Requirements
 
 The examples target HashLink and expect LIMEN's native modules to be available to the runtime.
 
-At minimum, the window example needs `limen.hdll`. The OpenGL example also needs the OpenGL graphics module (`opengl.limen`).
+At minimum, the window example needs `limen.hdll`. The OpenGL and Touch and Pen examples also need the OpenGL graphics module (`opengl.limen`).
 
 Build LIMEN first and make sure HashLink can find the produced native modules before running an example.
 

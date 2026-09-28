@@ -107,26 +107,30 @@ enum abstract EventType(Int) {
 	/**
 		A finger has touched the screen.
 
-		Event.reference identifies the finger. Event.mouseX and Event.mouseY
-		contain normalized touch coordinates multiplied by 10000.
+		Event.touchId and Event.fingerId identify the device and finger.
+		Event.touchX, Event.touchY and Event.pressure are normalized to 0..1.
 	**/
 	final TouchDown = 200;
 
 	/**
 		A finger has lifted from the screen.
 
-		Event.reference identifies the finger. Event.mouseX and Event.mouseY
-		contain normalized touch coordinates multiplied by 10000.
+		Event.touchId and Event.fingerId identify the device and finger.
+		Event.touchX, Event.touchY and Event.pressure are normalized to 0..1.
 	**/
 	final TouchUp = 201;
 
 	/**
 		A finger has moved while touching the screen.
 
-		Event.reference identifies the finger. Event.mouseX and Event.mouseY
-		contain normalized touch coordinates multiplied by 10000.
+		Event.touchId and Event.fingerId identify the device and finger.
+		Event.touchX, Event.touchY and Event.pressure are normalized to 0..1.
+		Event.touchDX and Event.touchDY contain normalized movement.
 	**/
 	final TouchMove = 202;
+
+	/** A touch was canceled. Treat as TouchUp and release the finger's state. **/
+	final TouchCanceled = 203;
 
 	/**
 		A joystick axis has changed value.
@@ -204,4 +208,28 @@ enum abstract EventType(Int) {
 		Key codes for physical keys may now differ.
 	**/
 	final KeyMapChanged = 500;
+
+	/** A pen entered proximity. Event.penId identifies it; Event.penState contains input flags. **/
+	final PenProximityIn = 600;
+
+	/** A pen left proximity. Event.penId identifies it; Event.penState contains input flags. **/
+	final PenProximityOut = 601;
+
+	/** The pen tip touched the surface. Event.penX/Y, penState and penEraser describe the input. **/
+	final PenDown = 602;
+
+	/** The pen tip left the surface. Event.penX/Y, penState and penEraser describe the input. **/
+	final PenUp = 603;
+
+	/** A pen moved, including hovering. Event.penX/Y are window coordinates; penState contains input flags. **/
+	final PenMove = 604;
+
+	/** A pen button was pressed. Event.button is one-based; penX/Y and penState describe the input. **/
+	final PenButtonDown = 605;
+
+	/** A pen button was released. Event.button is one-based; penX/Y and penState describe the input. **/
+	final PenButtonUp = 606;
+
+	/** A pen axis changed. Event.penAxis and penValue contain pressure, tilt or another axis measurement. **/
+	final PenAxis = 607;
 }

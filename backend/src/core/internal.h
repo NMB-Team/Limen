@@ -36,6 +36,7 @@ typedef enum {
 	TouchDown = 200,
 	TouchUp,
 	TouchMove,
+	TouchCanceled,
 	JoystickAxisMotion = 300,
 	JoystickBallMotion,
 	JoystickHatMotion,
@@ -48,6 +49,14 @@ typedef enum {
 	DropText,
 	DropEnd,
 	KeyMapChanged = 500,
+	PenProximityIn = 600,
+	PenProximityOut,
+	PenDown,
+	PenUp,
+	PenMove,
+	PenButtonDown,
+	PenButtonUp,
+	PenAxis,
 } limen_event_type;
 
 typedef enum {
@@ -88,6 +97,20 @@ typedef struct {
 	vbyte* dropFile;
 	uchar* inputChar;
 	int64_t timestamp;
+	int64_t touchId;
+	int64_t fingerId;
+	double touchX;
+	double touchY;
+	double touchDX;
+	double touchDY;
+	double pressure;
+	int penId;
+	int penState;
+	double penX;
+	double penY;
+	int penAxis;
+	double penValue;
+	bool penEraser;
 } limen_event;
 
 extern bool limen_hint_window_grab_keyboard;

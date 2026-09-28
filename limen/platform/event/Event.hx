@@ -1,6 +1,8 @@
 package limen.platform.event;
 
 import haxe.Int64;
+import limen.platform.input.pen.PenAxis;
+import limen.platform.input.pen.PenInputFlags;
 
 @:keep
 class Event {
@@ -32,6 +34,25 @@ class Event {
 	**/
 	public var timestamp:Int64;
 
+	public var touchId:Int64;
+	public var fingerId:Int64;
+	/** Normalized touch coordinates, movement and pressure. **/
+	public var touchX:Float;
+	public var touchY:Float;
+	public var touchDX:Float;
+	public var touchDY:Float;
+	public var pressure:Float;
+	public var penId:Int;
+	public var penState:PenInputFlags;
+	/** Pen coordinates in window units; valid for motion, tip, button and axis events. **/
+	public var penX:Float;
+	public var penY:Float;
+	/** The changed axis and its value, valid only for PenAxis events. **/
+	public var penAxis:PenAxis;
+	public var penValue:Float;
+	/** Whether the eraser tip is used, valid only for PenDown and PenUp. **/
+	public var penEraser:Bool;
+
 	/**
 		Convenience conversion for display and simple gameplay use.
 
@@ -43,7 +64,6 @@ class Event {
 	// for compile-time backward compatibility
 	public var controller(get, never):Int;
 	public var joystick(get, never):Int;
-	public var fingerId(get, never):Int;
 
 	public function new() {}
 
@@ -54,11 +74,6 @@ class Event {
 
 	@:noCompletion
 	inline function get_joystick() {
-		return reference;
-	}
-
-	@:noCompletion
-	inline function get_fingerId() {
 		return reference;
 	}
 

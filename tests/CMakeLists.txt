@@ -15,7 +15,7 @@ target_include_directories(limen_window_flags_test PRIVATE
 )
 target_link_libraries(limen_window_flags_test PRIVATE limen libhl SDL3::Headers)
 
-set(_LIMEN_WINDOW_FLAG_TESTS limen_window_flags)
+set(_LIMEN_PLATFORM_TESTS limen_window_flags)
 find_program(LIMEN_HAXE_EXECUTABLE NAMES haxe)
 find_program(LIMEN_HASHLINK_EXECUTABLE NAMES hl
 	HINTS
@@ -54,7 +54,36 @@ if(LIMEN_HAXE_EXECUTABLE AND LIMEN_HASHLINK_EXECUTABLE)
 	set_tests_properties(limen_window_flags_haxe PROPERTIES
 		WORKING_DIRECTORY "$<TARGET_FILE_DIR:limen>"
 	)
-	list(APPEND _LIMEN_WINDOW_FLAG_TESTS limen_window_flags_haxe)
+	list(APPEND _LIMEN_PLATFORM_TESTS limen_window_flags_haxe)
+
+	set(_LIMEN_INPUT_EVENTS_HL "${CMAKE_CURRENT_BINARY_DIR}/input_events.hl")
+	add_custom_command(
+		OUTPUT "${_LIMEN_INPUT_EVENTS_HL}"
+		COMMAND "${LIMEN_HAXE_EXECUTABLE}"
+			-cp "${CMAKE_CURRENT_SOURCE_DIR}/.."
+			-cp "${CMAKE_CURRENT_SOURCE_DIR}"
+			-main InputEventsTest
+			-hl "${_LIMEN_INPUT_EVENTS_HL}"
+		DEPENDS
+			InputEventsTest.hx
+			../limen/platform/event/Event.hx
+			../limen/platform/event/EventType.hx
+			../limen/platform/internal/SdlBindings.hx
+			../limen/platform/input/touch/Touch.hx
+			../limen/platform/input/touch/TouchDeviceType.hx
+			../limen/platform/input/pen/Pen.hx
+			../limen/platform/input/pen/PenDeviceType.hx
+			../limen/platform/input/pen/PenAxis.hx
+			../limen/platform/input/pen/PenInputFlags.hx
+		VERBATIM
+	)
+	add_custom_target(limen_input_events_haxe_test ALL DEPENDS "${_LIMEN_INPUT_EVENTS_HL}")
+	add_dependencies(limen_input_events_haxe_test limen_window_flags_haxe_test)
+	add_test(NAME limen_input_events_haxe COMMAND "${_LIMEN_HASHLINK_TEST_COMMAND}" "${_LIMEN_INPUT_EVENTS_HL}")
+	set_tests_properties(limen_input_events_haxe PROPERTIES
+		WORKING_DIRECTORY "$<TARGET_FILE_DIR:limen>"
+	)
+	list(APPEND _LIMEN_PLATFORM_TESTS limen_input_events_haxe)
 endif()
 
 if(WIN32)
@@ -102,21 +131,21 @@ endif()
 
 add_test(NAME limen_event_translation COMMAND limen_event_translation_test)
 add_test(NAME limen_window_flags COMMAND limen_window_flags_test)
-set_tests_properties(${_LIMEN_WINDOW_FLAG_TESTS} PROPERTIES
+set_tests_properties(${_LIMEN_PLATFORM_TESTS} PROPERTIES
 	ENVIRONMENT "SDL_VIDEODRIVER=dummy"
 )
 if(APPLE)
 	set_tests_properties(limen_event_translation PROPERTIES
 		ENVIRONMENT "DYLD_LIBRARY_PATH=$<TARGET_FILE_DIR:libhl>:$ENV{DYLD_LIBRARY_PATH}"
 	)
-	set_tests_properties(${_LIMEN_WINDOW_FLAG_TESTS} PROPERTIES
+	set_tests_properties(${_LIMEN_PLATFORM_TESTS} PROPERTIES
 		ENVIRONMENT "SDL_VIDEODRIVER=dummy;DYLD_LIBRARY_PATH=$<TARGET_FILE_DIR:libhl>:$ENV{DYLD_LIBRARY_PATH}"
 	)
 elseif(NOT WIN32)
 	set_tests_properties(limen_event_translation PROPERTIES
 		ENVIRONMENT "LD_LIBRARY_PATH=$<TARGET_FILE_DIR:libhl>:$ENV{LD_LIBRARY_PATH}"
 	)
-	set_tests_properties(${_LIMEN_WINDOW_FLAG_TESTS} PROPERTIES
+	set_tests_properties(${_LIMEN_PLATFORM_TESTS} PROPERTIES
 		ENVIRONMENT "SDL_VIDEODRIVER=dummy;LD_LIBRARY_PATH=$<TARGET_FILE_DIR:libhl>:$ENV{LD_LIBRARY_PATH}"
 	)
 endif()

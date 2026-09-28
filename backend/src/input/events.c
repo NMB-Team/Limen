@@ -147,6 +147,9 @@ static bool translate_touch_event(const SDL_Event* source, limen_event* destinat
 		case SDL_EVENT_FINGER_UP:
 			destination->type = TouchUp;
 			break;
+		case SDL_EVENT_FINGER_CANCELED:
+			destination->type = TouchCanceled;
+			break;
 		default:
 			return false;
 	}
@@ -154,7 +157,66 @@ static bool translate_touch_event(const SDL_Event* source, limen_event* destinat
 	destination->mouseX = (int)(source->tfinger.x * 10000);
 	destination->mouseY = (int)(source->tfinger.y * 10000);
 	destination->reference = (int)source->tfinger.fingerID;
+	destination->touchId = (int64_t)source->tfinger.touchID;
+	destination->fingerId = (int64_t)source->tfinger.fingerID;
+	destination->touchX = source->tfinger.x;
+	destination->touchY = source->tfinger.y;
+	destination->touchDX = source->tfinger.dx;
+	destination->touchDY = source->tfinger.dy;
+	destination->pressure = source->tfinger.pressure;
 	return true;
+}
+
+static bool translate_pen_event(const SDL_Event* source, limen_event* destination) {
+	switch (source->type) {
+		case SDL_EVENT_PEN_PROXIMITY_IN:
+		case SDL_EVENT_PEN_PROXIMITY_OUT:
+			destination->type = source->type == SDL_EVENT_PEN_PROXIMITY_IN ? PenProximityIn : PenProximityOut;
+			destination->window = source->pproximity.windowID;
+			destination->penId = (int)source->pproximity.which;
+			destination->penState = (int)source->pproximity.pen_state;
+			return true;
+		case SDL_EVENT_PEN_DOWN:
+		case SDL_EVENT_PEN_UP:
+			destination->type = source->type == SDL_EVENT_PEN_DOWN ? PenDown : PenUp;
+			destination->window = source->ptouch.windowID;
+			destination->penId = (int)source->ptouch.which;
+			destination->penState = (int)source->ptouch.pen_state;
+			destination->penX = source->ptouch.x;
+			destination->penY = source->ptouch.y;
+			destination->penEraser = source->ptouch.eraser;
+			return true;
+		case SDL_EVENT_PEN_MOTION:
+			destination->type = PenMove;
+			destination->window = source->pmotion.windowID;
+			destination->penId = (int)source->pmotion.which;
+			destination->penState = (int)source->pmotion.pen_state;
+			destination->penX = source->pmotion.x;
+			destination->penY = source->pmotion.y;
+			return true;
+		case SDL_EVENT_PEN_BUTTON_DOWN:
+		case SDL_EVENT_PEN_BUTTON_UP:
+			destination->type = source->type == SDL_EVENT_PEN_BUTTON_DOWN ? PenButtonDown : PenButtonUp;
+			destination->window = source->pbutton.windowID;
+			destination->penId = (int)source->pbutton.which;
+			destination->penState = (int)source->pbutton.pen_state;
+			destination->penX = source->pbutton.x;
+			destination->penY = source->pbutton.y;
+			destination->button = source->pbutton.button;
+			return true;
+		case SDL_EVENT_PEN_AXIS:
+			destination->type = PenAxis;
+			destination->window = source->paxis.windowID;
+			destination->penId = (int)source->paxis.which;
+			destination->penState = (int)source->paxis.pen_state;
+			destination->penX = source->paxis.x;
+			destination->penY = source->paxis.y;
+			destination->penAxis = source->paxis.axis;
+			destination->penValue = source->paxis.value;
+			return true;
+		default:
+			return false;
+	}
 }
 
 static bool translate_gamepad_event(const SDL_Event* source, limen_event* destination) {
@@ -248,7 +310,7 @@ bool limen_translate_event(const SDL_Event* source, limen_event* destination) {
 		return true;
 	}
 	return translate_window_event(source, destination) || translate_mouse_event(source, destination) || translate_keyboard_event(source, destination) || translate_touch_event(source, destination) || translate_gamepad_event(source, destination) ||
-	       translate_joystick_event(source, destination) || translate_drop_event(source, destination);
+	       translate_joystick_event(source, destination) || translate_drop_event(source, destination) || translate_pen_event(source, destination);
 }
 
 static bool SDLCALL window_event_watch(void* userdata, SDL_Event* event) {
@@ -277,6 +339,34 @@ HL_PRIM bool HL_NAME(event_loop)(limen_event* event) {
 	return false;
 }
 DEFINE_PRIM(_BOOL, event_loop, _DYN);
+
+#ifdef LIMEN_BUILD_TESTS
+HL_PRIM bool HL_NAME(test_queue_input_events)() {
+	SDL_Event source = {};
+	source.type = SDL_EVENT_FINGER_MOTION;
+	source.tfinger.windowID = 7;
+	source.tfinger.touchID = UINT64_C(0xf123456789abcdef);
+	source.tfinger.fingerID = UINT64_C(0x123456789abcdef0);
+	source.tfinger.x = 0.125f;
+	source.tfinger.y = 0.875f;
+	source.tfinger.dx = -0.0625f;
+	source.tfinger.dy = 0.03125f;
+	source.tfinger.pressure = 0.5f;
+	if (!SDL_PushEvent(&source))
+		return false;
+	source = (SDL_Event) {};
+	source.type = SDL_EVENT_PEN_AXIS;
+	source.paxis.windowID = 8;
+	source.paxis.which = 0xf1234567;
+	source.paxis.pen_state = SDL_PEN_INPUT_DOWN | SDL_PEN_INPUT_ERASER_TIP | SDL_PEN_INPUT_IN_PROXIMITY;
+	source.paxis.x = 12.25f;
+	source.paxis.y = 34.5f;
+	source.paxis.axis = SDL_PEN_AXIS_XTILT;
+	source.paxis.value = -45.5f;
+	return SDL_PushEvent(&source);
+}
+DEFINE_PRIM(_BOOL, test_queue_input_events, _NO_ARG);
+#endif
 
 HL_PRIM int HL_NAME(event_poll)(SDL_Event* event) {
 	return SDL_PollEvent(event);

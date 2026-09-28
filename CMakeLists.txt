@@ -110,6 +110,8 @@ add_library(limen SHARED
 	backend/src/input/joystick.c
 	backend/src/input/keyboard.c
 	backend/src/input/mouse.c
+	backend/src/input/touch.c
+	backend/src/input/pen.c
 	backend/src/window/clipboard.c
 	backend/src/window/cursor.c
 	backend/src/window/display.c

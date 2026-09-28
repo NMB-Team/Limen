@@ -2,7 +2,7 @@ package limen.platform.window;
 
 import haxe.Int64;
 
-enum NativeWindowInfo {
+enum WindowNativeInfo {
 	Win32(hwnd:Int64, hinstance:Int64);
 	Cocoa(window:Int64);
 	X11(display:Int64, window:Int64);

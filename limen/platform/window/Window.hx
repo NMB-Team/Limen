@@ -147,7 +147,7 @@ class Window {
 		return SdlBindings.winSetAlwaysOnTop(win, enabled);
 	}
 
-	public function getNativeWindowInfo():Null<NativeWindowInfo> {
+	public function getNativeWindowInfo():Null<WindowNativeInfo> {
 		if (win == null)
 			return null;
 
