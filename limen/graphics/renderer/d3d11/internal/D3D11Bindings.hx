@@ -15,7 +15,6 @@ typedef Dx11DriverInstance = hl.Abstract<"dx_driver">;
 @:noCompletion
 @:hlNative("limen", "d3d11_")
 class D3D11Bindings {
-	public static var fullScreen(get, set):Bool;
 	public static var minimumFeatureLevel = FeatureLevel.Level9_1;
 
 	/**
@@ -67,21 +66,4 @@ class D3D11Bindings {
 
 	@:hlNative("limen", "d3d11_debug_print")
 	static function dxDebugPrint(str:hl.Bytes) {}
-
-	static function get_fullScreen()
-		return getFullscreenState();
-
-	static function set_fullScreen(b) {
-		if (!setFullscreenState(b))
-			return false;
-		return b;
-	}
-
-	static function getFullscreenState() {
-		return false;
-	}
-
-	static function setFullscreenState(b:Bool) {
-		return false;
-	}
 }

@@ -184,7 +184,6 @@ static dx_driver* create_driver(HWND window, int format, int flags, int minimumF
 			if (result == S_OK) {
 				result = swapchain1->QueryInterface(__uuidof(IDXGISwapChain), (void**)&d->swapchain);
 				swapchain1->Release();
-				factory2->MakeWindowAssociation(window, DXGI_MWA_NO_ALT_ENTER);
 			}
 			factory2->Release();
 		} else {
@@ -243,6 +242,16 @@ static dx_driver* create_driver(HWND window, int format, int flags, int minimumF
 #endif
 
 	DXERR(result);
+
+#ifdef HL_WIN_DESKTOP
+	IDXGIFactory* swapchainFactory = nullptr;
+	result = d->swapchain->GetParent(__uuidof(IDXGIFactory), (void**)&swapchainFactory);
+	if (result == S_OK) {
+		result = swapchainFactory->MakeWindowAssociation(window, DXGI_MWA_NO_ALT_ENTER);
+		swapchainFactory->Release();
+	}
+	DXERR(result);
+#endif
 
 	driver = d;
 	return d;
@@ -578,17 +587,6 @@ HL_PRIM void HL_NAME(generate_mips)(dx_pointer* t) {
 	driver->context->GenerateMips((ID3D11ShaderResourceView*)t);
 }
 
-HL_PRIM bool HL_NAME(set_fullscreen_state)(bool fs) {
-	return driver->swapchain->SetFullscreenState(fs, nullptr) == S_OK;
-}
-
-HL_PRIM bool HL_NAME(get_fullscreen_state)() {
-	BOOL ret;
-	if (driver->swapchain->GetFullscreenState(&ret, nullptr) != S_OK)
-		return false;
-	return ret != 0;
-}
-
 HL_PRIM void HL_NAME(debug_print)(vbyte* b) {
 	OutputDebugStringW((LPCWSTR)b);
 }
@@ -649,7 +647,5 @@ DEFINE_PRIM(_VOID, vs_set_samplers, _I32 _I32 _REF(_POINTER));
 DEFINE_PRIM(_VOID, ps_set_shader_resources, _I32 _I32 _REF(_POINTER));
 DEFINE_PRIM(_VOID, vs_set_shader_resources, _I32 _I32 _REF(_POINTER));
 DEFINE_PRIM(_VOID, generate_mips, _POINTER);
-DEFINE_PRIM(_BOOL, set_fullscreen_state, _BOOL);
-DEFINE_PRIM(_BOOL, get_fullscreen_state, _NO_ARG);
 DEFINE_PRIM(_VOID, debug_print, _BYTES);
 DEFINE_PRIM(_VOID, copy_subresource_region, _RESOURCE _I32 _I32 _I32 _I32 _RESOURCE _I32 _DYN);
