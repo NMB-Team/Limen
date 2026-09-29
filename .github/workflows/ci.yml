@@ -2,7 +2,31 @@ name: CI
 
 on:
   push:
+    paths:
+      - 'backend/**/*.c'
+      - 'backend/**/*.cc'
+      - 'backend/**/*.cpp'
+      - 'backend/**/*.h'
+      - 'backend/**/*.hpp'
+
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - 'CMakePresets.json'
+
+      - '.github/workflows/**'
   pull_request:
+    paths:
+      - 'backend/**/*.c'
+      - 'backend/**/*.cc'
+      - 'backend/**/*.cpp'
+      - 'backend/**/*.h'
+      - 'backend/**/*.hpp'
+
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - 'CMakePresets.json'
+
+      - '.github/workflows/**'
   workflow_dispatch:
 
 permissions:
