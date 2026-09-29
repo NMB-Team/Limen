@@ -144,7 +144,7 @@ jobs:
           if [[ "${{ matrix.platform }}" != "windows-x64-mingw" ]]; then
             curl -fsSL --retry 3 --retry-delay 5 \
               -o "$RUNNER_TEMP/dxc.zip" \
-              https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.9.2607/dxc_2026_07_29.zip
+              https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.9.2609/dxc_2026_09_29.zip
             7z x "$RUNNER_TEMP/dxc.zip" -ohashlink/include/dx
           fi
 
