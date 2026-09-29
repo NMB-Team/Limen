@@ -112,11 +112,11 @@ static int GLLoadAPI() {
 	}
 
 	if (glCreateProgram == nullptr || glDeleteProgram == nullptr || glLinkProgram == nullptr || glAttachShader == nullptr || glGetProgramInfoLog == nullptr || glGetUniformLocation == nullptr || glGetAttribLocation == nullptr || glCreateShader == nullptr ||
-	    glDeleteShader == nullptr || glShaderSource == nullptr || glCompileShader == nullptr || glGetShaderInfoLog == nullptr || glGetShaderiv == nullptr || glGetProgramiv == nullptr || glUseProgram == nullptr || glGenBuffers == nullptr || glBindBuffer == nullptr ||
-	    glBufferData == nullptr || glBufferSubData == nullptr || glDeleteBuffers == nullptr || glEnableVertexAttribArray == nullptr || glDisableVertexAttribArray == nullptr || glVertexAttribPointer == nullptr || glDrawBuffers == nullptr || glGenFramebuffers == nullptr ||
-	    glBindFramebuffer == nullptr || glFramebufferTexture2D == nullptr || glDeleteFramebuffers == nullptr || glGenRenderbuffers == nullptr || glBindRenderbuffer == nullptr || glRenderbufferStorage == nullptr || glFramebufferRenderbuffer == nullptr ||
-	    glDeleteRenderbuffers == nullptr || glGenerateMipmap == nullptr || glUniform1i == nullptr || glUniform3fv == nullptr || glUniform4fv == nullptr || glUniformMatrix3fv == nullptr || glUniformMatrix4fv == nullptr || glUniform1f == nullptr || glUniform2f == nullptr ||
-	    glUniform3f == nullptr || glUniform4f == nullptr) {
+		glDeleteShader == nullptr || glShaderSource == nullptr || glCompileShader == nullptr || glGetShaderInfoLog == nullptr || glGetShaderiv == nullptr || glGetProgramiv == nullptr || glUseProgram == nullptr || glGenBuffers == nullptr || glBindBuffer == nullptr ||
+		glBufferData == nullptr || glBufferSubData == nullptr || glDeleteBuffers == nullptr || glEnableVertexAttribArray == nullptr || glDisableVertexAttribArray == nullptr || glVertexAttribPointer == nullptr || glDrawBuffers == nullptr || glGenFramebuffers == nullptr ||
+		glBindFramebuffer == nullptr || glFramebufferTexture2D == nullptr || glDeleteFramebuffers == nullptr || glGenRenderbuffers == nullptr || glBindRenderbuffer == nullptr || glRenderbufferStorage == nullptr || glFramebufferRenderbuffer == nullptr ||
+		glDeleteRenderbuffers == nullptr || glGenerateMipmap == nullptr || glUniform1i == nullptr || glUniform3fv == nullptr || glUniform4fv == nullptr || glUniformMatrix3fv == nullptr || glUniformMatrix4fv == nullptr || glUniform1f == nullptr || glUniform2f == nullptr ||
+		glUniform3f == nullptr || glUniform4f == nullptr) {
 		return 1;
 	}
 #endif

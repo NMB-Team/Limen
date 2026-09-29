@@ -251,6 +251,9 @@ inline const char* getBufferTypeAsStr(BufferType buf)
         SL_CASE_STR(kBufferTypeAmbientOcclusionDenoised);
         SL_CASE_STR(kBufferTypeUIColorAndAlpha);
         SL_CASE_STR(kBufferTypeUIAlpha);
+        SL_CASE_STR(kBufferTypeUpliftInputColor);
+        SL_CASE_STR(kBufferTypeUpliftOutputColor);
+        SL_CASE_STR(kBufferTypeUpliftControlMask);
         SL_CASE_STR(kBufferTypeShadowHint);
         SL_CASE_STR(kBufferTypeReflectionHint);
         SL_CASE_STR(kBufferTypeParticleHint);
@@ -290,6 +293,7 @@ inline const char* getBufferTypeAsStr(BufferType buf)
         SL_CASE_STR(kBufferTypeColorBeforeDepthOfField);
         SL_CASE_STR(kBufferTypeColorAfterDepthOfField);
         SL_CASE_STR(kBufferTypeScalingOutputAlpha);
+        SL_CASE_STR(kBufferTypeResponsivityMask);
         SL_CASE_STR(kBufferTypeBidirectionalDistortionField);
         SL_CASE_STR(kBufferTypeTransparencyLayer);
         SL_CASE_STR(kBufferTypeTransparencyLayerOpacity);
@@ -315,6 +319,7 @@ inline const char* getFeatureAsStr(Feature f)
         SL_CASE_STR(kFeatureDeepDVC);
         SL_CASE_STR(kFeatureDirectSR);
         SL_CASE_STR(kFeatureLatewarp);
+        SL_CASE_STR(kFeatureDLSS_NR);
         // Removed features
         case kFeatureNRD_INVALID: break;
     }
@@ -339,6 +344,7 @@ inline const char* getFeatureFilenameAsStrNoSL(Feature f)
         case kFeatureDLSS_RR: return "dlss_d";
         case kFeatureDirectSR: return "directsr";
         case kFeatureLatewarp: return "latewarp";
+        case kFeatureDLSS_NR: return "dlss_nr";
         case kFeatureNRD_INVALID: break;
     }
     return "Unknown";

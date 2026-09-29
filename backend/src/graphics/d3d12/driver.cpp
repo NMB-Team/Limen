@@ -132,10 +132,10 @@ class GpuCrashTracker {
 			if (shader != shaders.end()) {
 				std::ostringstream filename;
 				filename << "shader-"
-						 << std::hex
-						 << std::setfill('0')
-						 << std::setw(16) << hash.hash
-						 << ".bin";
+						<< std::hex
+						<< std::setfill('0')
+						<< std::setw(16) << hash.hash
+						<< ".bin";
 				const D3D12_SHADER_BYTECODE& bytecode = shader->second;
 				onCrashFile(filename.str().c_str(), bytecode.pShaderBytecode, (uint32_t)bytecode.BytecodeLength);
 			}
@@ -145,11 +145,11 @@ class GpuCrashTracker {
 			if (shaderDebugInfo != shaderDebugInfos.end()) {
 				std::ostringstream filename;
 				filename << "shader-"
-						 << std::hex
-						 << std::setfill('0')
-						 << std::setw(16) << identifier.id[0]
-						 << std::setw(16) << identifier.id[1]
-						 << ".nvdbg";
+						<< std::hex
+						<< std::setfill('0')
+						<< std::setw(16) << identifier.id[0]
+						<< std::setw(16) << identifier.id[1]
+						<< ".nvdbg";
 				onCrashFile(filename.str().c_str(), shaderDebugInfo->second.data(), (uint32_t)shaderDebugInfo->second.size());
 			}
 		}
@@ -697,13 +697,13 @@ inline void MemcpySubresource(_In_ const D3D12_MEMCPY_DEST* pDest, _In_ const D3
 }
 
 inline UINT64 UpdateSubresources(_In_ ID3D12GraphicsCommandList* pCmdList, _In_ ID3D12Resource* pDestinationResource, _In_ ID3D12Resource* pIntermediate, _In_range_(0, D3D12_REQ_SUBRESOURCES) UINT FirstSubresource,
-                                 _In_range_(0, D3D12_REQ_SUBRESOURCES - FirstSubresource) UINT NumSubresources, UINT64 RequiredSize, _In_reads_(NumSubresources) const D3D12_PLACED_SUBRESOURCE_FOOTPRINT* pLayouts,
-                                 _In_reads_(NumSubresources) const UINT* pNumRows, _In_reads_(NumSubresources) const UINT64* pRowSizesInBytes, _In_reads_(NumSubresources) const D3D12_SUBRESOURCE_DATA* pSrcData) noexcept {
+									_In_range_(0, D3D12_REQ_SUBRESOURCES - FirstSubresource) UINT NumSubresources, UINT64 RequiredSize, _In_reads_(NumSubresources) const D3D12_PLACED_SUBRESOURCE_FOOTPRINT* pLayouts,
+									_In_reads_(NumSubresources) const UINT* pNumRows, _In_reads_(NumSubresources) const UINT64* pRowSizesInBytes, _In_reads_(NumSubresources) const D3D12_SUBRESOURCE_DATA* pSrcData) noexcept {
 	// Minor validation
 	auto IntermediateDesc = pIntermediate->GetDesc();
 	auto DestinationDesc = pDestinationResource->GetDesc();
 	if (IntermediateDesc.Dimension != D3D12_RESOURCE_DIMENSION_BUFFER || IntermediateDesc.Width < RequiredSize + pLayouts[0].Offset || RequiredSize > SIZE_T(-1) ||
-	    (DestinationDesc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER && (FirstSubresource != 0 || NumSubresources != 1))) {
+		(DestinationDesc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER && (FirstSubresource != 0 || NumSubresources != 1))) {
 		return 0;
 	}
 
@@ -733,7 +733,7 @@ inline UINT64 UpdateSubresources(_In_ ID3D12GraphicsCommandList* pCmdList, _In_ 
 }
 
 inline UINT64 UpdateSubresources(_In_ ID3D12GraphicsCommandList* pCmdList, _In_ ID3D12Resource* pDestinationResource, _In_ ID3D12Resource* pIntermediate, UINT64 IntermediateOffset, _In_range_(0, D3D12_REQ_SUBRESOURCES) UINT FirstSubresource,
-                                 _In_range_(0, D3D12_REQ_SUBRESOURCES - FirstSubresource) UINT NumSubresources, _In_reads_(NumSubresources) const D3D12_SUBRESOURCE_DATA* pSrcData) noexcept {
+								_In_range_(0, D3D12_REQ_SUBRESOURCES - FirstSubresource) UINT NumSubresources, _In_reads_(NumSubresources) const D3D12_SUBRESOURCE_DATA* pSrcData) noexcept {
 	UINT64 RequiredSize = 0;
 	auto MemToAlloc = static_cast<UINT64>(sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(UINT) + sizeof(UINT64)) * NumSubresources;
 	if (MemToAlloc > SIZE_MAX)
