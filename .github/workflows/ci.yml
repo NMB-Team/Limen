@@ -11,6 +11,7 @@ on:
 
       - 'CMakeLists.txt'
       - 'cmake/**'
+      - 'tools/make_release_manifest.py'
       - 'CMakePresets.json'
 
       - '.github/workflows/**'
@@ -24,6 +25,7 @@ on:
 
       - 'CMakeLists.txt'
       - 'cmake/**'
+      - 'tools/make_release_manifest.py'
       - 'CMakePresets.json'
 
       - '.github/workflows/**'
@@ -201,6 +203,9 @@ jobs:
       contents: write
 
     steps:
+      - name: Checkout release tooling
+        uses: actions/checkout@v7
+
       - name: Download all packages
         uses: actions/download-artifact@v8
         with:
@@ -212,13 +217,14 @@ jobs:
           mkdir release
           for artifact in artifacts/limen-*; do
             platform="${artifact##*/limen-}"
+            python3 tools/make_release_manifest.py "$artifact" "$platform" "$GITHUB_SHA" "release/limen-${platform}.manifest"
             if [[ "$platform" == windows-* ]]; then
               (
                 cd "$artifact"
                 zip -r "$GITHUB_WORKSPACE/release/limen-${platform}.zip" .
               )
             else
-              tar -C "$artifact" -czf "release/limen-${platform}.tar.gz" .
+              tar --format=ustar -C "$artifact" -czf "release/limen-${platform}.tar.gz" .
             fi
           done
 
