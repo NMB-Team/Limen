@@ -76,7 +76,7 @@ enum abstract VkWsiStatus(Int) from Int to Int {
 	final Deferred = 5;
 }
 
-@:struct class VkSwapchainInfo {
+@:keep @:struct class VkSwapchainInfo {
 	public var width:Int;
 	public var height:Int;
 	public var presentMode:PresentMode;

@@ -34,7 +34,7 @@ enum VkSamplerCreateFlag {
 	SUBSAMPLED_COARSE_EXT;
 }
 
-@:struct class VkSamplerCreateInfo {
+@:keep @:struct class VkSamplerCreateInfo {
 	var type:VkStructureType;
 	var next:NextPtr;
 

@@ -194,7 +194,7 @@ enum abstract VkFilter(Int) {
 	final LINEAR = 1;
 }
 
-@:struct class VkImageBlitRegion {
+@:keep @:struct class VkImageBlitRegion {
 	public var aspectMask:haxe.EnumFlags<VkImageAspectFlag>;
 	public var srcMipLevel:Int;
 	public var srcBaseArrayLayer:Int;
@@ -218,7 +218,7 @@ enum abstract VkFilter(Int) {
 	public function new() {}
 }
 
-@:struct class VkDynamicRenderingClearInfo {
+@:keep @:struct class VkDynamicRenderingClearInfo {
 	public var colorImage:VkImage;
 	public var colorView:limen.graphics.renderer.vulkan.memory.Memory.VkImageView;
 	public var depthImage:VkImage;
@@ -238,7 +238,7 @@ enum abstract VkFilter(Int) {
 	public function new() {}
 }
 
-@:struct class VkCommandBufferAllocateInfo {
+@:keep @:struct class VkCommandBufferAllocateInfo {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -251,7 +251,7 @@ enum abstract VkFilter(Int) {
 	}
 }
 
-@:struct class VkCommandBufferBeginInfo {
+@:keep @:struct class VkCommandBufferBeginInfo {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -282,7 +282,7 @@ enum VkCommandPoolCreateFlag {
 	PROTECTED;
 }
 
-@:struct class VkCommandPoolCreateInfo {
+@:keep @:struct class VkCommandPoolCreateInfo {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -300,7 +300,7 @@ enum VkFenceCreateFlag {
 	SIGNALED;
 }
 
-@:struct class VkFenceCreateInfo {
+@:keep @:struct class VkFenceCreateInfo {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -313,7 +313,7 @@ enum VkFenceCreateFlag {
 
 abstract VkSemaphore(hl.Abstract<"vk_semaphore">) {}
 
-@:struct class VkSemaphoreCreateInfo {
+@:keep @:struct class VkSemaphoreCreateInfo {
 	var type:VkStructureType;
 	var next:NextPtr;
 	var unusedFlags:Int;
@@ -323,7 +323,7 @@ abstract VkSemaphore(hl.Abstract<"vk_semaphore">) {}
 	}
 }
 
-@:struct class VkSubmitInfo {
+@:keep @:struct class VkSubmitInfo {
 	var type:VkStructureType;
 	var next:NextPtr;
 

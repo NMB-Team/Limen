@@ -16,7 +16,7 @@ import limen.graphics.renderer.vulkan.pipeline.Pipeline.VkPipelineBindPoint;
 
 import haxe.Int64;
 
-@:struct class VkAttachmentDescription {
+@:keep @:struct class VkAttachmentDescription {
 	public var flags:haxe.EnumFlags<VkAttachmentDescriptionFlag>;
 	public var format:VkFormat;
 	public var samples:Int;
@@ -40,7 +40,7 @@ enum abstract VkAttachmentLoadOp(Int) {
 	final DONT_CARE = 2;
 }
 
-@:struct class VkAttachmentReference {
+@:keep @:struct class VkAttachmentReference {
 	public var attachment:Int;
 	public var layout:VkImageLayout;
 
@@ -53,7 +53,7 @@ enum abstract VkAttachmentStoreOp(Int) {
 	final STORE_OP_NONE_QCOM = 1000301000;
 }
 
-@:struct class VkClearAttachment {
+@:keep @:struct class VkClearAttachment {
 	public var aspectMask:haxe.EnumFlags<VkImageAspectFlag>;
 	public var colorAttachment:Int;
 	public var r:Single;
@@ -89,14 +89,14 @@ enum abstract VkAttachmentStoreOp(Int) {
 
 typedef VkClearColorValue = VkClearValue;
 
-@:struct class VkClearDepthStencilValue {
+@:keep @:struct class VkClearDepthStencilValue {
 	public var depth:Single;
 	public var stencil:Int;
 
 	public function new() {}
 }
 
-@:struct class VkClearRect {
+@:keep @:struct class VkClearRect {
 	public var offsetX:Int;
 	public var offsetY:Int;
 	public var extendX:Int;
@@ -107,7 +107,7 @@ typedef VkClearColorValue = VkClearValue;
 	public function new() {}
 }
 
-@:struct class VkClearValue {
+@:keep @:struct class VkClearValue {
 	public var r:Single;
 	public var g:Single;
 	public var b:Single;
@@ -145,7 +145,7 @@ enum VkFramebufferCreateFlag {
 	IMAGELESS;
 }
 
-@:struct class VkFramebufferCreateInfo {
+@:keep @:struct class VkFramebufferCreateInfo {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -164,7 +164,7 @@ enum VkFramebufferCreateFlag {
 
 abstract VkRenderPass(hl.Abstract<"vk_render_pass">) {}
 
-@:struct class VkRenderPassBeginInfo {
+@:keep @:struct class VkRenderPassBeginInfo {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -182,7 +182,7 @@ abstract VkRenderPass(hl.Abstract<"vk_render_pass">) {}
 	}
 }
 
-@:struct class VkRenderPassCreateInfo {
+@:keep @:struct class VkRenderPassCreateInfo {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -204,7 +204,7 @@ enum abstract VkSubpassContents(Int) {
 	final SECONDARY_COMMAND_BUFFERS = 1;
 }
 
-@:struct class VkSubpassDependency {
+@:keep @:struct class VkSubpassDependency {
 	public var srcSubpass:Int;
 	public var dstSubpass:Int;
 	public var srcStageMask:haxe.EnumFlags<VkPipelineStageFlag>;
@@ -216,7 +216,7 @@ enum abstract VkSubpassContents(Int) {
 	public function new() {}
 }
 
-@:struct class VkSubpassDescription {
+@:keep @:struct class VkSubpassDescription {
 	public var flags:haxe.EnumFlags<VkSubpassDescriptionFlag>;
 	public var pipelineBindPoint:VkPipelineBindPoint;
 	public var inputAttachmentCount:Int;

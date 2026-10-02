@@ -24,7 +24,7 @@ abstract VkBool32(Int) {
 	}
 }
 
-@:struct class VkDeviceSize {
+@:keep @:struct class VkDeviceSize {
 	public var low:Int;
 	public var high:Int;
 

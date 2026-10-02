@@ -23,7 +23,7 @@ enum VkQueryResultFlag {
 	PARTIAL;
 }
 
-@:struct class VkQueryPoolCreateInfo {
+@:keep @:struct class VkQueryPoolCreateInfo {
 	var type:VkStructureType;
 	var next:NextPtr;
 	var flags:UnusedFlags;

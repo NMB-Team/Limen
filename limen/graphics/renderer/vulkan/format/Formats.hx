@@ -285,7 +285,7 @@ enum abstract VkFormatFeature(Int) {
 	}
 }
 
-@:struct class VkFormatProperties {
+@:keep @:struct class VkFormatProperties {
 	public var linearTilingFeatures:Int;
 	public var optimalTilingFeatures:Int;
 	public var bufferFeatures:Int;

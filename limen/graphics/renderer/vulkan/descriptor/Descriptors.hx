@@ -12,7 +12,7 @@ import limen.graphics.renderer.vulkan.sampler.Samplers.VkSampler;
 
 import haxe.Int64;
 
-@:struct class VkCopyDescriptorSet {
+@:keep @:struct class VkCopyDescriptorSet {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -29,7 +29,7 @@ import haxe.Int64;
 	}
 }
 
-@:struct class VkDescriptorBufferInfo {
+@:keep @:struct class VkDescriptorBufferInfo {
 	public var buffer:VkBuffer;
 	public var offset:hl.I64;
 	public var range:hl.I64;
@@ -37,7 +37,7 @@ import haxe.Int64;
 	public function new() {}
 }
 
-@:struct class VkDescriptorImageInfo {
+@:keep @:struct class VkDescriptorImageInfo {
 	public var sampler:VkSampler;
 	public var imageView:VkImageView;
 	public var imageLayout:VkImageLayout;
@@ -53,7 +53,7 @@ enum VkDescriptorPoolCreateFlag {
 	HOST_ONLY_VALVE;
 }
 
-@:struct class VkDescriptorPoolCreateInfo {
+@:keep @:struct class VkDescriptorPoolCreateInfo {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -67,7 +67,7 @@ enum VkDescriptorPoolCreateFlag {
 	}
 }
 
-@:struct class VkDescriptorPoolSize {
+@:keep @:struct class VkDescriptorPoolSize {
 	public var type:VkDescriptorType;
 	public var descriptorCount:Int;
 
@@ -76,7 +76,7 @@ enum VkDescriptorPoolCreateFlag {
 
 abstract VkDescriptorSet(hl.Abstract<"vk_descriptor_set">) {}
 
-@:struct class VkDescriptorSetAllocateInfo {
+@:keep @:struct class VkDescriptorSetAllocateInfo {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -98,7 +98,7 @@ enum abstract VkDescriptorBindingFlag(Int) from Int to Int {
 	final VARIABLE_DESCRIPTOR_COUNT = 0x00000008;
 }
 
-@:struct class VkDescriptorSetLayoutBindingFlagsCreateInfo {
+@:keep @:struct class VkDescriptorSetLayoutBindingFlagsCreateInfo {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -110,7 +110,7 @@ enum abstract VkDescriptorBindingFlag(Int) from Int to Int {
 	}
 }
 
-@:struct class VkDescriptorSetLayoutBinding {
+@:keep @:struct class VkDescriptorSetLayoutBinding {
 	public var binding:Int;
 	public var descriptorType:VkDescriptorType;
 	public var descriptorCount:Int;
@@ -126,7 +126,7 @@ enum VkDescriptorSetLayoutCreateFlag {
 	HOST_ONLY_POOL_VALVE;
 }
 
-@:struct class VkDescriptorSetLayoutCreateInfo {
+@:keep @:struct class VkDescriptorSetLayoutCreateInfo {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -157,7 +157,7 @@ enum abstract VkDescriptorType(Int) {
 	final MUTABLE_VALVE = 1000351000;
 }
 
-@:struct class VkWriteDescriptorSet {
+@:keep @:struct class VkWriteDescriptorSet {
 	var type:VkStructureType;
 	var next:NextPtr;
 

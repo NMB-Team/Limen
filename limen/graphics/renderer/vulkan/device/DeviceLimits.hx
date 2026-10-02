@@ -2,7 +2,7 @@ package limen.graphics.renderer.vulkan.device;
 
 import limen.graphics.renderer.vulkan.VulkanCore.VkBool32;
 
-@:struct class VkPhysicalDeviceLimits {
+@:keep @:struct class VkPhysicalDeviceLimits {
 	public var maxImageDimension1D:Int;
 	public var maxImageDimension2D:Int;
 	public var maxImageDimension3D:Int;

@@ -153,7 +153,7 @@ enum abstract VkDynamicState(Int) {
 	final DEPTH_BIAS_ENABLE_EXT = 1000377002;
 }
 
-@:struct class VkPipelineRenderingCreateInfo {
+@:keep @:struct class VkPipelineRenderingCreateInfo {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -182,7 +182,7 @@ enum abstract VkFrontFace(Int) {
 abstract VkGraphicsPipeline(hl.Abstract<"vk_gpipeline">) {}
 abstract VkComputePipeline(hl.Abstract<"vk_gpipeline">) {}
 
-@:struct class VkComputePipelineCreateInfo {
+@:keep @:struct class VkComputePipelineCreateInfo {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -197,7 +197,7 @@ abstract VkComputePipeline(hl.Abstract<"vk_gpipeline">) {}
 	}
 }
 
-@:struct class VkGraphicsPipelineCreateInfo {
+@:keep @:struct class VkGraphicsPipelineCreateInfo {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -249,7 +249,7 @@ enum abstract VkPipelineBindPoint(Int) {
 	final RAY_TRACING_KHR = 1000165000;
 }
 
-@:struct class VkPipelineColorBlend {
+@:keep @:struct class VkPipelineColorBlend {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -268,7 +268,7 @@ enum abstract VkPipelineBindPoint(Int) {
 	}
 }
 
-@:struct class VkPipelineColorBlendAttachmentState {
+@:keep @:struct class VkPipelineColorBlendAttachmentState {
 	public var blendEnable:VkBool32;
 	public var srcColorBlendFactor:VkBlendFactor;
 	public var dstColorBlendFactor:VkBlendFactor;
@@ -303,7 +303,7 @@ enum VkPipelineCreateFlags {
 	RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_KHR;
 }
 
-@:struct class VkPipelineDepthStencil {
+@:keep @:struct class VkPipelineDepthStencil {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -335,7 +335,7 @@ enum VkPipelineCreateFlags {
 	}
 }
 
-@:struct class VkPipelineDynamic {
+@:keep @:struct class VkPipelineDynamic {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -348,7 +348,7 @@ enum VkPipelineCreateFlags {
 	}
 }
 
-@:struct class VkPipelineInputAssembly {
+@:keep @:struct class VkPipelineInputAssembly {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -363,7 +363,7 @@ enum VkPipelineCreateFlags {
 
 abstract VkPipelineLayout(hl.Abstract<"vk_pipeline_layout">) {}
 
-@:struct class VkPipelineLayoutCreateInfo {
+@:keep @:struct class VkPipelineLayoutCreateInfo {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -378,7 +378,7 @@ abstract VkPipelineLayout(hl.Abstract<"vk_pipeline_layout">) {}
 	}
 }
 
-@:struct class VkPipelineMultisample {
+@:keep @:struct class VkPipelineMultisample {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -395,7 +395,7 @@ abstract VkPipelineLayout(hl.Abstract<"vk_pipeline_layout">) {}
 	}
 }
 
-@:struct class VkPipelineRasterization {
+@:keep @:struct class VkPipelineRasterization {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -416,7 +416,7 @@ abstract VkPipelineLayout(hl.Abstract<"vk_pipeline_layout">) {}
 	}
 }
 
-@:struct class VkPipelineShaderStage {
+@:keep @:struct class VkPipelineShaderStage {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -436,7 +436,7 @@ enum VkPipelineShaderStageCreateFlag {
 	REQUIRE_FULL_SUBGROUPS_EXT;
 }
 
-@:struct class VkPipelineTessellation {
+@:keep @:struct class VkPipelineTessellation {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -448,7 +448,7 @@ enum VkPipelineShaderStageCreateFlag {
 	}
 }
 
-@:struct class VkPipelineVertexInput {
+@:keep @:struct class VkPipelineVertexInput {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -463,7 +463,7 @@ enum VkPipelineShaderStageCreateFlag {
 	}
 }
 
-@:struct class VkPipelineViewport {
+@:keep @:struct class VkPipelineViewport {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -499,7 +499,7 @@ enum abstract VkPrimitiveTopology(Int) {
 	final PATCH_LIST = 10;
 }
 
-@:struct class VkPushConstantRange {
+@:keep @:struct class VkPushConstantRange {
 	public var stageFlags:haxe.EnumFlags<VkShaderStageFlag>;
 	public var offset:Int;
 	public var size:Int;
@@ -507,7 +507,7 @@ enum abstract VkPrimitiveTopology(Int) {
 	public function new() {}
 }
 
-@:struct class VkRect2D {
+@:keep @:struct class VkRect2D {
 	public var offsetX:Int;
 	public var offsetY:Int;
 	public var extendX:Int;
@@ -527,7 +527,7 @@ enum abstract VkStencilOp(Int) {
 	final DECREMENT_AND_WRAP = 7;
 }
 
-@:struct class VkVertexInputAttributeDescription {
+@:keep @:struct class VkVertexInputAttributeDescription {
 	public var location:Int;
 	public var binding:Int;
 	public var format:VkFormat;
@@ -536,7 +536,7 @@ enum abstract VkStencilOp(Int) {
 	public function new() {}
 }
 
-@:struct class VkVertexInputBindingDescription {
+@:keep @:struct class VkVertexInputBindingDescription {
 	public var binding:Int;
 	public var stride:Int;
 	public var inputRate:VkVertexInputRate;
@@ -549,7 +549,7 @@ enum abstract VkVertexInputRate(Int) {
 	final INSTANCE = 1;
 }
 
-@:struct class VkViewport {
+@:keep @:struct class VkViewport {
 	public var x:Single;
 	public var y:Single;
 	public var width:Single;

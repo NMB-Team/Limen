@@ -69,7 +69,7 @@ enum VkBufferCreateFlag {
 	DEVICE_ADDRESS_CAPTURE_REPLAY;
 }
 
-@:struct class VkBufferCreateInfo {
+@:keep @:struct class VkBufferCreateInfo {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -89,7 +89,7 @@ enum VkBufferCreateFlag {
 	}
 }
 
-@:struct class VkBufferImageCopy {
+@:keep @:struct class VkBufferImageCopy {
 	public var bufferOffset:hl.I64;
 	public var bufferRowLength:Int;
 	public var bufferImageHeight:Int;
@@ -107,7 +107,7 @@ enum VkBufferCreateFlag {
 	public function new() {}
 }
 
-@:struct class VkBufferMemoryBarrier {
+@:keep @:struct class VkBufferMemoryBarrier {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -183,7 +183,7 @@ enum VkImageCreateFlag {
 	SUBSAMPLED_EXT;
 }
 
-@:struct class VkImageCreateInfo {
+@:keep @:struct class VkImageCreateInfo {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -232,7 +232,7 @@ enum abstract VkImageLayout(Int) {
 	final ATTACHMENT_OPTIMAL_KHR = 1000314001;
 }
 
-@:struct class VkImageMemoryBarrier {
+@:keep @:struct class VkImageMemoryBarrier {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -254,7 +254,7 @@ enum abstract VkImageLayout(Int) {
 	}
 }
 
-@:struct class VkImageSubResourceRange {
+@:keep @:struct class VkImageSubResourceRange {
 	public var aspectMask:haxe.EnumFlags<VkImageAspectFlag>;
 	public var baseMipLevel:Int;
 	public var levelCount:Int;
@@ -295,7 +295,7 @@ enum VkImageViewCreateFlag {
 	FRAGMENT_DENSITY_MAP_DEFERRED_EXT;
 }
 
-@:struct class VkImageViewCreateInfo {
+@:keep @:struct class VkImageViewCreateInfo {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -329,7 +329,7 @@ enum abstract VkImageViewType(Int) {
 	final TYPE_CUBE_ARRAY = 6;
 }
 
-@:struct class VkMemoryAllocateInfo {
+@:keep @:struct class VkMemoryAllocateInfo {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -342,7 +342,7 @@ enum abstract VkImageViewType(Int) {
 	}
 }
 
-@:struct class VkMemoryBarrier {
+@:keep @:struct class VkMemoryBarrier {
 	var type:VkStructureType;
 	var next:NextPtr;
 
@@ -365,7 +365,7 @@ enum VkMemoryPropertyFlag {
 	DEVICE_UNCACHED_AMD;
 }
 
-@:struct class VkMemoryRequirementsInfo {
+@:keep @:struct class VkMemoryRequirementsInfo {
 	public var size:hl.I64;
 	public var alignment:hl.I64;
 	public var memoryTypeBits:Int;
@@ -375,14 +375,14 @@ enum VkMemoryPropertyFlag {
 	public function new() {}
 }
 
-@:struct class VkMemoryHeapBudgetInfo {
+@:keep @:struct class VkMemoryHeapBudgetInfo {
 	public var budget:hl.I64;
 	public var usage:hl.I64;
 
 	public function new() {}
 }
 
-@:struct class VkMemoryRequirements {
+@:keep @:struct class VkMemoryRequirements {
 	public var size:Int;
 	public var size64:Int;
 	public var alignment:Int;
