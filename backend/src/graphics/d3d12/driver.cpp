@@ -904,7 +904,9 @@ HL_PRIM vbyte* HL_NAME(compiler_compile)(dx_compiler* comp, uchar* source, uchar
 	if (blob == nullptr)
 		hl_error("Could not create blob");
 #ifndef HL_XBS
+	hl_blocking(true);
 	comp->compiler->Compile(blob, L"", L"main", profile, hl_aptr(args, LPCWSTR), args->size, nullptr, 0, nullptr, &result);
+	hl_blocking(false);
 #else
 	BOOL knownEncoding = FALSE;
 	UINT32 encoding = 0U;
@@ -962,7 +964,10 @@ HL_PRIM ID3D12PipelineState* HL_NAME(create_graphics_pipeline_state)(D3D12_GRAPH
 		static_driver->gpuCrashTracker->onCreateGraphicsPipeline(desc);
 	ID3D12PipelineState* state = nullptr;
 	// if shader is considered invalid, maybe you're missing dxil.dll
-	DXERR(static_driver->device->CreateGraphicsPipelineState(desc, IID_PPV_ARGS(&state)));
+	hl_blocking(true);
+	HRESULT hr = static_driver->device->CreateGraphicsPipelineState(desc,IID_PPV_ARGS(&state));
+	hl_blocking(false);
+	DXERR(hr);
 	return state;
 }
 
