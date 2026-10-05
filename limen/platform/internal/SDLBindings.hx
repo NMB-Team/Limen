@@ -29,6 +29,10 @@ class SDLBindings {
 		return 0;
 	}
 
+	public static function isFsrAvailable():Bool {
+		return false;
+	}
+
 	public static function isDlssAvailable():Bool {
 		return false;
 	}

@@ -98,6 +98,7 @@ vulkan.limen - Vulkan graphics driver
 d3d11.limen  - Direct3D 11 graphics driver (Windows)
 d3d12.limen  - Direct3D 12 graphics driver (Windows x64)
 dlss.limen   - Optional DLSS integration for D3D12 (Windows x64)
+fsr.limen    - Optional statically linked FSR upscaler for D3D12 (Windows x64)
 ```
 
 ##### `limen.hdll` is always required.
@@ -216,8 +217,16 @@ SDL3 source tree instead of the pinned fetched release.
 
 DLSS support is disabled by default and is not required to build or install
 LIMEN. On Windows x64, set `LIMEN_BUILD_DLSS=ON` and
-`LIMEN_STREAMLINE_SDK_ROOT` to build `dlss.limen`; the Streamline import
-library and runtime DLLs are required only for that opt-in module.
+`LIMEN_STREAMLINE_SDK_ROOT` to build `dlss.limen`; the Streamline
+runtime DLLs are required only for that opt-in module. See
+[`limen/graphics/postprocess/dlss`](limen/graphics/postprocess/dlss/README.md)
+for build instructions, usage, and licensing.
+
+FSR support is disabled by default. Set `LIMEN_BUILD_FSR=ON` in a Windows
+x64 MSVC build to compile the AMD FSR 3.1.5 upscaler and DX12 backend into
+`fsr.limen`, without AMD runtime DLLs. See
+[`limen/graphics/postprocess/fsr`](limen/graphics/postprocess/fsr/README.md)
+for source overrides and usage.
 
 CMake locates the DXC runtime DLLs from the Vulkan SDK or HashLink's
 `include/dx` distribution. Their locations can be overridden with

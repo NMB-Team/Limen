@@ -68,6 +68,8 @@ set(_LIMEN_MODULE_PROXY_INPUTS
 		backend/src/graphics/d3d12/debug.cpp
 	dlss
 		backend/src/graphics/d3d12/dlss.cpp
+	fsr
+		backend/src/graphics/d3d12/fsr.cpp
 )
 set(_LIMEN_MODULE_PROXY_MODULE "")
 foreach(_input IN LISTS _LIMEN_MODULE_PROXY_INPUTS)
@@ -93,7 +95,7 @@ endforeach()
 file(WRITE "${_LIMEN_MODULE_PROXY_SOURCE}" "${_LIMEN_MODULE_PROXY_CONTENT}")
 
 if(MSVC)
-	foreach(_module opengl vulkan d3d11 d3d12 dlss)
+	foreach(_module opengl vulkan d3d11 d3d12 dlss fsr)
 		set(_LIMEN_HLC_DEF_${_module} "${CMAKE_CURRENT_BINARY_DIR}/limen_${_module}_hlc.def")
 		file(WRITE "${_LIMEN_HLC_DEF_${_module}}" "${_LIMEN_HLC_DEF_CONTENT_${_module}}")
 	endforeach()
@@ -144,6 +146,10 @@ endif()
 
 if(LIMEN_BUILD_DLSS AND (NOT LIMEN_WINDOWS_X64 OR NOT LIMEN_BUILD_D3D12))
 	message(FATAL_ERROR "LIMEN_BUILD_DLSS requires the Windows x64 D3D12 backend.")
+endif()
+
+if(LIMEN_BUILD_FSR AND (NOT LIMEN_WINDOWS_X64 OR NOT LIMEN_BUILD_D3D12 OR NOT MSVC))
+	message(FATAL_ERROR "LIMEN_BUILD_FSR requires the Windows x64 D3D12 backend and MSVC.")
 endif()
 
 if(LIMEN_BUILD_VULKAN)
@@ -356,6 +362,14 @@ if(LIMEN_WINDOWS_X64 AND LIMEN_BUILD_D3D12)
 		install(FILES "${LIMEN_AFTERMATH_RUNTIME_DLL}" DESTINATION "${LIMEN_HDLL_DESTINATION}")
 	endif()
 
+	if(LIMEN_BUILD_FSR)
+		include(FidelityFX)
+		limen_resolve_fidelityfx()
+		add_library(limen_fsr SHARED backend/src/graphics/d3d12/fsr.cpp)
+		limen_set_native_library(limen_fsr fsr .limen)
+		target_link_libraries(limen_fsr PRIVATE libhl limen_fidelityfx d3d12 dxgi)
+	endif()
+
 	if(LIMEN_BUILD_DLSS)
 		if(NOT _LIMEN_DXC_ARCH STREQUAL "x64")
 			message(FATAL_ERROR "NVIDIA Streamline DLSS is only supported by the Windows x64 build.")
@@ -409,11 +423,15 @@ if(LIMEN_WINDOWS_X64 AND LIMEN_BUILD_D3D12)
 				${_LIMEN_STREAMLINE_RUNTIME_FILES} "$<TARGET_FILE_DIR:limen_dlss>"
 		)
 		install(FILES ${_LIMEN_STREAMLINE_RUNTIME_FILES} DESTINATION "${LIMEN_HDLL_DESTINATION}")
+		install(
+			FILES "${CMAKE_CURRENT_SOURCE_DIR}/limen/graphics/postprocess/dlss/LICENSE_STREAMLINE"
+			DESTINATION "${LIMEN_HDLL_DESTINATION}"
+		)
 	endif()
 endif()
 
 set(_LIMEN_INSTALL_TARGETS limen)
-foreach(_target limen_opengl limen_vulkan limen_d3d11 limen_d3d12 limen_dlss)
+foreach(_target limen_opengl limen_vulkan limen_d3d11 limen_d3d12 limen_dlss limen_fsr)
 	if(TARGET ${_target})
 		list(APPEND _LIMEN_INSTALL_TARGETS ${_target})
 	endif()
@@ -433,7 +451,7 @@ if(MSVC)
 
 	set(_LIMEN_IMPORT_LIBRARY_TARGETS limen)
 	set(_LIMEN_IMPORT_LIBRARIES "$<TARGET_LINKER_FILE:limen>")
-	foreach(_module opengl vulkan d3d11 d3d12 dlss)
+	foreach(_module opengl vulkan d3d11 d3d12 dlss fsr)
 		set(_target limen_${_module})
 		if(TARGET ${_target})
 			set(_hlc_target ${_target}_hlc_import_library)

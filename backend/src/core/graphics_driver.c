@@ -65,3 +65,12 @@ HL_PRIM bool HL_NAME(is_dlss_available)() {
 	return available;
 }
 DEFINE_PRIM(_BOOL, is_dlss_available, _NO_ARG);
+
+HL_PRIM bool HL_NAME(is_fsr_available)() {
+	if (limen_selected_graphics_driver != LIMEN_GRAPHICS_D3D12)
+		return false;
+	bool available = limen_module_load("fsr.limen") != nullptr;
+	SDL_ClearError();
+	return available;
+}
+DEFINE_PRIM(_BOOL, is_fsr_available, _NO_ARG);
