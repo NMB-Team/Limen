@@ -73,6 +73,29 @@ enum HeapFlag {
 	CREATE_NOT_ZEROED;
 }
 
+@:forward(release, setName)
+abstract Heap(Dx12Resource) {
+	@:to inline function to():Dx12Resource {
+		return cast this;
+	}
+}
+
+@:struct class HeapDesc {
+	public var sizeInBytes:Int64;
+	@:packed public var properties(default, null):HeapProperties;
+	public var alignment:Int64;
+	public var flags:haxe.EnumFlags<HeapFlag>;
+
+	public function new() {}
+}
+
+@:struct class ResourceAllocationInfo {
+	public var sizeInBytes:Int64;
+	public var alignment:Int64;
+
+	public function new() {}
+}
+
 @:struct class HeapProperties {
 	public var type:HeapType;
 	public var cpuPageProperty:CpuPageProperty;

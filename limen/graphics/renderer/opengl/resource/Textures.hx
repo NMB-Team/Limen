@@ -54,6 +54,8 @@ class Textures {
 	@:hlNative("limen", "opengl_gl_tex_storage3d")
 	public static function texStorage3D(target:Int, levels:Int, internalFormat:Int, width:Int, height:Int, depth:Int) {}
 
+	public static function copyImageSubData(src:Texture, srcTarget:Int, srcLevel:Int, srcX:Int, srcY:Int, srcZ:Int, dst:Texture, dstTarget:Int, dstLevel:Int, dstX:Int, dstY:Int, dstZ:Int, width:Int, height:Int, depth:Int) {}
+
 	public static function generateMipmap(t:Int) {}
 
 	public static function deleteTexture(t:Texture) {}

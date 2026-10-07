@@ -223,13 +223,6 @@
 		},
 		{
 			"props": {
-				"max": 12,
-				"ignoreOverriddenMethods": false
-			},
-			"type": "ParameterNumber"
-		},
-		{
-			"props": {
 				"prohibitMeta": false
 			},
 			"type": "RedundantAllowMeta"

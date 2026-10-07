@@ -17,6 +17,9 @@ import limen.graphics.renderer.d3d12.descriptor.ResourceViews.UnorderedAccessVie
 import limen.graphics.renderer.d3d12.resource.Resources.Dx12Resource;
 import limen.graphics.renderer.d3d12.resource.Resources.GpuResource;
 import limen.graphics.renderer.d3d12.resource.Resources.HeapFlag;
+import limen.graphics.renderer.d3d12.resource.Resources.Heap;
+import limen.graphics.renderer.d3d12.resource.Resources.HeapDesc;
+import limen.graphics.renderer.d3d12.resource.Resources.ResourceAllocationInfo;
 import limen.graphics.renderer.d3d12.resource.Resources.HeapProperties;
 import limen.graphics.renderer.d3d12.resource.Resources.HeapType;
 import limen.graphics.renderer.d3d12.resource.Resources.PlacedSubresourceFootprint;
@@ -41,6 +44,7 @@ abstract CompilerHandle(hl.Abstract<"dx_compiler">) {}
 typedef Adapter = hl.Abstract<"dx_adapter">;
 typedef Factory = hl.Abstract<"dx_factory">;
 typedef Device = hl.Abstract<"dx_device">;
+typedef SwapChain = hl.Abstract<"dx_swapchain">;
 
 @:noDoc
 @:noCompletion
@@ -84,6 +88,8 @@ class D3D12Bindings {
 	public static function setDevice(device:Device) {}
 
 	public static function setFactory(factory:Factory) {}
+
+	public static function setSwapChain(swapChain:SwapChain) {}
 
 	public static function flushMessages() {}
 
@@ -133,6 +139,16 @@ class D3D12Bindings {
 	public static function createSampler(desc:Dx12SamplerDesc, target:Address) {}
 
 	public static function createCommittedResource(heapProperties:HeapProperties, heapFlags:haxe.EnumFlags<HeapFlag>, desc:ResourceDesc, initialState:ResourceState, clearValue:ClearValue):GpuResource {
+		return null;
+	}
+
+	public static function createHeap(desc:HeapDesc):Heap {
+		return null;
+	}
+
+	public static function getResourceAllocationInfo(desc:ResourceDesc, info:ResourceAllocationInfo):Void {}
+
+	public static function createPlacedResource(heap:Heap, offset:Int64, desc:ResourceDesc, initialState:ResourceState, clearValue:ClearValue):GpuResource {
 		return null;
 	}
 

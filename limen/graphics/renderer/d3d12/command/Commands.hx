@@ -57,6 +57,8 @@ abstract CommandList(Dx12Resource) {
 
 	public function resourceBarrier(b:ResourceBarrier) {}
 
+	public function resourceAliasingBarrier(before:GpuResource, after:GpuResource) {}
+
 	public function resourceBarriers(b:hl.CArray<ResourceBarrier>, barrierCount:Int) {}
 
 	public function setPipelineState(state:PipelineState) {}

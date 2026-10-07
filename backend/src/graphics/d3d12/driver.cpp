@@ -276,10 +276,12 @@ static LARGE_INTEGER driver_version = { 0 };
 using dx_device = ID3D12Device2;
 using dx_factory = IDXGIFactory4;
 using dx_adapter = IDXGIAdapter;
+using dx_swapchain = IDXGISwapChain;
 
 #define _DEVICE _ABSTRACT(dx_device)
 #define _FACTORY _ABSTRACT(dx_factory)
 #define _ADAPTER _ABSTRACT(dx_adapter)
+#define _SWAPCHAIN _ABSTRACT(dx_swapchain)
 
 #define _DEVICE _ABSTRACT(dx_device)
 
@@ -308,11 +310,19 @@ HL_PRIM void HL_NAME(set_factory)(IDXGIFactory4* factory) {
 	drv->factory = factory;
 }
 
+HL_PRIM void HL_NAME(set_swap_chain)(IDXGISwapChain* swapchain) {
+#ifndef HL_XBS
+	dx_driver* drv = static_driver;
+	drv->swapchain = static_cast<IDXGISwapChain4*>(swapchain);
+#endif
+}
+
 DEFINE_PRIM(_DEVICE, get_device, _NO_ARG);
 DEFINE_PRIM(_FACTORY, get_factory, _NO_ARG);
 DEFINE_PRIM(_ADAPTER, get_adapter, _NO_ARG);
 DEFINE_PRIM(_VOID, set_device, _DEVICE);
 DEFINE_PRIM(_VOID, set_factory, _FACTORY);
+DEFINE_PRIM(_VOID, set_swap_chain, _SWAPCHAIN);
 
 HL_PRIM void HL_NAME(flush_messages)();
 
@@ -778,6 +788,25 @@ HL_PRIM ID3D12Resource* HL_NAME(create_committed_resource)(D3D12_HEAP_PROPERTIES
 	return res;
 }
 
+HL_PRIM ID3D12Heap* HL_NAME(create_heap)(D3D12_HEAP_DESC* desc) {
+	ID3D12Heap* heap = nullptr;
+	DXERR(static_driver->device->CreateHeap(desc, IID_PPV_ARGS(&heap)));
+	return heap;
+}
+
+HL_PRIM void HL_NAME(get_resource_allocation_info)(D3D12_RESOURCE_DESC* desc, D3D12_RESOURCE_ALLOCATION_INFO* info) {
+	*info = static_driver->device->GetResourceAllocationInfo(0, 1, desc);
+}
+
+HL_PRIM ID3D12Resource* HL_NAME(create_placed_resource)(ID3D12Heap* heap, int64 offset, D3D12_RESOURCE_DESC* desc, D3D12_RESOURCE_STATES initialState, D3D12_CLEAR_VALUE* clearValue) {
+	ID3D12Resource* res = nullptr;
+#ifdef HL_XBS
+	initialState = (D3D12_RESOURCE_STATES)(initialState & ~D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
+#endif
+	DXERR(static_driver->device->CreatePlacedResource(heap, offset, desc, initialState, clearValue, IID_PPV_ARGS(&res)));
+	return res;
+}
+
 HL_PRIM void HL_NAME(create_render_target_view)(ID3D12Resource* res, D3D12_RENDER_TARGET_VIEW_DESC* desc, D3D12_CPU_DESCRIPTOR_HANDLE descriptor) {
 	static_driver->device->CreateRenderTargetView(res, desc, descriptor);
 }
@@ -856,6 +885,9 @@ DEFINE_PRIM(_VOID, create_constant_buffer_view, _STRUCT _I64);
 DEFINE_PRIM(_VOID, create_unordered_access_view, _RES _RES _STRUCT _I64);
 DEFINE_PRIM(_VOID, create_sampler, _STRUCT _I64);
 DEFINE_PRIM(_RES, create_committed_resource, _STRUCT _I32 _STRUCT _I32 _STRUCT);
+DEFINE_PRIM(_RES, create_heap, _STRUCT);
+DEFINE_PRIM(_VOID, get_resource_allocation_info, _STRUCT _STRUCT);
+DEFINE_PRIM(_RES, create_placed_resource, _RES _I64 _STRUCT _I32 _STRUCT);
 DEFINE_PRIM(_RES, get_back_buffer, _I32);
 DEFINE_PRIM(_VOID, resource_release, _RES);
 DEFINE_PRIM(_VOID, resource_set_name, _RES _BYTES);
@@ -1155,6 +1187,14 @@ HL_PRIM void HL_NAME(command_list_resource_barrier)(ID3D12GraphicsCommandList* l
 	l->ResourceBarrier(1, barrier);
 }
 
+HL_PRIM void HL_NAME(command_list_resource_aliasing_barrier)(ID3D12GraphicsCommandList* l, ID3D12Resource* before, ID3D12Resource* after) {
+	D3D12_RESOURCE_BARRIER barrier = {};
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_ALIASING;
+	barrier.Aliasing.pResourceBefore = before;
+	barrier.Aliasing.pResourceAfter = after;
+	l->ResourceBarrier(1, &barrier);
+}
+
 HL_PRIM void HL_NAME(command_list_resource_barriers)(ID3D12GraphicsCommandList* l, D3D12_RESOURCE_BARRIER* barrier, int barrierCount) {
 	l->ResourceBarrier(barrierCount, barrier);
 }
@@ -1306,6 +1346,7 @@ DEFINE_PRIM(_RES, command_list_create, _I32 _RES _RES);
 DEFINE_PRIM(_VOID, command_list_close, _RES);
 DEFINE_PRIM(_VOID, command_list_reset, _RES _RES _RES);
 DEFINE_PRIM(_VOID, command_list_resource_barrier, _RES _STRUCT);
+DEFINE_PRIM(_VOID, command_list_resource_aliasing_barrier, _RES _RES _RES);
 DEFINE_PRIM(_VOID, command_list_resource_barriers, _RES _ABSTRACT(hl_carray) _I32);
 DEFINE_PRIM(_VOID, command_list_clear_render_target_view, _RES _I64 _STRUCT);
 DEFINE_PRIM(_VOID, command_list_clear_depth_stencil_view, _RES _I64 _I32 _F32 _I32);
