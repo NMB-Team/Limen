@@ -11,12 +11,12 @@ class Vulkan {
 	public static var instanceApiVersion(get, never):Int;
 	public static var validationEnabled(get, never):Bool;
 
-	public static function createSurface(window:Window, enableValidation:Bool = false):Surface {
-		return Surface.create(window, enableValidation);
+	public static function createSurface(window:Window, enableValidation:Bool = false, ?requirements:VulkanRequirements):Surface {
+		return Surface.create(window, enableValidation, requirements);
 	}
 
-	public static function createContext(surface:Surface, queueFamily:hl.Ref<Int>, requiredCapabilities:Int = Capabilities.FOUNDATION):VkContext {
-		final context = VulkanBindings.initContext(surface.nativeHandle, queueFamily, requiredCapabilities);
+	public static function createContext(surface:Surface, queueFamily:hl.Ref<Int>, requiredCapabilities:Int = Capabilities.FOUNDATION, ?requirements:VulkanRequirements):VkContext {
+		final context = VulkanBindings.initContext(surface.nativeHandle, queueFamily, requiredCapabilities, requirements);
 		if (context == null)
 			throw error("Failed to create Vulkan context");
 		return context;

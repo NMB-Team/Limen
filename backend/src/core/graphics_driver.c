@@ -57,20 +57,30 @@ HL_PRIM int HL_NAME(select_graphics_driver)(int preferred, int supported) {
 }
 DEFINE_PRIM(_I32, select_graphics_driver, _I32 _I32);
 
-HL_PRIM bool HL_NAME(is_dlss_available)() {
-	if (limen_selected_graphics_driver != LIMEN_GRAPHICS_D3D12)
+static bool limen_postprocess_available(const char* module_name) {
+	if (limen_selected_graphics_driver < LIMEN_GRAPHICS_VULKAN || limen_selected_graphics_driver >= LIMEN_GRAPHICS_DRIVER_COUNT)
 		return false;
-	bool available = limen_module_load("dlss.limen") != nullptr;
+	void* module = limen_module_load(module_name);
+	if (module == nullptr) {
+		SDL_ClearError();
+		return false;
+	}
+	typedef void* (*resolver_type)(const char**);
+	typedef bool (*supported_type)(int);
+	resolver_type resolver = (resolver_type)SDL_LoadFunction(module, "hlp_is_backend_supported");
+	const char* signature = nullptr;
+	supported_type supported = resolver == nullptr ? nullptr : (supported_type)resolver(&signature);
+	bool available = supported != nullptr && supported(limen_selected_graphics_driver);
 	SDL_ClearError();
 	return available;
+}
+
+HL_PRIM bool HL_NAME(is_dlss_available)() {
+	return limen_postprocess_available("dlss.limen");
 }
 DEFINE_PRIM(_BOOL, is_dlss_available, _NO_ARG);
 
 HL_PRIM bool HL_NAME(is_fsr_available)() {
-	if (limen_selected_graphics_driver != LIMEN_GRAPHICS_D3D12)
-		return false;
-	bool available = limen_module_load("fsr.limen") != nullptr;
-	SDL_ClearError();
-	return available;
+	return limen_postprocess_available("fsr.limen");
 }
 DEFINE_PRIM(_BOOL, is_fsr_available, _NO_ARG);

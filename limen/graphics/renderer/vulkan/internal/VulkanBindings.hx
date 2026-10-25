@@ -52,6 +52,8 @@ import limen.graphics.renderer.vulkan.render.RenderPass.VkRenderPassCreateInfo;
 import limen.graphics.renderer.vulkan.sampler.Samplers.VkSampler;
 import limen.graphics.renderer.vulkan.sampler.Samplers.VkSamplerCreateInfo;
 import limen.graphics.PresentMode;
+import limen.graphics.renderer.vulkan.VulkanRequirements;
+import limen.graphics.postprocess.PostProcessDevice;
 
 enum abstract ShaderKind(Int) {
 	final Vertex = 0;
@@ -146,6 +148,14 @@ abstract VkContext(hl.Abstract<"vk_context">) {
 	public function getDriverVersion():Int {
 		return 0;
 	}
+
+	public function getPostProcessDevice():PostProcessDevice {
+		final device = new PostProcessDevice(Vulkan, null);
+		fillPostProcessDevice(device);
+		return device;
+	}
+
+	function fillPostProcessDevice(device:PostProcessDevice):Void {}
 
 	public function getGraphicsQueueFamily():Int {
 		return 0;
@@ -485,7 +495,7 @@ class VulkanBindings {
 	public static var ENABLE_VALIDATION = false;
 
 	@:hlNative("limen", "vulkan_vk_init")
-	public static function initialize(enableValidation:Bool):Bool {
+	public static function initialize(enableValidation:Bool, ?requirements:VulkanRequirements):Bool {
 		return false;
 	}
 
@@ -518,7 +528,7 @@ class VulkanBindings {
 		return null;
 	}
 
-	public static function initContext(surface:VkSurface, queueFamily:hl.Ref<Int>, requiredCapabilities:Int):VkContext {
+	public static function initContext(surface:VkSurface, queueFamily:hl.Ref<Int>, requiredCapabilities:Int, ?requirements:VulkanRequirements):VkContext {
 		return null;
 	}
 

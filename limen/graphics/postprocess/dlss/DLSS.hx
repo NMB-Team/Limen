@@ -1,10 +1,11 @@
 package limen.graphics.postprocess.dlss;
 
 import limen.graphics.GraphicsDriver;
+import limen.graphics.renderer.vulkan.VulkanRequirements;
+import limen.graphics.postprocess.PostProcessDevice;
+import limen.graphics.postprocess.CommandBuffer;
 import limen.graphics.renderer.d3d12.internal.D3D12Bindings.SwapChain;
 import limen.graphics.renderer.d3d12.command.Commands.CommandQueue;
-import limen.graphics.renderer.d3d12.command.Commands.CommandList;
-import limen.graphics.renderer.d3d12.internal.D3D12Bindings.Adapter;
 import limen.graphics.renderer.d3d12.internal.D3D12Bindings.Device;
 import limen.graphics.renderer.d3d12.internal.D3D12Bindings.Factory;
 import limen.graphics.postprocess.dlss.frame.DLSSConstants;
@@ -27,10 +28,19 @@ class DLSS {
 	public static inline final REFLEX_FRAME_REPORT_COUNT = 64;
 
 	public static function isAvailable():Bool {
-		return Platform.graphicsDriver == GraphicsDriver.D3D12 && SDLBindings.isDlssAvailable();
+		return SDLBindings.isDlssAvailable();
 	}
 
-	public static function init(showConsole:Bool, features:hl.NativeArray<Int>, checkSignature:Bool):Int {
+	public static function init(showConsole:Bool, features:hl.NativeArray<Int>, checkSignature:Bool, ?backend:GraphicsDriver):Int {
+		return initBackend(showConsole, features, checkSignature, backend ?? Platform.graphicsDriver);
+	}
+
+	@:hlNative("limen", "dlss_init")
+	static function initBackend(showConsole:Bool, features:hl.NativeArray<Int>, checkSignature:Bool, backend:GraphicsDriver):Int {
+		return 0;
+	}
+
+	public static function getVulkanRequirements(features:hl.NativeArray<Int>, requirements:VulkanRequirements):Int {
 		return 0;
 	}
 
@@ -38,7 +48,7 @@ class DLSS {
 		return 0;
 	}
 
-	public static function setDevice(device:Device):Int {
+	public static function setDevice(device:PostProcessDevice):Int {
 		return 0;
 	}
 
@@ -50,7 +60,7 @@ class DLSS {
 		return null;
 	}
 
-	public static function isFeatureSupported(adapter:Adapter, feature:DLSSFeature):Int {
+	public static function isFeatureSupported(device:PostProcessDevice, feature:DLSSFeature):Int {
 		return 0;
 	}
 
@@ -90,7 +100,7 @@ class DLSS {
 		return 0;
 	}
 
-	public static function setTagForFrame(frameToken:DLSSFrameToken, resources:hl.CArray<DLSSResource>, count:Int, commandList:CommandList):Int {
+	public static function setTagForFrame(frameToken:DLSSFrameToken, resources:hl.CArray<DLSSResource>, count:Int, commandList:CommandBuffer):Int {
 		return 0;
 	}
 
@@ -118,7 +128,7 @@ class DLSS {
 		return 0;
 	}
 
-	public static function evaluateFeature(frameToken:DLSSFrameToken, commandList:CommandList, feature:DLSSFeature):Int {
+	public static function evaluateFeature(frameToken:DLSSFrameToken, commandList:CommandBuffer, feature:DLSSFeature):Int {
 		return 0;
 	}
 

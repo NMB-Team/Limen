@@ -1,7 +1,8 @@
 # NVIDIA DLSS
 
 `limen.graphics.postprocess.dlss.DLSS` integrates NVIDIA Streamline with Limen's
-D3D12 device, factory, resources, resource states, and command list types.
+shared postprocess device, texture, and command types on D3D11, D3D12, and Vulkan.
+See [GPU postprocessing](../README.md) for the common contract and Vulkan setup.
 The bundled Streamline headers are version 2.14.1.
 
 Feature and result types live in the DLSS package. Upscaling settings are in
@@ -11,7 +12,7 @@ Reflex, and latency markers have their own `framegen`, `reflex`, and `pcl` packa
 
 ## Build
 
-Enable `LIMEN_BUILD_DLSS=ON` in a Windows x64 build with D3D12 enabled.
+Enable `LIMEN_BUILD_DLSS=ON` in a Windows x64 build with D3D11, D3D12, or Vulkan enabled.
 Set `LIMEN_STREAMLINE_SDK_ROOT` to a compatible NVIDIA Streamline SDK directory.
 CMake builds `dlss.limen` and copies these runtime files from the SDK's `bin/x64`
 or `x64` directory beside the module:
@@ -33,21 +34,22 @@ GPU, driver, and operating system.
 
 ## Usage
 
-1. Select the D3D12 graphics driver and check `DLSS.isAvailable()`. This checks
+1. Select a supported graphics driver and check `DLSS.isAvailable()`. This checks
    module availability; check hardware support separately after initialization.
 2. Call `DLSS.init(showConsole, features, true)` before creating graphics
    interfaces, using a `hl.NativeArray<Int>` of the requested `DLSSFeature`
    values. Keep signature verification enabled for NVIDIA's signed runtime.
-3. Register the native D3D12 device with `DLSS.setDevice()`. Use
+3. Register a `PostProcessDevice` with `DLSS.setDevice()`. Use
    `DLSS.upgradeFactory()` and `DLSS.upgradeDevice()` for interfaces that require
    Streamline interception before creating the swapchain. Check each requested
-   feature with `DLSS.isFeatureSupported(adapter, feature)`.
+   feature with `DLSS.isFeatureSupported(device, feature)`.
 4. Fill `DLSSOptions`, query `DLSS.getOptimalSettings()` for the render resolution,
    and apply the settings with `DLSS.setOptions()`.
 5. For each frame, obtain a token with `DLSS.getNewFrameToken()`, submit camera
    and motion-vector data with `DLSS.setConstants()`, and tag depth, motion
    vectors, input color, and output color with `DLSS.setTagForFrame()`. Supply
-   a `hl.CArray<DLSSResource>` with the actual extents, D3D12 states, and lifetimes.
+   a `hl.CArray<DLSSResource>` whose `res` fields reference `TextureResource`
+   descriptors, with the actual extents, native states/layouts, and lifetimes.
 6. Call `DLSS.evaluateFeature(token, commandList, DLSSFeature.DLSS)` on the current
    command list. Rebind application descriptor heaps and compute state afterward.
 7. Wait for outstanding GPU work, free feature resources with

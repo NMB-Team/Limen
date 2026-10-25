@@ -1,18 +1,19 @@
 # AMD FSR
 
-It uses Limen's D3D12 device, resources, resource states, and command list types.
+It uses the shared postprocess device, texture, and command types on D3D12 and
+Vulkan. See [GPU postprocessing](../README.md) for the common contract.
 
 Context, result, and debug types live in the FSR package. Quality and creation
 flags are in `fsr.upscaling`; dispatch parameters and flags are in `fsr.frame`.
 Frame-generation configuration, preparation parameters, and flags are in
-`fsr.framegen`. Native renderer types are reused throughout.
+`fsr.framegen`. D3D12 frame-generation and Anti-Lag 2 APIs retain their native renderer types.
 
 ## Build
 
-Enable `LIMEN_BUILD_FSR=ON` in a Windows x64 MSVC build with D3D12 enabled.
-CMake fetches the pinned AMD FSR SDK 2.3.0 source and shader build tools, compiles
+Enable `LIMEN_BUILD_FSR=ON` in a Windows x64 MSVC build with D3D12 or Vulkan enabled.
+For D3D12, CMake fetches the pinned AMD FSR SDK 2.3.0 source and shader build tools, compiles
 all shader permutations, and statically links the FSR 3.1.5 temporal upscaler,
-frame generation, interpolation swapchain, Anti-Lag 2, and DX12 backend into `fsr.limen`. No AMD FidelityFX runtime DLLs are required.
+frame generation, interpolation swapchain, Anti-Lag 2, and DX12 backend into `fsr.limen`. No AMD FidelityFX runtime DLL is required for D3D12.
 The newer ML providers are distributed by AMD as DLLs and are not included.
 
 For an offline build, set `LIMEN_FIDELITYFX_SOURCE_DIR` to an SDK 2.3.0 checkout
@@ -21,16 +22,23 @@ containing `FidelityFX_SC.exe`, `dxcompiler.dll`, and `dxil.dll`.
 These tools are used during the build only. The private build copy disables AMD's
 unpublished diagnostic overlay and optional AGS/PIX DLL tracing.
 
+For Vulkan, CMake obtains the pinned FidelityFX SDK 1.1.4 Vulkan API and packages
+`amd_fidelityfx_vk.dll` beside `fsr.limen`. Set
+`LIMEN_FIDELITYFX_VULKAN_SOURCE_DIR` to an existing SDK 1.1.4 checkout for an
+offline build. Vulkan can be built without enabling D3D12. Only temporal
+upscaling is exposed on Vulkan; frame generation and Anti-Lag 2 remain D3D12-only.
+The two SDK header sets are compiled separately.
+
 ## Usage
 
-1. Select the D3D12 graphics driver and check `FSR.isAvailable()`.
-2. Call `FSR.init(device, FSRDebugLevel.ERRORS)` and check the result.
+1. Select the D3D12 or Vulkan graphics driver and check `FSR.isAvailable()`.
+2. Create a `PostProcessDevice` and call `FSR.init(device, FSRDebugLevel.ERRORS)` and check the result.
 3. Call `FSR.getRenderResolution()` for the chosen `FSRQuality`, then create a
    context with the maximum render and output sizes. Check the returned result.
 4. Fill `FSRDispatchParams` and call `FSR.dispatch()` on the current command list.
    Color, depth, motion vectors, and output are required; exposure, reactive, and
    transparency/composition masks are optional. Resource states must match the
-   actual D3D12 states. The output must support unordered access.
+   actual D3D12 states or Vulkan layouts in each `TextureResource`. The output must support unordered access.
 5. Wait for outstanding GPU work before destroying a context or its resources.
    Destroy every context before `FSR.shutdown()`, which rejects live contexts.
 
@@ -41,7 +49,7 @@ to `1` when no other scaling applies. Reset temporal history on the first frame
 and after camera cuts. Rebind application descriptor heaps and compute state
 after dispatch; the SDK records its own state into the command list.
 
-`FSR.getVersion(context)` returns the statically linked provider version.
+`FSR.getVersion(context)` returns the active provider version.
 The result and flag values match the upstream API. FSR 3 does not implement the
 ML-specific nonlinear color and debug-visualization creation flags or the sRGB/PQ
 dispatch flags; AMD's FSR 3 provider ignores these. Use linear input color.

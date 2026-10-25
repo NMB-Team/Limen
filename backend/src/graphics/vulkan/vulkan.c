@@ -20,8 +20,13 @@
 
 #define HL_NAME(n) limen_vulkan_##n
 #include <hl.h>
+#include "../postprocess/types.h"
+#include "requirements.h"
+#include <stddef.h>
 
 static VkInstance instance = nullptr;
+static char** instance_extensions;
+static uint32_t instance_extension_count;
 static VkDebugUtilsMessengerEXT debug_messenger = nullptr;
 static uint32_t instance_references = 0;
 static uint32_t loader_api_version = VK_API_VERSION_1_0;
@@ -167,9 +172,20 @@ static VkDebugUtilsMessengerCreateInfoEXT debug_messenger_info() {
 	};
 }
 
-HL_PRIM bool HL_NAME(vk_init)(bool enable_validation) {
+HL_PRIM bool HL_NAME(vk_init)(bool enable_validation, VulkanRequirements* requirements) {
 	vk_clear_error();
 	if (instance) {
+		if (requirements && requirements->instanceExtensions) {
+			for (int i = 0; i < requirements->instanceExtensions->size; i++) {
+				const char* name = hl_aptr(requirements->instanceExtensions, const char*)[i];
+				bool enabled = false;
+				for (uint32_t j = 0; j < instance_extension_count; j++) enabled |= strcmp(name, instance_extensions[j]) == 0;
+				if (!enabled) {
+					vk_set_error("Recreate Vulkan surfaces to enable required instance extension: %s", name);
+					return false;
+				}
+			}
+		}
 		if (enable_validation && !validation_enabled) {
 			vk_set_error("Vulkan was initialized without validation; recreate all Vulkan surfaces before enabling validation");
 			return false;
@@ -223,7 +239,8 @@ HL_PRIM bool HL_NAME(vk_init)(bool enable_validation) {
 		return false;
 	}
 
-	const char* enabled_extensions[6];
+	uint32_t extra_extension_count = requirements && requirements->instanceExtensions ? requirements->instanceExtensions->size : 0;
+	const char** enabled_extensions = (const char**)hl_gc_alloc_noptr((6 + extra_extension_count) * sizeof(char*));
 	uint32_t enabled_extension_count = 0;
 	const char* required_extensions[] = { VK_KHR_SURFACE_EXTENSION_NAME, HL_VK_PLATFORM_EXTENSION };
 	for (uint32_t i = 0; i < 2; i++) {
@@ -257,6 +274,17 @@ HL_PRIM bool HL_NAME(vk_init)(bool enable_validation) {
 	}
 	enabled_extensions[enabled_extension_count++] = VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME;
 #endif
+	for (uint32_t i = 0; i < extra_extension_count; i++) {
+		const char* name = hl_aptr(requirements->instanceExtensions, const char*)[i];
+		if (!has_extension(extension_properties, extension_count, name)) {
+			free(extension_properties);
+			vk_set_error("Required Vulkan instance extension is unavailable: %s", name);
+			return false;
+		}
+		bool duplicate = false;
+		for (uint32_t j = 0; j < enabled_extension_count; j++) duplicate |= strcmp(name, enabled_extensions[j]) == 0;
+		if (!duplicate) enabled_extensions[enabled_extension_count++] = name;
+	}
 	free(extension_properties);
 
 	const char* validation_layer = "VK_LAYER_KHRONOS_validation";
@@ -327,6 +355,13 @@ HL_PRIM bool HL_NAME(vk_init)(bool enable_validation) {
 		}
 	}
 
+	instance_extension_count = enabled_extension_count;
+	instance_extensions = malloc(sizeof(char*) * instance_extension_count);
+	for (uint32_t i = 0; i < instance_extension_count; i++) {
+		const size_t length = strlen(enabled_extensions[i]) + 1;
+		instance_extensions[i] = malloc(length);
+		memcpy(instance_extensions[i], enabled_extensions[i], length);
+	}
 	validation_enabled = enable_validation;
 	instance_references = 1;
 	snprintf(
@@ -369,6 +404,10 @@ HL_PRIM void HL_NAME(vk_shutdown)() {
 	}
 	vkDestroyInstance(instance, nullptr);
 	instance = nullptr;
+	for (uint32_t i = 0; i < instance_extension_count; i++) free(instance_extensions[i]);
+	free(instance_extensions);
+	instance_extensions = nullptr;
+	instance_extension_count = 0;
 	validation_enabled = false;
 	surface_maintenance1_enabled = false;
 	instance_api_version = 0;
@@ -434,6 +473,8 @@ typedef struct _VkContext {
 	VkPhysicalDeviceProperties properties;
 	VkPhysicalDeviceMemoryProperties memProps;
 	VkDevice device;
+	uint32_t postprocess_graphics_queue_index;
+	uint32_t postprocess_compute_queue_index;
 	VkQueue graphics_queue;
 	VkQueue present_queue;
 	VkQueue compute_queue;
@@ -499,6 +540,13 @@ typedef struct {
 	bool swapchain_maintenance1;
 	bool portability_subset;
 	bool memory_budget;
+	bool shader_image_gather_extended;
+	bool shader_storage_image_write_without_format;
+	bool shader_int16;
+	bool shader_float16;
+	bool storage_buffer16_bit_access;
+	bool subgroup_size_control;
+	bool compute_full_subgroups;
 	bool sampler_anisotropy;
 	bool independent_blend;
 	bool depth_clamp;
@@ -540,10 +588,30 @@ static void reject_device(char* reason, size_t capacity, const char* format, ...
 	va_end(args);
 }
 
+static bool requested_features_supported(const vbyte* requested, const void* supported, size_t begin, size_t end) {
+	if (requested == nullptr) return true;
+	for (size_t offset = begin; offset < end; offset += sizeof(VkBool32)) {
+		if (*(const VkBool32*)(requested + offset) && !*(const VkBool32*)((const char*)supported + offset)) return false;
+	}
+	return true;
+}
+
+static void enable_requested_features(const vbyte* requested, void* enabled, size_t begin, size_t end) {
+	if (requested == nullptr) return;
+	for (size_t offset = begin; offset < end; offset += sizeof(VkBool32))
+		*(VkBool32*)((char*)enabled + offset) |= *(const VkBool32*)(requested + offset);
+}
+
+#define FEATURES12_BEGIN offsetof(VkPhysicalDeviceVulkan12Features, samplerMirrorClampToEdge)
+#define FEATURES12_END (offsetof(VkPhysicalDeviceVulkan12Features, subgroupBroadcastDynamicId) + sizeof(VkBool32))
+#define FEATURES13_BEGIN offsetof(VkPhysicalDeviceVulkan13Features, robustImageAccess)
+#define FEATURES13_END (offsetof(VkPhysicalDeviceVulkan13Features, maintenance4) + sizeof(VkBool32))
+
 static bool evaluate_device(
 	VkPhysicalDevice device,
 	VkSurfaceKHR surface,
 	uint32_t required_capabilities,
+	VulkanRequirements* requirements,
 	VkDeviceCandidate* candidate,
 	char* rejection,
 	size_t rejection_capacity
@@ -617,6 +685,12 @@ static bool evaluate_device(
 	candidate->swapchain_maintenance1 = surface_maintenance1_enabled && has_extension(extensions, extension_count, VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
 	candidate->portability_subset = has_extension(extensions, extension_count, "VK_KHR_portability_subset");
 	candidate->memory_budget = has_extension(extensions, extension_count, VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
+	if (requirements && requirements->deviceExtensions) {
+		for (int i = 0; i < requirements->deviceExtensions->size; i++) {
+			const char* name = hl_aptr(requirements->deviceExtensions, const char*)[i];
+			if (!has_extension(extensions, extension_count, name)) reject_device(rejection, rejection_capacity, "missing %s", name);
+		}
+	}
 	free(extensions);
 
 	VkPhysicalDeviceSwapchainMaintenance1FeaturesKHR maintenance1 = {
@@ -648,9 +722,19 @@ static bool evaluate_device(
 		.pNext = &features11,
 	};
 	vkGetPhysicalDeviceFeatures2(device, &features2);
+	if (requirements && (!requested_features_supported(requirements->features12, &features12, FEATURES12_BEGIN, FEATURES12_END)
+		|| !requested_features_supported(requirements->features13, &features13, FEATURES13_BEGIN, FEATURES13_END)))
+		reject_device(rejection, rejection_capacity, "missing required postprocess features");
 	candidate->dynamic_rendering = features13.dynamicRendering;
 	candidate->synchronization2 = features13.synchronization2;
 	candidate->timeline_semaphore = features12.timelineSemaphore;
+	candidate->shader_image_gather_extended = features2.features.shaderImageGatherExtended;
+	candidate->shader_storage_image_write_without_format = features2.features.shaderStorageImageWriteWithoutFormat;
+	candidate->shader_int16 = features2.features.shaderInt16;
+	candidate->shader_float16 = features12.shaderFloat16;
+	candidate->storage_buffer16_bit_access = features11.storageBuffer16BitAccess;
+	candidate->subgroup_size_control = features13.subgroupSizeControl;
+	candidate->compute_full_subgroups = features13.computeFullSubgroups;
 	candidate->sampler_anisotropy = features2.features.samplerAnisotropy;
 	candidate->independent_blend = features2.features.independentBlend;
 	candidate->depth_clamp = features2.features.depthClamp;
@@ -718,6 +802,17 @@ static bool evaluate_device(
 			}
 		}
 	}
+	if (requirements) {
+		for (uint32_t i = 0; i < queue_count; i++) {
+			uint64_t needed = 1;
+			if (i == candidate->graphics_queue_family) needed += requirements->graphicsQueues;
+			if (i == candidate->compute_queue_family) needed += requirements->computeQueues;
+			if (needed > queues[i].queueFamilyProperties.queueCount)
+				reject_device(rejection, rejection_capacity, "insufficient postprocess queues in family %u", i);
+		}
+		if (requirements->computeQueues && candidate->compute_queue_family == UINT32_MAX)
+			reject_device(rejection, rejection_capacity, "no compute queue for postprocessing");
+	}
 	free(queues);
 	if (candidate->graphics_queue_family == UINT32_MAX)
 		reject_device(rejection, rejection_capacity, "no graphics queue");
@@ -747,7 +842,7 @@ static bool evaluate_device(
 	return true;
 }
 
-HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, int required_capability_flags) {
+HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, int required_capability_flags, VulkanRequirements* requirements) {
 	vk_clear_error();
 	const uint32_t known_capabilities = VK_CAP_DYNAMIC_RENDERING | VK_CAP_SYNCHRONIZATION_2 |
 		VK_CAP_TIMELINE_SEMAPHORE | VK_CAP_SWAPCHAIN_MAINTENANCE_1 |
@@ -784,7 +879,7 @@ HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, 
 	for (uint32_t i = 0; i < device_count; i++) {
 		VkDeviceCandidate candidate;
 		char rejection[1024];
-		bool accepted = evaluate_device(devices[i], surface, (uint32_t)required_capability_flags, &candidate, rejection, sizeof(rejection));
+		bool accepted = evaluate_device(devices[i], surface, (uint32_t)required_capability_flags, requirements, &candidate, rejection, sizeof(rejection));
 		append_text(
 			selection_report,
 			sizeof(selection_report),
@@ -821,18 +916,25 @@ HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, 
 		if (!duplicate)
 			unique_queues[unique_queue_count++] = queue_candidates[i];
 	}
-	float queue_priority = 1.0f;
+	uint32_t graphics_extra = requirements ? requirements->graphicsQueues : 0;
+	uint32_t compute_extra = requirements ? requirements->computeQueues : 0;
+	uint32_t priority_count = 1 + graphics_extra + compute_extra;
+	float* queue_priorities = (float*)hl_gc_alloc_noptr(sizeof(float) * priority_count);
+	for (uint32_t i = 0; i < priority_count; i++) queue_priorities[i] = 1.0f;
 	VkDeviceQueueCreateInfo queue_infos[4];
 	for (uint32_t i = 0; i < unique_queue_count; i++) {
 		queue_infos[i] = (VkDeviceQueueCreateInfo) {
 			.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
 			.queueFamilyIndex = unique_queues[i],
-			.queueCount = 1,
-			.pQueuePriorities = &queue_priority,
+			.queueCount = 1 + (unique_queues[i] == selected.graphics_queue_family ? graphics_extra : 0)
+				+ (unique_queues[i] == selected.compute_queue_family ? compute_extra : 0),
+			.pQueuePriorities = queue_priorities,
 		};
 	}
 
-	const char* enabled_extensions[4] = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+	uint32_t extra_extension_count = requirements && requirements->deviceExtensions ? requirements->deviceExtensions->size : 0;
+	const char** enabled_extensions = (const char**)hl_gc_alloc_noptr((4 + extra_extension_count) * sizeof(char*));
+	enabled_extensions[0] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
 	uint32_t enabled_extension_count = 1;
 	if (selected.swapchain_maintenance1)
 		enabled_extensions[enabled_extension_count++] = VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME;
@@ -841,14 +943,26 @@ HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, 
 	if (selected.memory_budget)
 		enabled_extensions[enabled_extension_count++] = VK_EXT_MEMORY_BUDGET_EXTENSION_NAME;
 
+	for (uint32_t i = 0; i < extra_extension_count; i++) {
+		const char* name = hl_aptr(requirements->deviceExtensions, const char*)[i];
+		bool duplicate = false;
+		for (uint32_t j = 0; j < enabled_extension_count; j++) duplicate |= strcmp(name, enabled_extensions[j]) == 0;
+		if (!duplicate) enabled_extensions[enabled_extension_count++] = name;
+	}
+
 	VkPhysicalDeviceSwapchainMaintenance1FeaturesKHR maintenance1 = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SWAPCHAIN_MAINTENANCE_1_FEATURES_KHR,
 		.swapchainMaintenance1 = selected.swapchain_maintenance1,
+	};
+	VkPhysicalDeviceVulkan11Features features11 = {
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
+		.storageBuffer16BitAccess = selected.storage_buffer16_bit_access,
 	};
 	VkPhysicalDeviceVulkan12Features features12 = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
 		.pNext = nullptr,
 		.timelineSemaphore = VK_TRUE,
+		.shaderFloat16 = selected.shader_float16,
 		.drawIndirectCount = selected.draw_indirect_count,
 		.descriptorIndexing = selected.descriptor_indexing,
 		.shaderSampledImageArrayNonUniformIndexing = selected.sampled_image_non_uniform,
@@ -865,12 +979,22 @@ HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, 
 		.pNext = selected.swapchain_maintenance1 ? &maintenance1 : nullptr,
 		.synchronization2 = VK_TRUE,
 		.dynamicRendering = VK_TRUE,
+		.subgroupSizeControl = selected.subgroup_size_control,
+		.computeFullSubgroups = selected.compute_full_subgroups,
 	};
+	if (requirements) {
+		enable_requested_features(requirements->features12, &features12, FEATURES12_BEGIN, FEATURES12_END);
+		enable_requested_features(requirements->features13, &features13, FEATURES13_BEGIN, FEATURES13_END);
+	}
+	features11.pNext = &features12;
 	features12.pNext = &features13;
 	VkPhysicalDeviceFeatures2 enabled_features = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-		.pNext = &features12,
+		.pNext = &features11,
 		.features = {
+			.shaderImageGatherExtended = selected.shader_image_gather_extended,
+			.shaderStorageImageWriteWithoutFormat = selected.shader_storage_image_write_without_format,
+			.shaderInt16 = selected.shader_int16,
 			.samplerAnisotropy = selected.sampler_anisotropy,
 			.independentBlend = selected.independent_blend,
 			.depthClamp = selected.depth_clamp,
@@ -906,6 +1030,8 @@ HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, 
 		.graphics_timestamp_valid_bits = selected.graphics_timestamp_valid_bits,
 		.properties12 = selected.properties12,
 		.memory_budget = selected.memory_budget,
+		.postprocess_graphics_queue_index = graphics_extra ? 1 : 0,
+		.postprocess_compute_queue_index = compute_extra ? 1 + (selected.compute_queue_family == selected.graphics_queue_family ? graphics_extra : 0) : 0,
 	};
 	result = vkCreateDevice(ctx->pdevice, &device_info, nullptr, &ctx->device);
 	if (result != VK_SUCCESS) {
@@ -1110,6 +1236,17 @@ HL_PRIM int HL_NAME(vk_get_device_id)(VkContext ctx) {
 
 HL_PRIM int HL_NAME(vk_get_driver_version)(VkContext ctx) {
 	return (int)ctx->properties.driverVersion;
+}
+
+HL_PRIM void HL_NAME(vk_fill_post_process_device)(VkContext ctx, PostProcessDevice* out) {
+	out->backend = 2;
+	out->device = ctx->device;
+	out->instance = instance;
+	out->physicalDevice = ctx->pdevice;
+	out->graphicsQueueFamily = ctx->graphics_queue_family;
+	out->graphicsQueueIndex = ctx->postprocess_graphics_queue_index;
+	out->computeQueueFamily = ctx->compute_queue_family;
+	out->computeQueueIndex = ctx->postprocess_compute_queue_index;
 }
 
 HL_PRIM int HL_NAME(vk_get_graphics_queue_family)(VkContext ctx) {
@@ -2252,7 +2389,7 @@ HL_PRIM bool HL_NAME(vk_set_shader_module_name)(VkContext ctx, VkShaderModule mo
 #define _SAMPLER _ABSTRACT(vk_sampler)
 #define _QPOOL _ABSTRACT(vk_query_pool)
 
-DEFINE_PRIM(_BOOL, vk_init, _BOOL);
+DEFINE_PRIM(_BOOL, vk_init, _BOOL _STRUCT);
 DEFINE_PRIM(_VOID, vk_shutdown, _NO_ARG);
 DEFINE_PRIM(_VOID, vk_destroy_surface, _BYTES);
 DEFINE_PRIM(_BYTES, vk_last_error, _NO_ARG);
@@ -2260,7 +2397,7 @@ DEFINE_PRIM(_BYTES, vk_instance_report, _NO_ARG);
 DEFINE_PRIM(_I32, vk_loader_api_version, _NO_ARG);
 DEFINE_PRIM(_I32, vk_instance_api_version, _NO_ARG);
 DEFINE_PRIM(_BOOL, vk_validation_enabled, _NO_ARG);
-DEFINE_PRIM(_VCTX, vk_init_context, _BYTES _REF(_I32) _I32);
+DEFINE_PRIM(_VCTX, vk_init_context, _BYTES _REF(_I32) _I32 _STRUCT);
 DEFINE_PRIM(_BOOL, vk_destroy_context, _VCTX);
 DEFINE_PRIM(_BYTES, vk_get_context_report, _VCTX);
 DEFINE_PRIM(_I32, vk_get_capability_flags, _VCTX);
@@ -3045,3 +3182,5 @@ DEFINE_PRIM(_VOID, vk_pipeline_barrier, _CMD _I32 _I32 _I32 _I32 _BYTES _I32 _BY
 DEFINE_PRIM(_VOID, vk_bind_descriptor_sets, _CMD _I32 _PIPELAYOUT _I32 _I32 _BYTES _I32 _BYTES);
 DEFINE_PRIM(_VOID, vk_bind_descriptor_sets_native, _CMD _I32 _PIPELAYOUT _I32 _I32 _ARR _I32 _ARR);
 DEFINE_PRIM(_VOID, vk_bind_descriptor_set, _CMD _I32 _PIPELAYOUT _I32 _DSET);
+
+DEFINE_PRIM(_VOID, vk_fill_post_process_device, _VCTX _STRUCT);

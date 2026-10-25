@@ -12,8 +12,8 @@ option(LIMEN_BUILD_VULKAN "Build vulkan.limen." ON)
 option(LIMEN_BUILD_SHADERC "Build shaderc support into vulkan.limen." ON)
 option(LIMEN_BUILD_D3D11 "Build d3d11.limen." ${WIN32})
 option(LIMEN_BUILD_D3D12 "Build d3d12.limen." ${LIMEN_WINDOWS_X64})
-option(LIMEN_BUILD_FSR "Build self-contained fsr.limen for the D3D12 backend." OFF)
-option(LIMEN_BUILD_DLSS "Build dlss.limen for the D3D12 backend." OFF)
+option(LIMEN_BUILD_FSR "Build fsr.limen for enabled D3D12 and Vulkan backends." OFF)
+option(LIMEN_BUILD_DLSS "Build dlss.limen for enabled Direct3D and Vulkan backends." OFF)
 option(LIMEN_BUILD_AFTERMATH "Build NVIDIA Nsight Aftermath support into d3d12.limen." OFF)
 option(LIMEN_BUILD_TESTS "Build Limen tests." OFF)
 
@@ -29,3 +29,5 @@ set(LIMEN_STREAMLINE_SDK_ROOT "" CACHE PATH "Path to the NVIDIA Streamline SDK."
 set(LIMEN_AFTERMATH_SDK_ROOT "" CACHE PATH "Path to the NVIDIA Nsight Aftermath SDK.")
 set(LIMEN_AFTERMATH_LIBRARY "" CACHE FILEPATH "Path to the NVIDIA Nsight Aftermath import library.")
 set(LIMEN_AFTERMATH_RUNTIME_DLL "" CACHE FILEPATH "Path to the NVIDIA Nsight Aftermath runtime DLL.")
+
+set(LIMEN_FIDELITYFX_VULKAN_SOURCE_DIR "" CACHE PATH "Optional FidelityFX SDK 1.1.4 source tree for its Vulkan API and runtime.")

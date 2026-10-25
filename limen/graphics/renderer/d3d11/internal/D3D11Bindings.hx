@@ -6,6 +6,8 @@ import limen.graphics.renderer.d3d11.DX11Core.Format;
 import limen.graphics.renderer.d3d11.DX11Core.PresentFlags;
 import limen.graphics.renderer.d3d11.resource.Resources.Resource;
 import limen.platform.window.Window;
+import limen.graphics.postprocess.PostProcessDevice;
+import limen.graphics.postprocess.CommandBuffer;
 
 @:noDoc
 @:noCompletion
@@ -15,6 +17,18 @@ typedef Dx11DriverInstance = hl.Abstract<"dx_driver">;
 @:noCompletion
 @:hlNative("limen", "d3d11_")
 class D3D11Bindings {
+	public static function getPostProcessDevice():PostProcessDevice {
+		final device = new PostProcessDevice(D3D11, null);
+		fillPostProcessDevice(device);
+		return device;
+	}
+
+	static function fillPostProcessDevice(device:PostProcessDevice):Void {}
+
+	public static function getPostProcessCommands():CommandBuffer {
+		return null;
+	}
+
 	public static var minimumFeatureLevel = FeatureLevel.Level9_1;
 
 	/**

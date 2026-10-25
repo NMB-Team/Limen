@@ -67,9 +67,10 @@ set(_LIMEN_MODULE_PROXY_INPUTS
 		backend/src/graphics/d3d12/driver.cpp
 		backend/src/graphics/d3d12/debug.cpp
 	dlss
-		backend/src/graphics/d3d12/dlss.cpp
+		backend/src/graphics/postprocess/dlss/dlss.cpp
 	fsr
-		backend/src/graphics/d3d12/fsr.cpp
+		backend/src/graphics/postprocess/fsr/fsr.cpp
+		backend/src/graphics/postprocess/fsr/d3d12.cpp
 )
 set(_LIMEN_MODULE_PROXY_MODULE "")
 foreach(_input IN LISTS _LIMEN_MODULE_PROXY_INPUTS)
@@ -144,12 +145,12 @@ if(LIMEN_BUILD_D3D12 AND NOT LIMEN_WINDOWS_X64)
 	message(FATAL_ERROR "LIMEN_BUILD_D3D12 is supported only on Windows x64.")
 endif()
 
-if(LIMEN_BUILD_DLSS AND (NOT LIMEN_WINDOWS_X64 OR NOT LIMEN_BUILD_D3D12))
-	message(FATAL_ERROR "LIMEN_BUILD_DLSS requires the Windows x64 D3D12 backend.")
+if(LIMEN_BUILD_DLSS AND (NOT LIMEN_WINDOWS_X64 OR NOT (LIMEN_BUILD_D3D12 OR LIMEN_BUILD_D3D11 OR LIMEN_BUILD_VULKAN)))
+	message(FATAL_ERROR "LIMEN_BUILD_DLSS requires Windows x64 and a D3D11, D3D12, or Vulkan backend.")
 endif()
 
-if(LIMEN_BUILD_FSR AND (NOT LIMEN_WINDOWS_X64 OR NOT LIMEN_BUILD_D3D12 OR NOT MSVC))
-	message(FATAL_ERROR "LIMEN_BUILD_FSR requires the Windows x64 D3D12 backend and MSVC.")
+if(LIMEN_BUILD_FSR AND (NOT LIMEN_WINDOWS_X64 OR NOT (LIMEN_BUILD_D3D12 OR LIMEN_BUILD_VULKAN) OR NOT MSVC))
+	message(FATAL_ERROR "LIMEN_BUILD_FSR requires Windows x64, MSVC, and a D3D12 or Vulkan backend.")
 endif()
 
 if(LIMEN_BUILD_VULKAN)
@@ -361,74 +362,82 @@ if(LIMEN_WINDOWS_X64 AND LIMEN_BUILD_D3D12)
 	if(LIMEN_BUILD_AFTERMATH)
 		install(FILES "${LIMEN_AFTERMATH_RUNTIME_DLL}" DESTINATION "${LIMEN_HDLL_DESTINATION}")
 	endif()
+endif()
 
-	if(LIMEN_BUILD_FSR)
+if(LIMEN_BUILD_FSR)
+	add_library(limen_fsr SHARED backend/src/graphics/postprocess/fsr/fsr.cpp)
+	limen_set_native_library(limen_fsr fsr .limen)
+	target_link_libraries(limen_fsr PRIVATE libhl limen)
+	if(LIMEN_BUILD_D3D12)
 		include(FidelityFX)
 		limen_resolve_fidelityfx()
-		add_library(limen_fsr SHARED backend/src/graphics/d3d12/fsr.cpp)
-		limen_set_native_library(limen_fsr fsr .limen)
+		target_sources(limen_fsr PRIVATE backend/src/graphics/postprocess/fsr/d3d12.cpp)
+		target_compile_definitions(limen_fsr PRIVATE LIMEN_POSTPROCESS_D3D12)
 		target_include_directories(limen_fsr PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/backend/src/platform")
-		target_link_libraries(limen_fsr PRIVATE libhl limen limen_fidelityfx d3d12 dxgi)
+		target_link_libraries(limen_fsr PRIVATE limen_fidelityfx d3d12 dxgi)
 	endif()
-
-	if(LIMEN_BUILD_DLSS)
-		if(NOT _LIMEN_DXC_ARCH STREQUAL "x64")
-			message(FATAL_ERROR "NVIDIA Streamline DLSS is only supported by the Windows x64 build.")
-		endif()
-		set(_LIMEN_STREAMLINE_ROOT_HINTS
-			"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/graphics/d3d12/streamline"
-		)
-		if(LIMEN_STREAMLINE_SDK_ROOT)
-			list(APPEND _LIMEN_STREAMLINE_ROOT_HINTS "${LIMEN_STREAMLINE_SDK_ROOT}")
-		endif()
-		if(DEFINED ENV{STREAMLINE_SDK})
-			list(APPEND _LIMEN_STREAMLINE_ROOT_HINTS "$ENV{STREAMLINE_SDK}")
-		endif()
-		set(_LIMEN_STREAMLINE_RUNTIME_FILES)
-		foreach(_runtime_name
-			sl.interposer.dll
-			sl.common.dll
-			sl.pcl.dll
-			sl.reflex.dll
-			sl.dlss.dll
-			sl.dlss_g.dll
-			nvngx_dlss.dll
-			nvngx_dlssg.dll
-		)
-			string(MAKE_C_IDENTIFIER "${_runtime_name}" _runtime_id)
-			find_file(_LIMEN_STREAMLINE_RUNTIME_${_runtime_id}
-				NAMES "${_runtime_name}"
-				HINTS ${_LIMEN_STREAMLINE_ROOT_HINTS}
-				PATH_SUFFIXES bin/x64 x64
-				REQUIRED
-			)
-			list(APPEND _LIMEN_STREAMLINE_RUNTIME_FILES
-				"${_LIMEN_STREAMLINE_RUNTIME_${_runtime_id}}"
-			)
-		endforeach()
-
-		add_library(limen_dlss SHARED backend/src/graphics/d3d12/dlss.cpp)
-		limen_set_native_library(limen_dlss dlss .limen)
-		target_include_directories(limen_dlss PRIVATE
-			"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/graphics/d3d12/streamline"
-		)
-		target_link_libraries(limen_dlss PRIVATE
-			libhl
-			d3d12
-			dxgi
-			user32
-		)
-		add_dependencies(limen_dlss limen_d3d12)
-		add_custom_command(TARGET limen_dlss POST_BUILD
-			COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-				${_LIMEN_STREAMLINE_RUNTIME_FILES} "$<TARGET_FILE_DIR:limen_dlss>"
-		)
-		install(FILES ${_LIMEN_STREAMLINE_RUNTIME_FILES} DESTINATION "${LIMEN_HDLL_DESTINATION}")
-		install(
-			FILES "${CMAKE_CURRENT_SOURCE_DIR}/limen/graphics/postprocess/dlss/LICENSE_STREAMLINE"
-			DESTINATION "${LIMEN_HDLL_DESTINATION}"
-		)
+	if(LIMEN_BUILD_VULKAN)
+		include(FidelityFXVulkan)
+		limen_enable_fsr_vulkan(limen_fsr)
 	endif()
+endif()
+
+if(LIMEN_BUILD_DLSS)
+	set(_LIMEN_STREAMLINE_ROOT_HINTS
+		"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/graphics/postprocess/dlss/streamline"
+	)
+	if(LIMEN_STREAMLINE_SDK_ROOT)
+		list(APPEND _LIMEN_STREAMLINE_ROOT_HINTS "${LIMEN_STREAMLINE_SDK_ROOT}")
+	endif()
+	if(DEFINED ENV{STREAMLINE_SDK})
+		list(APPEND _LIMEN_STREAMLINE_ROOT_HINTS "$ENV{STREAMLINE_SDK}")
+	endif()
+	set(_LIMEN_STREAMLINE_RUNTIME_FILES)
+	foreach(_runtime_name
+		sl.interposer.dll
+		sl.common.dll
+		sl.pcl.dll
+		sl.reflex.dll
+		sl.dlss.dll
+		sl.dlss_g.dll
+		nvngx_dlss.dll
+		nvngx_dlssg.dll
+	)
+		string(MAKE_C_IDENTIFIER "${_runtime_name}" _runtime_id)
+		find_file(_LIMEN_STREAMLINE_RUNTIME_${_runtime_id}
+			NAMES "${_runtime_name}"
+			HINTS ${_LIMEN_STREAMLINE_ROOT_HINTS}
+			PATH_SUFFIXES bin/x64 x64
+			REQUIRED
+		)
+		list(APPEND _LIMEN_STREAMLINE_RUNTIME_FILES
+			"${_LIMEN_STREAMLINE_RUNTIME_${_runtime_id}}"
+		)
+	endforeach()
+
+	add_library(limen_dlss SHARED backend/src/graphics/postprocess/dlss/dlss.cpp)
+	limen_set_native_library(limen_dlss dlss .limen)
+	target_include_directories(limen_dlss PRIVATE
+		"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/graphics/postprocess/dlss/streamline"
+	)
+	target_link_libraries(limen_dlss PRIVATE
+		libhl
+		dxgi
+		user32
+	)
+	if(LIMEN_BUILD_VULKAN)
+		target_compile_definitions(limen_dlss PRIVATE LIMEN_POSTPROCESS_VULKAN)
+		target_link_libraries(limen_dlss PRIVATE Vulkan::Headers)
+	endif()
+	add_custom_command(TARGET limen_dlss POST_BUILD
+		COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+			${_LIMEN_STREAMLINE_RUNTIME_FILES} "$<TARGET_FILE_DIR:limen_dlss>"
+	)
+	install(FILES ${_LIMEN_STREAMLINE_RUNTIME_FILES} DESTINATION "${LIMEN_HDLL_DESTINATION}")
+	install(
+		FILES "${CMAKE_CURRENT_SOURCE_DIR}/limen/graphics/postprocess/dlss/LICENSE_STREAMLINE"
+		DESTINATION "${LIMEN_HDLL_DESTINATION}"
+	)
 endif()
 
 set(_LIMEN_INSTALL_TARGETS limen)

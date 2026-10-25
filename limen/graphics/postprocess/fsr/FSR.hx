@@ -1,6 +1,7 @@
 package limen.graphics.postprocess.fsr;
 
-import limen.graphics.GraphicsDriver;
+import limen.graphics.postprocess.PostProcessDevice;
+import limen.graphics.postprocess.CommandBuffer;
 import limen.graphics.renderer.d3d12.internal.D3D12Bindings.Factory;
 import limen.graphics.renderer.d3d12.internal.D3D12Bindings.SwapChain;
 import limen.graphics.renderer.d3d12.command.Commands.CommandQueue;
@@ -14,16 +15,15 @@ import limen.graphics.renderer.d3d12.internal.D3D12Bindings.Device;
 import limen.graphics.renderer.d3d12.command.Commands.CommandList;
 import limen.graphics.postprocess.fsr.frame.FSRDispatchParams;
 import limen.graphics.postprocess.fsr.upscaling.FSRQuality;
-import limen.platform.Platform;
 import limen.platform.internal.SDLBindings;
 
 @:hlNative("limen", "fsr_")
 class FSR {
 	public static function isAvailable():Bool {
-		return Platform.graphicsDriver == GraphicsDriver.D3D12 && SDLBindings.isFsrAvailable();
+		return SDLBindings.isFsrAvailable();
 	}
 
-	public static function init(device:Device, debugLevel:FSRDebugLevel):Int {
+	public static function init(device:PostProcessDevice, debugLevel:FSRDebugLevel):Int {
 		return 0;
 	}
 
@@ -31,11 +31,11 @@ class FSR {
 		return 0;
 	}
 
-	public static function getRenderResolution(device:Device, quality:FSRQuality, displayWidth:Int, displayHeight:Int, renderWidth:hl.Ref<Int>, renderHeight:hl.Ref<Int>):Int {
+	public static function getRenderResolution(device:PostProcessDevice, quality:FSRQuality, displayWidth:Int, displayHeight:Int, renderWidth:hl.Ref<Int>, renderHeight:hl.Ref<Int>):Int {
 		return 0;
 	}
 
-	public static function createContext(device:Device, flags:Int, maxRenderWidth:Int, maxRenderHeight:Int, maxUpscaleWidth:Int, maxUpscaleHeight:Int, result:hl.Ref<Int>):FSRContext {
+	public static function createContext(device:PostProcessDevice, flags:Int, maxRenderWidth:Int, maxRenderHeight:Int, maxUpscaleWidth:Int, maxUpscaleHeight:Int, result:hl.Ref<Int>):FSRContext {
 		return null;
 	}
 
@@ -43,7 +43,7 @@ class FSR {
 		return 0;
 	}
 
-	public static function dispatch(context:FSRContext, commandList:CommandList, params:FSRDispatchParams):Int {
+	public static function dispatch(context:FSRContext, commandList:CommandBuffer, params:FSRDispatchParams):Int {
 		return 0;
 	}
 
@@ -56,20 +56,20 @@ class FSR {
 		return bytes == null ? null : @:privateAccess String.fromUTF8(bytes);
 	}
 
-	public static function getEffectVersionCount(device:Device, effect:FSREffect, count:hl.Ref<Int>):Int {
+	public static function getEffectVersionCount(device:PostProcessDevice, effect:FSREffect, count:hl.Ref<Int>):Int {
 		return 0;
 	}
 
-	static function getEffectVersionName(device:Device, effect:FSREffect, index:Int):hl.Bytes {
+	static function getEffectVersionName(device:PostProcessDevice, effect:FSREffect, index:Int):hl.Bytes {
 		return null;
 	}
 
-	public static function getEffectVersion(device:Device, effect:FSREffect, index:Int = 0):String {
+	public static function getEffectVersion(device:PostProcessDevice, effect:FSREffect, index:Int = 0):String {
 		var bytes = getEffectVersionName(device, effect, index);
 		return bytes == null ? null : @:privateAccess String.fromUTF8(bytes);
 	}
 
-	public static function isEffectAvailable(device:Device, effect:FSREffect):Bool {
+	public static function isEffectAvailable(device:PostProcessDevice, effect:FSREffect):Bool {
 		var count = 0;
 		return getEffectVersionCount(device, effect, count) == FSRResult.Ok && count > 0;
 	}

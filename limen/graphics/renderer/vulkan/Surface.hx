@@ -9,8 +9,8 @@ class Surface {
 	public var nativeHandle(default, null):VkSurface;
 	public var disposed(get, never):Bool;
 
-	public static function create(window:Window, enableValidation:Bool = false):Surface {
-		if (!VulkanBindings.initialize(enableValidation))
+	public static function create(window:Window, enableValidation:Bool = false, ?requirements:VulkanRequirements):Surface {
+		if (!VulkanBindings.initialize(enableValidation, requirements))
 			throw Vulkan.error("Failed to initialize Vulkan");
 		final handle = VulkanBindings.createWindowSurface(window.nativeHandle);
 		if (handle == null) {

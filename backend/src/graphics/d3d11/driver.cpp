@@ -14,6 +14,7 @@
 #include <xbo_directx.h>
 #endif
 #include "internal.h"
+#include "../postprocess/types.h"
 #include <assert.h>
 
 #define DXERR(cmd)                          \
@@ -649,3 +650,14 @@ DEFINE_PRIM(_VOID, vs_set_shader_resources, _I32 _I32 _REF(_POINTER));
 DEFINE_PRIM(_VOID, generate_mips, _POINTER);
 DEFINE_PRIM(_VOID, debug_print, _BYTES);
 DEFINE_PRIM(_VOID, copy_subresource_region, _RESOURCE _I32 _I32 _I32 _I32 _RESOURCE _I32 _DYN);
+
+HL_PRIM void HL_NAME(fill_post_process_device)(PostProcessDevice* out) {
+	out->backend = PostProcessBackend::D3D11;
+	out->device = driver->device;
+}
+DEFINE_PRIM(_VOID, fill_post_process_device, _STRUCT);
+
+HL_PRIM void* HL_NAME(get_post_process_commands)() {
+	return driver->context;
+}
+DEFINE_PRIM(_ABSTRACT(postprocess_command_buffer), get_post_process_commands, _NO_ARG);
