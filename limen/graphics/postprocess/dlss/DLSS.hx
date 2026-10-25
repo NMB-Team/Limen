@@ -1,6 +1,8 @@
 package limen.graphics.postprocess.dlss;
 
 import limen.graphics.GraphicsDriver;
+import limen.graphics.renderer.d3d12.internal.D3D12Bindings.SwapChain;
+import limen.graphics.renderer.d3d12.command.Commands.CommandQueue;
 import limen.graphics.renderer.d3d12.command.Commands.CommandList;
 import limen.graphics.renderer.d3d12.internal.D3D12Bindings.Adapter;
 import limen.graphics.renderer.d3d12.internal.D3D12Bindings.Device;
@@ -118,5 +120,21 @@ class DLSS {
 
 	public static function evaluateFeature(frameToken:DLSSFrameToken, commandList:CommandList, feature:DLSSFeature):Int {
 		return 0;
+	}
+
+	public static function upgradeSwapChain(nativeSwapChain:SwapChain):SwapChain {
+		return null;
+	}
+
+	public static function getNativeDevice(device:Device):Device {
+		return null;
+	}
+
+	public static function getNativeFactory(factory:Factory):Factory {
+		return null;
+	}
+
+	public static function getNativeQueue(queue:CommandQueue):CommandQueue {
+		return null;
 	}
 }

@@ -25,6 +25,7 @@ function(limen_resolve_fidelityfx)
 		PATTERN ffx_fsr3upscaler_private.h EXCLUDE
 		PATTERN ffx_dx12.cpp EXCLUDE
 		PATTERN ffx_internal_types.h EXCLUDE
+		PATTERN ffx_provider.h EXCLUDE
 	)
 	foreach(_file upscalers/fsr3/internal/ffx_fsr3upscaler.cpp upscalers/fsr3/internal/ffx_fsr3upscaler_private.h)
 		file(READ "${_sdk}/${_file}" _source)
@@ -39,6 +40,9 @@ function(limen_resolve_fidelityfx)
 	file(READ "${_sdk}/api/internal/ffx_internal_types.h" _source)
 	string(REPLACE "info[index].entryName" "\"CS\"" _source "${_source}")
 	file(CONFIGURE OUTPUT "${_build_sdk}/api/internal/ffx_internal_types.h" CONTENT "${_source}" @ONLY)
+	file(READ "${_sdk}/api/internal/ffx_provider.h" _source)
+	string(REPLACE "#if FFX_BACKEND_DX12" "#if 0 // External AMD providers are not part of the static SDK" _source "${_source}")
+	file(CONFIGURE OUTPUT "${_build_sdk}/api/internal/ffx_provider.h" CONTENT "${_source}" @ONLY)
 	set(_sdk "${_build_sdk}")
 
 	if(LIMEN_FIDELITYFX_TOOLS_DIR)
@@ -127,6 +131,64 @@ function(limen_resolve_fidelityfx)
 		endforeach()
 	endforeach()
 
+	file(GLOB _fg_shader_inputs CONFIGURE_DEPENDS
+		"${_sdk}/framegeneration/fsr3/include/gpu/*/*.h"
+		"${_sdk}/framegeneration/fsr3/internal/shaders/*.hlsl"
+	)
+	file(GLOB _fg_shader_sources CONFIGURE_DEPENDS "${_sdk}/framegeneration/fsr3/internal/shaders/ffx_*.hlsl")
+	foreach(_shader IN LISTS _fg_shader_sources)
+		get_filename_component(_name "${_shader}" NAME_WE)
+		if(_name MATCHES "^ffx_frameinterpolation")
+			set(_effect_args
+				-DFFX_FRAMEINTERPOLATION_EMBED_ROOTSIG=0
+				-DFFX_FRAMEINTERPOLATION_OPTION_UPSAMPLE_SAMPLERS_USE_DATA_HALF=0
+				-DFFX_FRAMEINTERPOLATION_OPTION_ACCUMULATE_SAMPLERS_USE_DATA_HALF=0
+				-DFFX_FRAMEINTERPOLATION_OPTION_REPROJECT_SAMPLERS_USE_DATA_HALF=1
+				-DFFX_FRAMEINTERPOLATION_OPTION_POSTPROCESSLOCKSTATUS_SAMPLERS_USE_DATA_HALF=0
+				-DFFX_FRAMEINTERPOLATION_OPTION_UPSAMPLE_USE_LANCZOS_TYPE=2
+				"-DFFX_FRAMEINTERPOLATION_OPTION_LOW_RES_MOTION_VECTORS={0,1}"
+				"-DFFX_FRAMEINTERPOLATION_OPTION_JITTER_MOTION_VECTORS={0,1}"
+				"-DFFX_FRAMEINTERPOLATION_OPTION_INVERTED_DEPTH={0,1}"
+			)
+		else()
+			set(_effect_args -DFFX_OPTICALFLOW_EMBED_ROOTSIG=0 "-DFFX_OPTICALFLOW_OPTION_HDR_COLOR_INPUT={0,1}")
+		endif()
+		foreach(_variant "default" wave64 16bit wave64_16bit)
+			set(_variant_args)
+			set(_suffix "")
+			if(NOT _variant STREQUAL "default")
+				set(_suffix "_${_variant}")
+			endif()
+			if(_variant MATCHES "wave64")
+				list(APPEND _variant_args "-DFFX_PREFER_WAVE64=[WaveSize(64)]" -DFFX_HLSL_SM=66 -T cs_6_6)
+			else()
+				list(APPEND _variant_args -DFFX_HLSL_SM=62 -T cs_6_2)
+			endif()
+			if(_variant MATCHES "16bit")
+				list(APPEND _variant_args -DFFX_HALF=1 -enable-16bit-types)
+			else()
+				list(APPEND _variant_args -DFFX_HALF=0)
+			endif()
+			set(_header "${_shaders}/${_name}${_suffix}_permutations.h")
+			add_custom_command(OUTPUT "${_header}"
+				COMMAND "${_tools}/FidelityFX_SC.exe"
+					-Zs -reflection -embed-arguments -E CS -Wno-for-redefinition -Wno-ambig-lit-shift
+					-DFFX_HLSL=1 -DFFX_GPU=1 -DFFX_IMPLICIT_SHADER_REGISTER_BINDING_HLSL=0
+					${_effect_args} ${_variant_args}
+					-I "${_sdk}/api/internal/gpu" -I "${_sdk}/framegeneration/fsr3/include/gpu"
+					"-name=${_name}${_suffix}" "-output=${_shaders}" "${_shader}"
+				DEPENDS ${_fg_shader_inputs} "${_tools}/FidelityFX_SC.exe" "${_tools}/dxcompiler.dll" "${_tools}/dxil.dll"
+				COMMENT "Compiling FSR frame generation shader ${_name}${_suffix}"
+				VERBATIM
+			)
+			list(APPEND _shader_headers "${_header}")
+		endforeach()
+	endforeach()
+	file(GLOB _fg_sources CONFIGURE_DEPENDS
+		"${_sdk}/framegeneration/fsr3/internal/*.cpp"
+		"${_sdk}/framegeneration/fsr3/dx12/*.cpp"
+	)
+
 	add_library(limen_fidelityfx STATIC
 		"${_sdk}/api/internal/ffx_assert.cpp"
 		"${_sdk}/api/internal/ffx_message.cpp"
@@ -137,15 +199,19 @@ function(limen_resolve_fidelityfx)
 		"${_sdk}/upscalers/fsr3/internal/ffx_fsr3upscaler.cpp"
 		"${_sdk}/upscalers/fsr3/internal/ffx_fsr3upscaler_shaderblobs.cpp"
 		${_shader_headers}
+		${_fg_sources}
 	)
 	target_include_directories(limen_fidelityfx PUBLIC
 		"${_sdk}/api/include"
 		"${_sdk}/api/internal"
 		"${_sdk}/upscalers/include"
 		"${_sdk}/upscalers/fsr3/include"
+		"${_sdk}/framegeneration/include"
+		"${_sdk}/framegeneration/fsr3/include"
+		"${_sdk}/framegeneration/fsr3/dx12/antilag2"
 	)
 	target_include_directories(limen_fidelityfx PRIVATE "${_shaders}")
-	target_compile_definitions(limen_fidelityfx PRIVATE FFX_UPSCALER NOMINMAX WIN32_LEAN_AND_MEAN)
+	target_compile_definitions(limen_fidelityfx PRIVATE FFX_UPSCALER FFX_FRAMEGENERATION FFX_BACKEND_DX12 UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
 	target_link_libraries(limen_fidelityfx PRIVATE d3d12 dxgi)
 	install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/limen/graphics/postprocess/fsr/LICENSE_FIDELITYFX" DESTINATION "${LIMEN_HDLL_DESTINATION}")
 endfunction()

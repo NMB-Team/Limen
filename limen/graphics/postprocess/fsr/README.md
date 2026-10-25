@@ -4,13 +4,15 @@ It uses Limen's D3D12 device, resources, resource states, and command list types
 
 Context, result, and debug types live in the FSR package. Quality and creation
 flags are in `fsr.upscaling`; dispatch parameters and flags are in `fsr.frame`.
+Frame-generation configuration, preparation parameters, and flags are in
+`fsr.framegen`. Native renderer types are reused throughout.
 
 ## Build
 
 Enable `LIMEN_BUILD_FSR=ON` in a Windows x64 MSVC build with D3D12 enabled.
 CMake fetches the pinned AMD FSR SDK 2.3.0 source and shader build tools, compiles
-all shader permutations, and statically links the FSR 3.1.5 temporal upscaler and
-DX12 backend into `fsr.limen`. No AMD FidelityFX runtime DLLs are required.
+all shader permutations, and statically links the FSR 3.1.5 temporal upscaler,
+frame generation, interpolation swapchain, Anti-Lag 2, and DX12 backend into `fsr.limen`. No AMD FidelityFX runtime DLLs are required.
 The newer ML providers are distributed by AMD as DLLs and are not included.
 
 For an offline build, set `LIMEN_FIDELITYFX_SOURCE_DIR` to an SDK 2.3.0 checkout
@@ -43,3 +45,35 @@ after dispatch; the SDK records its own state into the command list.
 The result and flag values match the upstream API. FSR 3 does not implement the
 ML-specific nonlinear color and debug-visualization creation flags or the sRGB/PQ
 dispatch flags; AMD's FSR 3 provider ignores these. Use linear input color.
+
+## Frame generation
+
+Query `FSR.isEffectAvailable(device, FSREffect.FRAME_GENERATION)` independently
+of upscaler availability. `getEffectVersionCount()` and `getEffectVersion()`
+enumerate the statically linked providers; no external AMD providers are loaded.
+
+Create the interpolation swapchain with `FSR.createSwapChain(window, ...)`
+before the renderer creates its regular swapchain, then install it with
+`D3D12Bindings.setSwapChain()`. Pass a Limen `Window`; the native bridge resolves
+its Win32 HWND from SDL. Create a frame-generation context for the display size
+and depth/motion-vector conventions. Configure and prepare it once per rendered
+frame, incrementing `frameID` by exactly one. Preparation uses pixel jitter,
+frame time in milliseconds, vertical FOV in radians, and the camera basis vectors.
+
+Use `registerUiResource()` for a premultiplied UI texture, or configure the
+HUD-less scene texture before presentation. `setFramePacingTuning()` adjusts
+swapchain pacing; `queryFrameGenMemory()` and `querySwapChainMemory()` report GPU
+usage. Anti-Lag 2 has separate init, update, present, and deinit calls, and requires
+supported AMD hardware/drivers.
+
+Before resize or teardown, disable frame generation, finish submitted GPU work,
+and call `waitForPresents()` before destroying frame-generation resources.
+Unregister UI resources before disposing their textures. Destroy the
+frame-generation context, destroy the swapchain context, detach the renderer's
+swapchain, release its proxy with `releaseSwapChain()`, then shut down FSR.
+
+Heaps exposes these features through `engine.driver.upscaling` and the types in
+`h3d.impl.Upscaling`. Configure `Upscaling.UPSCALER` and
+`Upscaling.FRAME_GEN_PROVIDER` before creating the engine; the providers can be
+selected independently. Choose `BackBuffer`, `HudLess`, or `UITexture` with
+`setFrameGenUIMode()`. Renderer-specific implementations live beside their driver.
