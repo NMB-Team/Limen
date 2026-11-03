@@ -209,9 +209,9 @@ HL_PRIM bool HL_NAME(vk_init)(bool enable_validation, VulkanRequirements* requir
 			return false;
 		}
 	}
-	if (loader_api_version < VK_API_VERSION_1_3) {
+	if (loader_api_version < VK_API_VERSION_1_2) {
 		vk_set_error(
-			"Vulkan 1.3 is required, but the loader provides %u.%u.%u",
+			"Vulkan 1.2 is required, but the loader provides %u.%u.%u",
 			VK_API_VERSION_MAJOR(loader_api_version),
 			VK_API_VERSION_MINOR(loader_api_version),
 			VK_API_VERSION_PATCH(loader_api_version)
@@ -219,7 +219,7 @@ HL_PRIM bool HL_NAME(vk_init)(bool enable_validation, VulkanRequirements* requir
 		return false;
 	}
 
-	instance_api_version = VK_API_VERSION_1_3;
+	instance_api_version = loader_api_version < VK_API_VERSION_1_3 ? VK_API_VERSION_1_2 : VK_API_VERSION_1_3;
 #ifdef VK_API_VERSION_1_4
 	if (loader_api_version >= VK_API_VERSION_1_4)
 		instance_api_version = VK_API_VERSION_1_4;
@@ -288,24 +288,31 @@ HL_PRIM bool HL_NAME(vk_init)(bool enable_validation, VulkanRequirements* requir
 	free(extension_properties);
 
 	const char* validation_layer = "VK_LAYER_KHRONOS_validation";
-	if (enable_validation) {
+	const char* renderdoc_layer = "VK_LAYER_RENDERDOC_Capture";
+	const char* enabled_layers[2];
+	uint32_t enabled_layer_count = 0;
+	bool enable_renderdoc = requirements && requirements->renderdoc;
+	if (enable_validation || enable_renderdoc) {
 		uint32_t layer_count = 0;
 		result = vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 		if (result != VK_SUCCESS) {
 			vk_set_error("Failed to enumerate Vulkan instance layers: %s (%d)", vk_result_name(result), result);
 			return false;
 		}
-		VkLayerProperties* layer_properties = malloc(sizeof(VkLayerProperties) * layer_count);
-		result = vkEnumerateInstanceLayerProperties(&layer_count, layer_properties);
-		if (result != VK_SUCCESS || !has_layer(layer_properties, layer_count, validation_layer)) {
-			free(layer_properties);
-			if (result != VK_SUCCESS)
-				vk_set_error("Failed to read Vulkan instance layers: %s (%d)", vk_result_name(result), result);
-			else
-				vk_set_error("Validation requested, but %s is unavailable", validation_layer);
+		VkLayerProperties* layers = malloc(sizeof(*layers) * layer_count);
+		result = vkEnumerateInstanceLayerProperties(&layer_count, layers);
+		if (result != VK_SUCCESS || (enable_validation && !has_layer(layers, layer_count, validation_layer))) {
+			free(layers);
+			vk_set_error("Requested Vulkan validation layer is unavailable or layer enumeration failed (%d)", result);
 			return false;
 		}
-		free(layer_properties);
+		if (enable_validation) enabled_layers[enabled_layer_count++] = validation_layer;
+		if (enable_renderdoc) {
+			if (has_layer(layers, layer_count, renderdoc_layer))
+				enabled_layers[enabled_layer_count++] = renderdoc_layer;
+			else fprintf(stderr, "[Vulkan] %s not found, capture disabled\n", renderdoc_layer);
+		}
+		free(layers);
 	}
 
 	VkApplicationInfo appInfo = {
@@ -324,9 +331,9 @@ HL_PRIM bool HL_NAME(vk_init)(bool enable_validation, VulkanRequirements* requir
 		.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,
 #endif
 		.pApplicationInfo = &appInfo,
-		.enabledLayerCount = enable_validation ? 1 : 0,
+		.enabledLayerCount = enabled_layer_count,
 		.enabledExtensionCount = enabled_extension_count,
-		.ppEnabledLayerNames = enable_validation ? &validation_layer : nullptr,
+		.ppEnabledLayerNames = enabled_layer_count ? enabled_layers : nullptr,
 		.ppEnabledExtensionNames = enabled_extensions,
 	};
 
@@ -467,7 +474,28 @@ HL_PRIM vbyte* HL_NAME(vk_make_array)(varray* a) {
 // ------------------------------------------ CONTEXT INIT
 // --------------------------------------------
 
+typedef struct VkCompatDispatch {
+	PFN_vkCmdBeginRendering vkCmdBeginRendering;
+	PFN_vkCmdEndRendering vkCmdEndRendering;
+	PFN_vkCmdPipelineBarrier2 vkCmdPipelineBarrier2;
+	PFN_vkCmdWriteTimestamp2 vkCmdWriteTimestamp2;
+	PFN_vkCmdCopyBufferToImage2 vkCmdCopyBufferToImage2;
+	PFN_vkCmdCopyImageToBuffer2 vkCmdCopyImageToBuffer2;
+	PFN_vkCmdBlitImage2 vkCmdBlitImage2;
+	PFN_vkCmdCopyBuffer2 vkCmdCopyBuffer2;
+	PFN_vkCmdSetCullMode vkCmdSetCullMode;
+	PFN_vkCmdSetFrontFace vkCmdSetFrontFace;
+	PFN_vkCmdSetPrimitiveTopology vkCmdSetPrimitiveTopology;
+	PFN_vkCmdSetDepthTestEnable vkCmdSetDepthTestEnable;
+	PFN_vkCmdSetDepthWriteEnable vkCmdSetDepthWriteEnable;
+	PFN_vkCmdSetDepthCompareOp vkCmdSetDepthCompareOp;
+	PFN_vkCmdSetDepthBiasEnable vkCmdSetDepthBiasEnable;
+	PFN_vkQueueSubmit2 vkQueueSubmit2;
+} VkCompatDispatch;
+
 typedef struct _VkContext {
+	VkCompatDispatch compat;
+
 	VkSurfaceKHR surface;
 	VkPhysicalDevice pdevice;
 	VkPhysicalDeviceProperties properties;
@@ -494,6 +522,126 @@ typedef struct _VkContext {
 	char report[8192];
 	char wsi_report[1024];
 }* VkContext;
+
+static const char* compat_extensions[] = {
+	VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
+	VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+	VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME,
+	VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
+	VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME,
+};
+
+// Only 1.2 command buffers need a registry entry; 1.3 keeps the direct dispatch path.
+typedef struct VkCompatCommand {
+	VkCommandBuffer command;
+	VkCommandPool pool;
+	VkContext context;
+	struct VkCompatCommand* next;
+} VkCompatCommand;
+static VkCompatCommand* compat_commands[256];
+static uint32_t compat_command_count;
+
+static uint32_t compat_bucket(VkCommandBuffer command) {
+	return ((uintptr_t)command >> 4) & 255;
+}
+
+static VkCompatDispatch* command_dispatch(VkCommandBuffer command) {
+	if (compat_command_count)
+		for (VkCompatCommand* entry = compat_commands[compat_bucket(command)]; entry; entry = entry->next)
+			if (entry->command == command) return &entry->context->compat;
+	return nullptr;
+}
+
+static void remove_compat_commands(VkContext context, VkCommandPool pool, VkCommandBuffer command) {
+	if (!compat_command_count) return;
+	for (uint32_t i = 0; i < 256; i++) {
+		VkCompatCommand** link = &compat_commands[i];
+		while (*link) {
+			VkCompatCommand* entry = *link;
+			if (entry->context == context && (!pool || entry->pool == pool) && (!command || entry->command == command)) {
+				*link = entry->next;
+				free(entry);
+				compat_command_count--;
+			} else link = &entry->next;
+		}
+	}
+}
+
+static void compat_vkCmdBeginRendering(VkCommandBuffer                   commandBuffer, const VkRenderingInfo*                              pRenderingInfo) {
+	VkCompatDispatch* dispatch = command_dispatch(commandBuffer);
+	(dispatch ? dispatch->vkCmdBeginRendering : vkCmdBeginRendering)(commandBuffer, pRenderingInfo);
+}
+
+static void compat_vkCmdEndRendering(VkCommandBuffer                   commandBuffer) {
+	VkCompatDispatch* dispatch = command_dispatch(commandBuffer);
+	(dispatch ? dispatch->vkCmdEndRendering : vkCmdEndRendering)(commandBuffer);
+}
+
+static void compat_vkCmdPipelineBarrier2(VkCommandBuffer                   commandBuffer, const VkDependencyInfo*                             pDependencyInfo) {
+	VkCompatDispatch* dispatch = command_dispatch(commandBuffer);
+	(dispatch ? dispatch->vkCmdPipelineBarrier2 : vkCmdPipelineBarrier2)(commandBuffer, pDependencyInfo);
+}
+
+static void compat_vkCmdWriteTimestamp2(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2               stage, VkQueryPool                                         queryPool, uint32_t                                            query) {
+	VkCompatDispatch* dispatch = command_dispatch(commandBuffer);
+	(dispatch ? dispatch->vkCmdWriteTimestamp2 : vkCmdWriteTimestamp2)(commandBuffer, stage, queryPool, query);
+}
+
+static void compat_vkCmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo) {
+	VkCompatDispatch* dispatch = command_dispatch(commandBuffer);
+	(dispatch ? dispatch->vkCmdCopyBufferToImage2 : vkCmdCopyBufferToImage2)(commandBuffer, pCopyBufferToImageInfo);
+}
+
+static void compat_vkCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo) {
+	VkCompatDispatch* dispatch = command_dispatch(commandBuffer);
+	(dispatch ? dispatch->vkCmdCopyImageToBuffer2 : vkCmdCopyImageToBuffer2)(commandBuffer, pCopyImageToBufferInfo);
+}
+
+static void compat_vkCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo) {
+	VkCompatDispatch* dispatch = command_dispatch(commandBuffer);
+	(dispatch ? dispatch->vkCmdBlitImage2 : vkCmdBlitImage2)(commandBuffer, pBlitImageInfo);
+}
+
+static void compat_vkCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo) {
+	VkCompatDispatch* dispatch = command_dispatch(commandBuffer);
+	(dispatch ? dispatch->vkCmdCopyBuffer2 : vkCmdCopyBuffer2)(commandBuffer, pCopyBufferInfo);
+}
+
+static void compat_vkCmdSetCullMode(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode) {
+	VkCompatDispatch* dispatch = command_dispatch(commandBuffer);
+	(dispatch ? dispatch->vkCmdSetCullMode : vkCmdSetCullMode)(commandBuffer, cullMode);
+}
+
+static void compat_vkCmdSetFrontFace(VkCommandBuffer commandBuffer, VkFrontFace frontFace) {
+	VkCompatDispatch* dispatch = command_dispatch(commandBuffer);
+	(dispatch ? dispatch->vkCmdSetFrontFace : vkCmdSetFrontFace)(commandBuffer, frontFace);
+}
+
+static void compat_vkCmdSetPrimitiveTopology(VkCommandBuffer commandBuffer, VkPrimitiveTopology primitiveTopology) {
+	VkCompatDispatch* dispatch = command_dispatch(commandBuffer);
+	(dispatch ? dispatch->vkCmdSetPrimitiveTopology : vkCmdSetPrimitiveTopology)(commandBuffer, primitiveTopology);
+}
+
+static void compat_vkCmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) {
+	VkCompatDispatch* dispatch = command_dispatch(commandBuffer);
+	(dispatch ? dispatch->vkCmdSetDepthTestEnable : vkCmdSetDepthTestEnable)(commandBuffer, depthTestEnable);
+}
+
+static void compat_vkCmdSetDepthWriteEnable(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable) {
+	VkCompatDispatch* dispatch = command_dispatch(commandBuffer);
+	(dispatch ? dispatch->vkCmdSetDepthWriteEnable : vkCmdSetDepthWriteEnable)(commandBuffer, depthWriteEnable);
+}
+
+static void compat_vkCmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp) {
+	VkCompatDispatch* dispatch = command_dispatch(commandBuffer);
+	(dispatch ? dispatch->vkCmdSetDepthCompareOp : vkCmdSetDepthCompareOp)(commandBuffer, depthCompareOp);
+}
+
+static void compat_vkCmdSetDepthBiasEnable(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) {
+	VkCompatDispatch* dispatch = command_dispatch(commandBuffer);
+	(dispatch ? dispatch->vkCmdSetDepthBiasEnable : vkCmdSetDepthBiasEnable)(commandBuffer, depthBiasEnable);
+}
+
 
 enum {
 	VK_CAP_DYNAMIC_RENDERING = 1 << 0,
@@ -540,6 +688,8 @@ typedef struct {
 	bool swapchain_maintenance1;
 	bool portability_subset;
 	bool memory_budget;
+	bool maintenance4;
+	bool shader_demote;
 	bool shader_image_gather_extended;
 	bool shader_storage_image_write_without_format;
 	bool shader_int16;
@@ -626,11 +776,11 @@ static bool evaluate_device(
 	rejection[0] = '\0';
 
 	vkGetPhysicalDeviceProperties(device, &candidate->properties);
-	if (candidate->properties.apiVersion < VK_API_VERSION_1_3) {
+	if (candidate->properties.apiVersion < VK_API_VERSION_1_2) {
 		reject_device(
 			rejection,
 			rejection_capacity,
-			"requires Vulkan 1.3 (device provides %u.%u.%u)",
+			"requires Vulkan 1.2 (device provides %u.%u.%u)",
 			VK_API_VERSION_MAJOR(candidate->properties.apiVersion),
 			VK_API_VERSION_MINOR(candidate->properties.apiVersion),
 			VK_API_VERSION_PATCH(candidate->properties.apiVersion)
@@ -652,7 +802,7 @@ static bool evaluate_device(
 	};
 	properties13.pNext = candidate->properties.apiVersion >= VK_API_VERSION_1_4 ? &properties14 : nullptr;
 #endif
-	candidate->properties12.pNext = &properties13;
+	candidate->properties12.pNext = candidate->properties.apiVersion >= VK_API_VERSION_1_3 ? &properties13 : nullptr;
 	properties11.pNext = &candidate->properties12;
 	VkPhysicalDeviceProperties2 properties2 = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
@@ -685,11 +835,18 @@ static bool evaluate_device(
 	candidate->swapchain_maintenance1 = surface_maintenance1_enabled && has_extension(extensions, extension_count, VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
 	candidate->portability_subset = has_extension(extensions, extension_count, "VK_KHR_portability_subset");
 	candidate->memory_budget = has_extension(extensions, extension_count, VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
+	candidate->maintenance4 = has_extension(extensions, extension_count, VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+	candidate->shader_demote = has_extension(extensions, extension_count, VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME);
 	if (requirements && requirements->deviceExtensions) {
 		for (int i = 0; i < requirements->deviceExtensions->size; i++) {
 			const char* name = hl_aptr(requirements->deviceExtensions, const char*)[i];
 			if (!has_extension(extensions, extension_count, name)) reject_device(rejection, rejection_capacity, "missing %s", name);
 		}
+	}
+	if (candidate->properties.apiVersion < VK_API_VERSION_1_3) {
+		for (uint32_t i = 0; i < sizeof(compat_extensions) / sizeof(*compat_extensions); i++)
+			if (!has_extension(extensions, extension_count, compat_extensions[i]))
+				reject_device(rejection, rejection_capacity, "missing %s", compat_extensions[i]);
 	}
 	free(extensions);
 
@@ -715,13 +872,63 @@ static bool evaluate_device(
 	} else
 #endif
 		features13.pNext = candidate->swapchain_maintenance1 ? &maintenance1 : nullptr;
-	features12.pNext = &features13;
+	VkPhysicalDeviceMaintenance4Features maintenance4 = {
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES,
+		.maintenance4 = VK_TRUE,
+	};
+	VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures demote = {
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES,
+		.shaderDemoteToHelperInvocation = VK_TRUE,
+	};
+	VkPhysicalDeviceExtendedDynamicState2FeaturesEXT dynamic_state2 = {
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT,
+		.extendedDynamicState2 = VK_TRUE,
+	};
+	VkPhysicalDeviceExtendedDynamicStateFeaturesEXT dynamic_state = {
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT,
+		.pNext = &dynamic_state2,
+		.extendedDynamicState = VK_TRUE,
+	};
+	VkPhysicalDeviceDynamicRenderingFeatures rendering = {
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
+		.pNext = &dynamic_state,
+		.dynamicRendering = VK_TRUE,
+	};
+	VkPhysicalDeviceSynchronization2Features synchronization = {
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES,
+		.pNext = &rendering,
+		.synchronization2 = VK_TRUE,
+	};
+	if (candidate->properties.apiVersion < VK_API_VERSION_1_3) {
+		synchronization.synchronization2 = rendering.dynamicRendering = VK_FALSE;
+		dynamic_state.extendedDynamicState = dynamic_state2.extendedDynamicState2 = VK_FALSE;
+		dynamic_state2.pNext = candidate->swapchain_maintenance1 ? &maintenance1 : nullptr;
+		if (candidate->maintenance4) {
+			maintenance4.pNext = dynamic_state2.pNext;
+			dynamic_state2.pNext = &maintenance4;
+		}
+		if (candidate->shader_demote) {
+			demote.pNext = dynamic_state2.pNext;
+			dynamic_state2.pNext = &demote;
+		}
+		features12.pNext = &synchronization;
+	} else features12.pNext = &features13;
 	features11.pNext = &features12;
 	VkPhysicalDeviceFeatures2 features2 = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
 		.pNext = &features11,
 	};
 	vkGetPhysicalDeviceFeatures2(device, &features2);
+	if (candidate->properties.apiVersion < VK_API_VERSION_1_3) {
+		features13.dynamicRendering = rendering.dynamicRendering;
+		features13.synchronization2 = synchronization.synchronization2;
+		features13.maintenance4 = candidate->maintenance4 ? maintenance4.maintenance4 : VK_FALSE;
+		features13.shaderDemoteToHelperInvocation = candidate->shader_demote ? demote.shaderDemoteToHelperInvocation : VK_FALSE;
+		candidate->maintenance4 = features13.maintenance4;
+		candidate->shader_demote = features13.shaderDemoteToHelperInvocation;
+		if (!dynamic_state.extendedDynamicState || !dynamic_state2.extendedDynamicState2)
+			reject_device(rejection, rejection_capacity, "missing extended dynamic state features");
+	}
 	if (requirements && (!requested_features_supported(requirements->features12, &features12, FEATURES12_BEGIN, FEATURES12_END)
 		|| !requested_features_supported(requirements->features13, &features13, FEATURES13_BEGIN, FEATURES13_END)))
 		reject_device(rejection, rejection_capacity, "missing required postprocess features");
@@ -753,9 +960,9 @@ static bool evaluate_device(
 	candidate->variable_descriptor_count = features12.descriptorBindingVariableDescriptorCount;
 	candidate->update_unused_while_pending = features12.descriptorBindingUpdateUnusedWhilePending;
 	candidate->swapchain_maintenance1 = candidate->swapchain_maintenance1 && maintenance1.swapchainMaintenance1;
-	if ((required_capabilities & VK_CAP_DYNAMIC_RENDERING) && !candidate->dynamic_rendering)
+	if (!candidate->dynamic_rendering)
 		reject_device(rejection, rejection_capacity, "missing dynamicRendering");
-	if ((required_capabilities & VK_CAP_SYNCHRONIZATION_2) && !candidate->synchronization2)
+	if (!candidate->synchronization2)
 		reject_device(rejection, rejection_capacity, "missing synchronization2");
 	if ((required_capabilities & VK_CAP_TIMELINE_SEMAPHORE) && !candidate->timeline_semaphore)
 		reject_device(rejection, rejection_capacity, "missing timelineSemaphore");
@@ -933,7 +1140,7 @@ HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, 
 	}
 
 	uint32_t extra_extension_count = requirements && requirements->deviceExtensions ? requirements->deviceExtensions->size : 0;
-	const char** enabled_extensions = (const char**)hl_gc_alloc_noptr((4 + extra_extension_count) * sizeof(char*));
+	const char** enabled_extensions = (const char**)hl_gc_alloc_noptr((11 + extra_extension_count) * sizeof(char*));
 	enabled_extensions[0] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
 	uint32_t enabled_extension_count = 1;
 	if (selected.swapchain_maintenance1)
@@ -942,6 +1149,13 @@ HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, 
 		enabled_extensions[enabled_extension_count++] = "VK_KHR_portability_subset";
 	if (selected.memory_budget)
 		enabled_extensions[enabled_extension_count++] = VK_EXT_MEMORY_BUDGET_EXTENSION_NAME;
+
+	if (selected.properties.apiVersion < VK_API_VERSION_1_3) {
+		if (selected.maintenance4) enabled_extensions[enabled_extension_count++] = VK_KHR_MAINTENANCE_4_EXTENSION_NAME;
+		if (selected.shader_demote) enabled_extensions[enabled_extension_count++] = VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME;
+		for (uint32_t i = 0; i < sizeof(compat_extensions) / sizeof(*compat_extensions); i++)
+			enabled_extensions[enabled_extension_count++] = compat_extensions[i];
+	}
 
 	for (uint32_t i = 0; i < extra_extension_count; i++) {
 		const char* name = hl_aptr(requirements->deviceExtensions, const char*)[i];
@@ -987,7 +1201,45 @@ HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, 
 		enable_requested_features(requirements->features13, &features13, FEATURES13_BEGIN, FEATURES13_END);
 	}
 	features11.pNext = &features12;
-	features12.pNext = &features13;
+	VkPhysicalDeviceMaintenance4Features maintenance4 = {
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES,
+		.maintenance4 = VK_TRUE,
+	};
+	VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures demote = {
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES,
+		.shaderDemoteToHelperInvocation = VK_TRUE,
+	};
+	VkPhysicalDeviceExtendedDynamicState2FeaturesEXT dynamic_state2 = {
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT,
+		.extendedDynamicState2 = VK_TRUE,
+	};
+	VkPhysicalDeviceExtendedDynamicStateFeaturesEXT dynamic_state = {
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT,
+		.pNext = &dynamic_state2,
+		.extendedDynamicState = VK_TRUE,
+	};
+	VkPhysicalDeviceDynamicRenderingFeatures rendering = {
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
+		.pNext = &dynamic_state,
+		.dynamicRendering = VK_TRUE,
+	};
+	VkPhysicalDeviceSynchronization2Features synchronization = {
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES,
+		.pNext = &rendering,
+		.synchronization2 = VK_TRUE,
+	};
+	if (selected.properties.apiVersion < VK_API_VERSION_1_3) {
+		dynamic_state2.pNext = selected.swapchain_maintenance1 ? &maintenance1 : nullptr;
+		if (selected.maintenance4) {
+			maintenance4.pNext = dynamic_state2.pNext;
+			dynamic_state2.pNext = &maintenance4;
+		}
+		if (selected.shader_demote) {
+			demote.pNext = dynamic_state2.pNext;
+			dynamic_state2.pNext = &demote;
+		}
+		features12.pNext = &synchronization;
+	} else features12.pNext = &features13;
 	VkPhysicalDeviceFeatures2 enabled_features = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
 		.pNext = &features11,
@@ -1038,6 +1290,41 @@ HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, 
 		free(ctx);
 		vk_set_error("vkCreateDevice failed for %s: %s (%d)", selected.properties.deviceName, vk_result_name(result), result);
 		return nullptr;
+	}
+
+	if (selected.properties.apiVersion < VK_API_VERSION_1_3) {
+		ctx->compat.vkCmdBeginRendering = (PFN_vkCmdBeginRendering)vkGetDeviceProcAddr(ctx->device, "vkCmdBeginRenderingKHR");
+		if (!ctx->compat.vkCmdBeginRendering) goto missing_compat_command;
+		ctx->compat.vkCmdEndRendering = (PFN_vkCmdEndRendering)vkGetDeviceProcAddr(ctx->device, "vkCmdEndRenderingKHR");
+		if (!ctx->compat.vkCmdEndRendering) goto missing_compat_command;
+		ctx->compat.vkCmdPipelineBarrier2 = (PFN_vkCmdPipelineBarrier2)vkGetDeviceProcAddr(ctx->device, "vkCmdPipelineBarrier2KHR");
+		if (!ctx->compat.vkCmdPipelineBarrier2) goto missing_compat_command;
+		ctx->compat.vkCmdWriteTimestamp2 = (PFN_vkCmdWriteTimestamp2)vkGetDeviceProcAddr(ctx->device, "vkCmdWriteTimestamp2KHR");
+		if (!ctx->compat.vkCmdWriteTimestamp2) goto missing_compat_command;
+		ctx->compat.vkCmdCopyBufferToImage2 = (PFN_vkCmdCopyBufferToImage2)vkGetDeviceProcAddr(ctx->device, "vkCmdCopyBufferToImage2KHR");
+		if (!ctx->compat.vkCmdCopyBufferToImage2) goto missing_compat_command;
+		ctx->compat.vkCmdCopyImageToBuffer2 = (PFN_vkCmdCopyImageToBuffer2)vkGetDeviceProcAddr(ctx->device, "vkCmdCopyImageToBuffer2KHR");
+		if (!ctx->compat.vkCmdCopyImageToBuffer2) goto missing_compat_command;
+		ctx->compat.vkCmdBlitImage2 = (PFN_vkCmdBlitImage2)vkGetDeviceProcAddr(ctx->device, "vkCmdBlitImage2KHR");
+		if (!ctx->compat.vkCmdBlitImage2) goto missing_compat_command;
+		ctx->compat.vkCmdCopyBuffer2 = (PFN_vkCmdCopyBuffer2)vkGetDeviceProcAddr(ctx->device, "vkCmdCopyBuffer2KHR");
+		if (!ctx->compat.vkCmdCopyBuffer2) goto missing_compat_command;
+		ctx->compat.vkCmdSetCullMode = (PFN_vkCmdSetCullMode)vkGetDeviceProcAddr(ctx->device, "vkCmdSetCullModeEXT");
+		if (!ctx->compat.vkCmdSetCullMode) goto missing_compat_command;
+		ctx->compat.vkCmdSetFrontFace = (PFN_vkCmdSetFrontFace)vkGetDeviceProcAddr(ctx->device, "vkCmdSetFrontFaceEXT");
+		if (!ctx->compat.vkCmdSetFrontFace) goto missing_compat_command;
+		ctx->compat.vkCmdSetPrimitiveTopology = (PFN_vkCmdSetPrimitiveTopology)vkGetDeviceProcAddr(ctx->device, "vkCmdSetPrimitiveTopologyEXT");
+		if (!ctx->compat.vkCmdSetPrimitiveTopology) goto missing_compat_command;
+		ctx->compat.vkCmdSetDepthTestEnable = (PFN_vkCmdSetDepthTestEnable)vkGetDeviceProcAddr(ctx->device, "vkCmdSetDepthTestEnableEXT");
+		if (!ctx->compat.vkCmdSetDepthTestEnable) goto missing_compat_command;
+		ctx->compat.vkCmdSetDepthWriteEnable = (PFN_vkCmdSetDepthWriteEnable)vkGetDeviceProcAddr(ctx->device, "vkCmdSetDepthWriteEnableEXT");
+		if (!ctx->compat.vkCmdSetDepthWriteEnable) goto missing_compat_command;
+		ctx->compat.vkCmdSetDepthCompareOp = (PFN_vkCmdSetDepthCompareOp)vkGetDeviceProcAddr(ctx->device, "vkCmdSetDepthCompareOpEXT");
+		if (!ctx->compat.vkCmdSetDepthCompareOp) goto missing_compat_command;
+		ctx->compat.vkCmdSetDepthBiasEnable = (PFN_vkCmdSetDepthBiasEnable)vkGetDeviceProcAddr(ctx->device, "vkCmdSetDepthBiasEnableEXT");
+		if (!ctx->compat.vkCmdSetDepthBiasEnable) goto missing_compat_command;
+		ctx->compat.vkQueueSubmit2 = (PFN_vkQueueSubmit2)vkGetDeviceProcAddr(ctx->device, "vkQueueSubmit2KHR");
+		if (!ctx->compat.vkQueueSubmit2) goto missing_compat_command;
 	}
 
 	vkGetDeviceQueue(ctx->device, ctx->graphics_queue_family, 0, &ctx->graphics_queue);
@@ -1155,6 +1442,12 @@ HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, 
 	);
 	*outQueue = (int)ctx->graphics_queue_family;
 	return ctx;
+
+missing_compat_command:
+	vkDestroyDevice(ctx->device, nullptr);
+	free(ctx);
+	vk_set_error("Required Vulkan 1.2 extension command is unavailable");
+	return nullptr;
 }
 
 HL_PRIM bool HL_NAME(vk_destroy_context)(VkContext ctx) {
@@ -1167,6 +1460,7 @@ HL_PRIM bool HL_NAME(vk_destroy_context)(VkContext ctx) {
 	for (uint32_t i = 0; i < ctx->retired_swapchain_count; i++)
 		vkDestroySwapchainKHR(ctx->device, ctx->retired_swapchains[i], nullptr);
 	free(ctx->retired_swapchains);
+	remove_compat_commands(ctx, nullptr, nullptr);
 	vkDestroyDevice(ctx->device, nullptr);
 	free(ctx);
 	if (result != VK_SUCCESS) {
@@ -1984,6 +2278,17 @@ HL_PRIM int HL_NAME(vk_get_query_pool_results)(VkContext ctx, VkQueryPool pool, 
 
 HL_PRIM int HL_NAME(vk_allocate_command_buffers)(VkContext ctx, VkCommandBufferAllocateInfo* inf, varray* buffers) {
 	VkResult result = vkAllocateCommandBuffers(ctx->device, inf, hl_aptr(buffers, VkCommandBuffer));
+	if (result == VK_SUCCESS && ctx->compat.vkCmdBeginRendering) {
+		for (uint32_t i = 0; i < inf->commandBufferCount; i++) {
+			VkCommandBuffer command = hl_aptr(buffers, VkCommandBuffer)[i];
+			uint32_t bucket = compat_bucket(command);
+			VkCompatCommand* entry = malloc(sizeof(*entry));
+			if (!entry) hl_error("Failed to allocate Vulkan command dispatch state");
+			*entry = (VkCompatCommand) { command, inf->commandPool, ctx, compat_commands[bucket] };
+			compat_commands[bucket] = entry;
+			compat_command_count++;
+		}
+	}
 	if (result != VK_SUCCESS)
 		vk_set_error("vkAllocateCommandBuffers failed: %s (%d)", vk_result_name(result), result);
 	return result;
@@ -2257,7 +2562,7 @@ HL_PRIM int HL_NAME(vk_submit_command)(VkContext ctx, VkCommandBuffer command, V
 		.commandBufferInfoCount = 1,
 		.pCommandBufferInfos = &command_info,
 	};
-	VkResult result = vkQueueSubmit2(ctx->graphics_queue, 1, &submit, fence);
+	VkResult result = (ctx->compat.vkQueueSubmit2 ? ctx->compat.vkQueueSubmit2 : vkQueueSubmit2)(ctx->graphics_queue, 1, &submit, fence);
 	if (result != VK_SUCCESS)
 		vk_set_error("vkQueueSubmit2 failed: %s (%d)", vk_result_name(result), result);
 	return result;
@@ -2318,6 +2623,7 @@ HL_PRIM void HL_NAME(vk_destroy_semaphore)(VkContext ctx, VkSemaphore sem) {
 }
 
 HL_PRIM void HL_NAME(vk_destroy_command_pool)(VkContext ctx, VkCommandPool pool) {
+	remove_compat_commands(ctx, pool, nullptr);
 	vkDestroyCommandPool(ctx->device, pool, nullptr);
 }
 
@@ -2326,6 +2632,8 @@ HL_PRIM void HL_NAME(vk_destroy_query_pool)(VkContext ctx, VkQueryPool pool) {
 }
 
 HL_PRIM void HL_NAME(vk_free_command_buffers)(VkContext ctx, VkCommandPool pool, varray* cmd) {
+	for (int i = 0; i < cmd->size; i++)
+		remove_compat_commands(ctx, pool, hl_aptr(cmd, VkCommandBuffer)[i]);
 	vkFreeCommandBuffers(ctx->device, pool, cmd->size, hl_aptr(cmd, VkCommandBuffer));
 }
 
@@ -2549,7 +2857,7 @@ HL_PRIM void HL_NAME(vk_end_query)(VkCommandBuffer command, VkQueryPool pool, in
 }
 
 HL_PRIM void HL_NAME(vk_write_timestamp2)(VkCommandBuffer command, int64_t stage_mask, VkQueryPool pool, int query) {
-	vkCmdWriteTimestamp2(command, (VkPipelineStageFlags2)stage_mask, pool, (uint32_t)query);
+	compat_vkCmdWriteTimestamp2(command, (VkPipelineStageFlags2)stage_mask, pool, (uint32_t)query);
 }
 
 typedef struct {
@@ -2616,7 +2924,7 @@ HL_PRIM void HL_NAME(vk_begin_dynamic_rendering_clear)(VkCommandBuffer command, 
 		.imageMemoryBarrierCount = info->depth_image ? 2 : 1,
 		.pImageMemoryBarriers = barriers,
 	};
-	vkCmdPipelineBarrier2(command, &dependency);
+	compat_vkCmdPipelineBarrier2(command, &dependency);
 
 	VkRenderingAttachmentInfo color_attachment = {
 		.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
@@ -2642,7 +2950,7 @@ HL_PRIM void HL_NAME(vk_begin_dynamic_rendering_clear)(VkCommandBuffer command, 
 		.pColorAttachments = &color_attachment,
 		.pDepthAttachment = info->depth_view ? &depth_attachment : nullptr,
 	};
-	vkCmdBeginRendering(command, &rendering);
+	compat_vkCmdBeginRendering(command, &rendering);
 	VkViewport viewport = { 0.0f, 0.0f, (float)info->width, (float)info->height, 0.0f, 1.0f };
 	VkRect2D scissor = { .offset = { 0, 0 }, .extent = { (uint32_t)info->width, (uint32_t)info->height } };
 	vkCmdSetViewport(command, 0, 1, &viewport);
@@ -2691,7 +2999,7 @@ HL_PRIM void HL_NAME(vk_begin_dynamic_rendering)(VkCommandBuffer command, int wi
 		.pDepthAttachment = depth_view ? &depth_attachment : nullptr,
 		.pStencilAttachment = stencil_view ? &stencil_attachment : nullptr,
 	};
-	vkCmdBeginRendering(command, &rendering);
+	compat_vkCmdBeginRendering(command, &rendering);
 }
 
 HL_PRIM void HL_NAME(vk_begin_dynamic_rendering_native)(VkCommandBuffer command, int width, int height, int color_count,
@@ -2702,7 +3010,7 @@ HL_PRIM void HL_NAME(vk_begin_dynamic_rendering_native)(VkCommandBuffer command,
 }
 
 HL_PRIM void HL_NAME(vk_end_dynamic_rendering_present)(VkCommandBuffer command, VkImage color_image) {
-	vkCmdEndRendering(command);
+	compat_vkCmdEndRendering(command);
 	VkImageMemoryBarrier2 barrier = {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
 		.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -2727,11 +3035,11 @@ HL_PRIM void HL_NAME(vk_end_dynamic_rendering_present)(VkCommandBuffer command, 
 		.imageMemoryBarrierCount = 1,
 		.pImageMemoryBarriers = &barrier,
 	};
-	vkCmdPipelineBarrier2(command, &dependency);
+	compat_vkCmdPipelineBarrier2(command, &dependency);
 }
 
 HL_PRIM void HL_NAME(vk_end_dynamic_rendering)(VkCommandBuffer command) {
-	vkCmdEndRendering(command);
+	compat_vkCmdEndRendering(command);
 }
 
 HL_PRIM int HL_NAME(vk_submit_frame)(VkContext ctx, VkCommandBuffer command, VkSemaphore acquired, VkSemaphore finished, VkFence fence) {
@@ -2761,7 +3069,7 @@ HL_PRIM int HL_NAME(vk_submit_frame)(VkContext ctx, VkCommandBuffer command, VkS
 		.signalSemaphoreInfoCount = finished ? 1 : 0,
 		.pSignalSemaphoreInfos = finished ? &signal : nullptr,
 	};
-	VkResult result = vkQueueSubmit2(ctx->graphics_queue, 1, &submit, fence);
+	VkResult result = (ctx->compat.vkQueueSubmit2 ? ctx->compat.vkQueueSubmit2 : vkQueueSubmit2)(ctx->graphics_queue, 1, &submit, fence);
 	if (result != VK_SUCCESS)
 		vk_set_error("vkQueueSubmit2 failed: %s (%d)", vk_result_name(result), result);
 	return result;
@@ -2863,31 +3171,31 @@ HL_PRIM void HL_NAME(vk_set_scissor1)(VkCommandBuffer out, int first, int x, int
 }
 
 HL_PRIM void HL_NAME(vk_set_cull_mode)(VkCommandBuffer out, int mode) {
-	vkCmdSetCullMode(out, (VkCullModeFlags)mode);
+	compat_vkCmdSetCullMode(out, (VkCullModeFlags)mode);
 }
 
 HL_PRIM void HL_NAME(vk_set_front_face)(VkCommandBuffer out, int face) {
-	vkCmdSetFrontFace(out, (VkFrontFace)face);
+	compat_vkCmdSetFrontFace(out, (VkFrontFace)face);
 }
 
 HL_PRIM void HL_NAME(vk_set_primitive_topology)(VkCommandBuffer out, int topology) {
-	vkCmdSetPrimitiveTopology(out, (VkPrimitiveTopology)topology);
+	compat_vkCmdSetPrimitiveTopology(out, (VkPrimitiveTopology)topology);
 }
 
 HL_PRIM void HL_NAME(vk_set_depth_test_enable)(VkCommandBuffer out, bool enabled) {
-	vkCmdSetDepthTestEnable(out, enabled ? VK_TRUE : VK_FALSE);
+	compat_vkCmdSetDepthTestEnable(out, enabled ? VK_TRUE : VK_FALSE);
 }
 
 HL_PRIM void HL_NAME(vk_set_depth_write_enable)(VkCommandBuffer out, bool enabled) {
-	vkCmdSetDepthWriteEnable(out, enabled ? VK_TRUE : VK_FALSE);
+	compat_vkCmdSetDepthWriteEnable(out, enabled ? VK_TRUE : VK_FALSE);
 }
 
 HL_PRIM void HL_NAME(vk_set_depth_compare_op)(VkCommandBuffer out, int compare) {
-	vkCmdSetDepthCompareOp(out, (VkCompareOp)compare);
+	compat_vkCmdSetDepthCompareOp(out, (VkCompareOp)compare);
 }
 
 HL_PRIM void HL_NAME(vk_set_depth_bias_enable)(VkCommandBuffer out, bool enabled) {
-	vkCmdSetDepthBiasEnable(out, enabled ? VK_TRUE : VK_FALSE);
+	compat_vkCmdSetDepthBiasEnable(out, enabled ? VK_TRUE : VK_FALSE);
 }
 
 HL_PRIM void HL_NAME(vk_set_depth_bias)(VkCommandBuffer out, float constantFactor, float clamp, float slopeFactor) {
@@ -2938,7 +3246,7 @@ HL_PRIM void HL_NAME(vk_copy_buffer_to_image2)(VkCommandBuffer command, VkBuffer
 		.regionCount = (uint32_t)count,
 		.pRegions = copies,
 	};
-	vkCmdCopyBufferToImage2(command, &info);
+	compat_vkCmdCopyBufferToImage2(command, &info);
 	free(copies);
 }
 
@@ -2954,7 +3262,7 @@ HL_PRIM void HL_NAME(vk_copy_image_to_buffer2)(VkCommandBuffer command, VkImage 
 		.regionCount = (uint32_t)count,
 		.pRegions = copies,
 	};
-	vkCmdCopyImageToBuffer2(command, &info);
+	compat_vkCmdCopyImageToBuffer2(command, &info);
 	free(copies);
 }
 
@@ -3023,7 +3331,7 @@ HL_PRIM void HL_NAME(vk_blit_image2)(VkCommandBuffer command, VkImage source, in
 		.pRegions = blits,
 		.filter = (VkFilter)filter,
 	};
-	vkCmdBlitImage2(command, &info);
+	compat_vkCmdBlitImage2(command, &info);
 	free(blits);
 }
 
@@ -3041,7 +3349,7 @@ HL_PRIM void HL_NAME(vk_copy_buffer2)(VkCommandBuffer command, VkBuffer source, 
 		.regionCount = 1,
 		.pRegions = &region,
 	};
-	vkCmdCopyBuffer2(command, &info);
+	compat_vkCmdCopyBuffer2(command, &info);
 }
 
 HL_PRIM void HL_NAME(vk_buffer_barrier2)(VkCommandBuffer command, VkBuffer buffer, int64_t offset, int64_t size, int64_t source_stage, int64_t source_access, int64_t destination_stage, int64_t destination_access) {
@@ -3062,7 +3370,7 @@ HL_PRIM void HL_NAME(vk_buffer_barrier2)(VkCommandBuffer command, VkBuffer buffe
 		.bufferMemoryBarrierCount = 1,
 		.pBufferMemoryBarriers = &barrier,
 	};
-	vkCmdPipelineBarrier2(command, &dependency);
+	compat_vkCmdPipelineBarrier2(command, &dependency);
 }
 
 HL_PRIM void HL_NAME(vk_image_barrier2)(VkCommandBuffer command, VkImage image, int aspect_mask, int base_mip_level, int level_count, int base_array_layer, int layer_count, int old_layout, int new_layout,
@@ -3091,7 +3399,7 @@ HL_PRIM void HL_NAME(vk_image_barrier2)(VkCommandBuffer command, VkImage image, 
 		.imageMemoryBarrierCount = 1,
 		.pImageMemoryBarriers = &barrier,
 	};
-	vkCmdPipelineBarrier2(command, &dependency);
+	compat_vkCmdPipelineBarrier2(command, &dependency);
 }
 
 HL_PRIM void HL_NAME(vk_memory_barrier2)(VkCommandBuffer command, int64_t source_stage, int64_t source_access, int64_t destination_stage, int64_t destination_access) {
@@ -3107,7 +3415,7 @@ HL_PRIM void HL_NAME(vk_memory_barrier2)(VkCommandBuffer command, int64_t source
 		.memoryBarrierCount = 1,
 		.pMemoryBarriers = &barrier,
 	};
-	vkCmdPipelineBarrier2(command, &dependency);
+	compat_vkCmdPipelineBarrier2(command, &dependency);
 }
 
 HL_PRIM void HL_NAME(vk_pipeline_barrier)(VkCommandBuffer out, VkPipelineStageFlags srcMask, VkPipelineStageFlags dstMask, VkDependencyFlags flags, int memCount, VkMemoryBarrier* memBarriers, int bufferCount, VkBufferMemoryBarrier* bufBarriers,

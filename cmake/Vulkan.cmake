@@ -6,8 +6,8 @@ function(limen_resolve_vulkan)
 	set(VULKAN_HEADERS_ENABLE_MODULE OFF CACHE BOOL "" FORCE)
 	FetchContent_Declare(
 		VulkanHeaders
-		URL https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/v1.4.357.tar.gz
-		URL_HASH SHA256=7dc0dbcf1d49dd3d7da3761c251c6097dfbaac475321a4a8a99269d3d5abecdc
+		URL https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/v1.4.367.tar.gz
+		URL_HASH SHA256=0df7d58b5df617e0a6a17dec521af459206719f9c7cb12d05d09275597c16f70
 		EXCLUDE_FROM_ALL
 	)
 	FetchContent_MakeAvailable(VulkanHeaders)
@@ -32,18 +32,18 @@ function(limen_resolve_vulkan)
 	set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 	FetchContent_Declare(limen_glslang
-		URL https://github.com/KhronosGroup/glslang/archive/168d452a4f460d24b588fed08477a81c44ee27a1.tar.gz
-		URL_HASH SHA256=c167b2474af06cbab93abae8249efaf88fb79a09f30488e2a24d399e4258ce7a
+		URL https://github.com/KhronosGroup/glslang/archive/refs/tags/16.6.0.tar.gz
+		URL_HASH SHA256=9c09b901149c729df745057dafa815278aaa101b84d2b6e14f16a42de52f97f2
 		SOURCE_SUBDIR _limen_populate_only
 	)
 	FetchContent_Declare(limen_spirv_headers
-		URL https://github.com/KhronosGroup/SPIRV-Headers/archive/29981f65241605e08b0ede4cfeb999fe3b723c6a.tar.gz
-		URL_HASH SHA256=232899f1ad4104fb5bc377b94596c7621575eee62ad9a9e8f929b63a7dd8a7ad
+		URL https://github.com/KhronosGroup/SPIRV-Headers/archive/refs/tags/v1.202609.0.tar.gz
+		URL_HASH SHA256=0bac674ba1fd0a0d969b9c539a58322d37cb890a8af13b71177a64534c03b473
 		SOURCE_SUBDIR _limen_populate_only
 	)
 	FetchContent_Declare(limen_spirv_tools
-		URL https://github.com/KhronosGroup/SPIRV-Tools/archive/b707790a898e44038547df54580022fc1cf89c3d.tar.gz
-		URL_HASH SHA256=05d8af89737bde57571c48dbd36714c9f520a69623e14de72c3be6b600e277d6
+		URL https://github.com/KhronosGroup/SPIRV-Tools/archive/refs/tags/v2026.4.tar.gz
+		URL_HASH SHA256=92df4c377603f086c3d2a1eb2bd9b8f883a73ca890fb939d78a0cecdcc01686c
 		SOURCE_SUBDIR _limen_populate_only
 	)
 	FetchContent_MakeAvailable(limen_glslang limen_spirv_headers limen_spirv_tools)
@@ -58,8 +58,8 @@ function(limen_resolve_vulkan)
 	set(SHADERC_SPIRV_HEADERS_DIR "${limen_spirv_headers_SOURCE_DIR}" CACHE PATH "" FORCE)
 	set(SHADERC_SPIRV_TOOLS_DIR "${limen_spirv_tools_SOURCE_DIR}" CACHE PATH "" FORCE)
 	FetchContent_Declare(limen_shaderc
-		URL https://github.com/google/shaderc/archive/2c8cae778eec0283b44acbe7ed1a386865d78799.tar.gz # v2026.3
-		URL_HASH SHA256=e6d6492a363cdef271e466f67cae3ad0d48f7e748491b8e2fe51424c08e391ad
+		URL https://github.com/google/shaderc/archive/refs/tags/v2026.4.tar.gz
+		URL_HASH SHA256=f06ce5bcca94e5df7f34e115743597d0ad2e13c5fe9213c67dc8c76031241947
 		EXCLUDE_FROM_ALL
 	)
 	FetchContent_MakeAvailable(limen_shaderc)

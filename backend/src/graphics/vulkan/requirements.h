@@ -7,4 +7,5 @@ typedef struct VulkanRequirements {
 	vbyte* features13;
 	uint32_t graphicsQueues;
 	uint32_t computeQueues;
+	bool renderdoc;
 } VulkanRequirements;

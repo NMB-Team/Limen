@@ -8,6 +8,7 @@ class VulkanRequirements {
 	public var features13:hl.Bytes;
 	public var graphicsQueues:Int = 0;
 	public var computeQueues:Int = 0;
+	public var renderdoc:Bool = false;
 
 	public function new() {}
 }
