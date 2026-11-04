@@ -83,8 +83,8 @@ endfunction()
 
 function(limen_resolve_vma)
 	FetchContent_Declare(limen_vma
-		URL https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/archive/refs/tags/v3.3.0.tar.gz
-		URL_HASH SHA256=c4f6bbe6b5a45c2eb610ca9d231158e313086d5b1a40c9922cb42b597419b14e
+		URL https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/archive/refs/tags/v3.5.0.tar.gz
+		URL_HASH SHA256=c5f3db848fca9cb9726b41f256cc3007773321fa92a86d1e0902e66474e8a9e3
 		SOURCE_SUBDIR limen-unused
 	)
 	FetchContent_MakeAvailable(limen_vma)

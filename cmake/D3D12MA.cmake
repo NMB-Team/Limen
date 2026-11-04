@@ -2,8 +2,8 @@ include(FetchContent)
 
 function(limen_resolve_d3d12ma)
 	FetchContent_Declare(d3d12ma
-		URL https://github.com/GPUOpen-LibrariesAndSDKs/D3D12MemoryAllocator/archive/refs/tags/v3.1.0.tar.gz
-		URL_HASH SHA256=629aa00919f2f0f8cdfcdc485db5077f456e939e418cee148e17458efa055f63
+		URL https://github.com/GPUOpen-LibrariesAndSDKs/D3D12MemoryAllocator/archive/refs/tags/v3.2.1.tar.gz
+		URL_HASH SHA256=2f259ebef317ca3c9ec9cce4c0c9e138dd2ca287087332259c79ddec0fdd1483
 		SOURCE_SUBDIR limen-unused
 	)
 	FetchContent_MakeAvailable(d3d12ma)

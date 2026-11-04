@@ -122,6 +122,8 @@ jobs:
             libudev-dev \
             liburing-dev \
             libvulkan-dev \
+            mesa-vulkan-drivers \
+            vulkan-tools \
             libwayland-dev \
             libx11-dev \
             libxcursor-dev \
@@ -132,6 +134,20 @@ jobs:
             libxrandr-dev \
             libxss-dev \
             libxtst-dev
+
+      - name: Configure software Vulkan
+        if: startsWith(matrix.platform, 'linux-')
+        run: |
+          ICD=$(find /usr/share/vulkan/icd.d \
+            -maxdepth 1 -name 'lvp_icd*.json' -print -quit)
+
+          if [[ -z "$ICD" ]]; then
+            echo "::error::Lavapipe Vulkan ICD not found"
+            exit 1
+          fi
+
+          echo "VK_DRIVER_FILES=$ICD" >> "$GITHUB_ENV"
+          VK_DRIVER_FILES="$ICD" vulkaninfo --summary
 
       - name: Install Windows dependencies
         if: startsWith(matrix.platform, 'windows-')
@@ -244,19 +260,16 @@ jobs:
             exit 0
           fi
 
-          # Move the existing rolling tag to the commit that produced this build.
           gh api --method PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/latest" \
             -f sha="$GITHUB_SHA" \
             -F force=true
 
-          # Update metadata in place. The release stays published the whole time.
           gh release edit latest \
             --repo "$GITHUB_REPOSITORY" \
             --title "LIMEN latest build" \
             --notes "Automated LIMEN builds from $GITHUB_SHA." \
             --prerelease
 
-          # Asset names are stable, so replace them without deleting/recreating the release.
           gh release upload latest release/* \
             --repo "$GITHUB_REPOSITORY" \
             --clobber

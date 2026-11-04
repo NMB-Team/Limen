@@ -9,9 +9,12 @@
 	},
 	"clang-format.style": "file",
 
-	"editor.detectIndentation": false,
-	"editor.insertSpaces": false,
-	"editor.tabSize": 4,
+	"[yaml]": {
+		"editor.tabSize": 2,
+		"editor.insertSpaces": true,
+		"editor.detectIndentation": false
+	},
+
 	"editor.trimAutoWhitespace": true,
 
 	"files.trimTrailingWhitespace": true,
