@@ -149,3 +149,20 @@ elseif(NOT WIN32)
 		ENVIRONMENT "SDL_VIDEODRIVER=dummy;LD_LIBRARY_PATH=$<TARGET_FILE_DIR:libhl>:$ENV{LD_LIBRARY_PATH}"
 	)
 endif()
+
+if(LIMEN_BUILD_D3D12MA)
+	add_executable(limen_d3d12ma_test d3d12ma.cpp ../backend/src/graphics/d3d12/memory_allocator.cpp)
+	target_link_libraries(limen_d3d12ma_test PRIVATE libhl limen_d3d12ma)
+	add_test(NAME limen_d3d12ma COMMAND limen_d3d12ma_test)
+	set_tests_properties(limen_d3d12ma PROPERTIES
+		ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:$<TARGET_FILE_DIR:libhl>"
+	)
+endif()
+
+if(LIMEN_BUILD_VMA)
+	add_executable(limen_vma_memory_test vma_memory.cpp)
+	get_target_property(_LIMEN_VMA_INCLUDES limen_vulkan INCLUDE_DIRECTORIES)
+	target_include_directories(limen_vma_memory_test PRIVATE ${_LIMEN_VMA_INCLUDES})
+	target_link_libraries(limen_vma_memory_test PRIVATE libhl Vulkan::Headers Vulkan::Vulkan)
+	add_test(NAME limen_vma_memory COMMAND limen_vma_memory_test)
+endif()

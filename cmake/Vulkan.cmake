@@ -80,3 +80,15 @@ function(limen_resolve_vulkan)
 	)
 	set_target_properties(limen_spirv_reflect PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endfunction()
+
+function(limen_resolve_vma)
+	FetchContent_Declare(limen_vma
+		URL https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/archive/refs/tags/v3.3.0.tar.gz
+		URL_HASH SHA256=c4f6bbe6b5a45c2eb610ca9d231158e313086d5b1a40c9922cb42b597419b14e
+		SOURCE_SUBDIR limen-unused
+	)
+	FetchContent_MakeAvailable(limen_vma)
+	target_include_directories(limen_vulkan PRIVATE "${limen_vma_SOURCE_DIR}/include")
+	install(FILES "${limen_vma_SOURCE_DIR}/LICENSE.txt"
+		DESTINATION "${LIMEN_HDLL_DESTINATION}" RENAME LICENSE_VMA.txt)
+endfunction()

@@ -9,6 +9,10 @@
 #endif
 #include <vulkan/vulkan.h>
 
+#ifdef LIMEN_VMA
+#include "memory_allocator.h"
+#endif
+
 #include <stdint.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -1450,10 +1454,25 @@ missing_compat_command:
 	return nullptr;
 }
 
+#ifdef LIMEN_VMA
+HL_PRIM void* HL_NAME(memory_create)(VkContext ctx, int* result) {
+	if (!ctx) { *result = VK_ERROR_INITIALIZATION_FAILED; return nullptr; }
+	return limen_vma_create(instance, ctx->pdevice, ctx->device,
+		instance_api_version < ctx->properties.apiVersion ? instance_api_version : ctx->properties.apiVersion,
+		ctx->memory_budget, result);
+}
+#endif
+
 HL_PRIM bool HL_NAME(vk_destroy_context)(VkContext ctx) {
 	if (!ctx)
 		return true;
 	vk_clear_error();
+#ifdef LIMEN_VMA
+	if (limen_vma_has_allocators(ctx->device)) {
+		vk_set_error("Destroy VMA allocators before destroying the Vulkan context");
+		return false;
+	}
+#endif
 	VkResult result = vkDeviceWaitIdle(ctx->device);
 	if (ctx->swapchain)
 		vkDestroySwapchainKHR(ctx->device, ctx->swapchain, nullptr);
@@ -3419,7 +3438,7 @@ HL_PRIM void HL_NAME(vk_memory_barrier2)(VkCommandBuffer command, int64_t source
 }
 
 HL_PRIM void HL_NAME(vk_pipeline_barrier)(VkCommandBuffer out, VkPipelineStageFlags srcMask, VkPipelineStageFlags dstMask, VkDependencyFlags flags, int memCount, VkMemoryBarrier* memBarriers, int bufferCount, VkBufferMemoryBarrier* bufBarriers,
-                                          int imageCount, VkImageMemoryBarrier* imgBarriers) {
+																																										int imageCount, VkImageMemoryBarrier* imgBarriers) {
 	vkCmdPipelineBarrier(out, srcMask, dstMask, flags, memCount, memBarriers, bufferCount, bufBarriers, imageCount, imgBarriers);
 }
 

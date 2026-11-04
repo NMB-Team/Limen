@@ -1,6 +1,9 @@
 #define HL_NAME(n) limen_d3d12_##n
 #include <hl.h>
 #undef _GUID
+#ifdef LIMEN_D3D12MA
+#include "memory_allocator.h"
+#endif
 
 #ifdef HL_WIN_DESKTOP
 #include <d3d12.h>
@@ -352,6 +355,12 @@ HL_PRIM IDXGIAdapter* HL_NAME(get_adapter)() {
 
 HL_PRIM void HL_NAME(set_device)(ID3D12Device2* device) {
 	dx_driver* drv = static_driver;
+
+#ifdef LIMEN_D3D12MA
+	if (drv->device != device)
+		limen_d3d12ma_dispose_device(drv->device);
+#endif
+
 	drv->device = device;
 }
 
@@ -541,6 +550,9 @@ HL_PRIM dx_driver* HL_NAME(create_sdl)(void* window, DriverInitFlag flags, uchar
 HL_PRIM void HL_NAME(dispose_driver)(dx_driver* drv) {
 	if (drv == nullptr)
 		return;
+#ifdef LIMEN_D3D12MA
+	limen_d3d12ma_dispose_device(drv->device);
+#endif
 #ifndef HL_XBS
 	if (drv->swapchain)
 		drv->swapchain->Release();

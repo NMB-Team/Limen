@@ -72,6 +72,17 @@ set(_LIMEN_MODULE_PROXY_INPUTS
 		backend/src/graphics/postprocess/fsr/fsr.cpp
 		backend/src/graphics/postprocess/fsr/d3d12.cpp
 )
+if(LIMEN_BUILD_VMA)
+	if(NOT LIMEN_BUILD_VULKAN)
+		message(FATAL_ERROR "LIMEN_BUILD_VMA requires LIMEN_BUILD_VULKAN.")
+	endif()
+	list(FIND _LIMEN_MODULE_PROXY_INPUTS backend/src/graphics/vulkan/vulkan.c _LIMEN_VMA_PROXY_INDEX)
+	list(INSERT _LIMEN_MODULE_PROXY_INPUTS ${_LIMEN_VMA_PROXY_INDEX} backend/src/graphics/vulkan/memory_allocator.cpp)
+endif()
+if(LIMEN_BUILD_D3D12MA)
+	list(FIND _LIMEN_MODULE_PROXY_INPUTS backend/src/graphics/d3d12/debug.cpp _LIMEN_D3D12_PROXY_INDEX)
+	list(INSERT _LIMEN_MODULE_PROXY_INPUTS ${_LIMEN_D3D12_PROXY_INDEX} backend/src/graphics/d3d12/memory_allocator.cpp)
+endif()
 set(_LIMEN_MODULE_PROXY_MODULE "")
 foreach(_input IN LISTS _LIMEN_MODULE_PROXY_INPUTS)
 	if(NOT _input MATCHES "\\.(c|cpp)$")
@@ -145,6 +156,10 @@ if(LIMEN_BUILD_D3D12 AND NOT LIMEN_WINDOWS_X64)
 	message(FATAL_ERROR "LIMEN_BUILD_D3D12 is supported only on Windows x64.")
 endif()
 
+if(LIMEN_BUILD_D3D12MA AND NOT (LIMEN_WINDOWS_X64 AND LIMEN_BUILD_D3D12))
+	message(FATAL_ERROR "LIMEN_BUILD_D3D12MA requires Windows x64 and D3D12.")
+endif()
+
 if(LIMEN_BUILD_DLSS AND (NOT LIMEN_WINDOWS_X64 OR NOT (LIMEN_BUILD_D3D12 OR LIMEN_BUILD_D3D11 OR LIMEN_BUILD_VULKAN)))
 	message(FATAL_ERROR "LIMEN_BUILD_DLSS requires Windows x64 and a D3D11, D3D12, or Vulkan backend.")
 endif()
@@ -200,6 +215,11 @@ if(LIMEN_BUILD_VULKAN)
 		backend/src/graphics/vulkan/spirv.c
 	)
 	limen_set_native_library(limen_vulkan vulkan .limen)
+	if(LIMEN_BUILD_VMA)
+		limen_resolve_vma()
+		target_sources(limen_vulkan PRIVATE backend/src/graphics/vulkan/memory_allocator.cpp)
+		target_compile_definitions(limen_vulkan PRIVATE LIMEN_VMA)
+	endif()
 	limen_enable_c23_nullptr(limen_vulkan)
 	target_include_directories(limen_vulkan PRIVATE
 		"${CMAKE_CURRENT_SOURCE_DIR}/backend/include"
@@ -333,6 +353,13 @@ if(LIMEN_WINDOWS_X64 AND LIMEN_BUILD_D3D12)
 		backend/src/graphics/d3d12/debug.cpp
 	)
 	limen_set_native_library(limen_d3d12 d3d12 .limen)
+	if(LIMEN_BUILD_D3D12MA)
+		include(D3D12MA)
+		limen_resolve_d3d12ma()
+		target_sources(limen_d3d12 PRIVATE backend/src/graphics/d3d12/memory_allocator.cpp)
+		target_compile_definitions(limen_d3d12 PRIVATE LIMEN_D3D12MA)
+		target_link_libraries(limen_d3d12 PRIVATE limen_d3d12ma)
+	endif()
 	target_include_directories(limen_d3d12 PRIVATE
 		"${CMAKE_CURRENT_SOURCE_DIR}/backend/include"
 		"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/platform"
