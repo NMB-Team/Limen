@@ -18,15 +18,17 @@ static bool callback_allocation_failed = false;
 // haxe dispatches after SDL has finished pumping events
 static void queue_callback(int id, bool checked) {
 	limen_tray_callback* pending = SDL_malloc(sizeof(*pending));
+
 	if (pending == nullptr) {
 		callback_allocation_failed = true;
 		return;
 	}
-	*pending = (limen_tray_callback){.id = id, .checked = checked};
+	*pending = (limen_tray_callback){ .id = id, .checked = checked };
 	if (pending_tail != nullptr)
 		pending_tail->next = pending;
 	else
 		pending_head = pending;
+
 	pending_tail = pending;
 }
 
@@ -45,6 +47,7 @@ void limen_tray_clear_callbacks(void) {
 		pending_head = pending->next;
 		SDL_free(pending);
 	}
+
 	pending_tail = nullptr;
 	callback_allocation_failed = false;
 }
@@ -71,6 +74,7 @@ DEFINE_PRIM(_VOID, tray_set_tooltip, _TRAY _BYTES);
 
 HL_PRIM SDL_TrayMenu* HL_NAME(tray_create_menu)(SDL_Tray* tray) {
 	SDL_TrayMenu* menu = SDL_GetTrayMenu(tray);
+
 	return menu != nullptr ? menu : SDL_CreateTrayMenu(tray);
 }
 DEFINE_PRIM(_TRAY_MENU, tray_create_menu, _TRAY);
@@ -82,8 +86,10 @@ DEFINE_PRIM(_TRAY_MENU, tray_create_submenu, _TRAY_ENTRY);
 
 HL_PRIM SDL_TrayEntry* HL_NAME(tray_insert_entry)(SDL_TrayMenu* menu, vbyte* label, int kind, bool checked) {
 	SDL_TrayEntryFlags flags = (SDL_TrayEntryFlags)kind;
+
 	if (checked)
 		flags |= SDL_TRAYENTRY_CHECKED;
+
 	return SDL_InsertTrayEntryAt(menu, -1, (const char*)label, flags);
 }
 DEFINE_PRIM(_TRAY_ENTRY, tray_insert_entry, _TRAY_MENU _BYTES _I32 _BOOL);
@@ -100,6 +106,7 @@ DEFINE_PRIM(_VOID, tray_set_entry_label, _TRAY_ENTRY _BYTES);
 
 HL_PRIM vbyte* HL_NAME(tray_get_entry_label)(SDL_TrayEntry* entry) {
 	const char* label = SDL_GetTrayEntryLabel(entry);
+
 	return label == nullptr ? nullptr : hl_copy_bytes((const vbyte*)label, (int)strlen(label) + 1);
 }
 DEFINE_PRIM(_BYTES, tray_get_entry_label, _TRAY_ENTRY);
@@ -134,15 +141,20 @@ HL_PRIM int HL_NAME(tray_poll_callback)(bool* checked) {
 		callback_allocation_failed = false;
 		hl_error("Could not allocate tray callback");
 	}
+
 	if (pending_head == nullptr)
 		return 0;
+
 	limen_tray_callback* pending = pending_head;
 	int id = pending->id;
 	*checked = pending->checked;
 	pending_head = pending->next;
+
 	if (pending_head == nullptr)
 		pending_tail = nullptr;
+
 	SDL_free(pending);
+
 	return id;
 }
 DEFINE_PRIM(_I32, tray_poll_callback, _REF(_BOOL));

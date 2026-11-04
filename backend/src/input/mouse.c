@@ -5,14 +5,17 @@ static bool relative_mouse_mode = false;
 HL_PRIM int HL_NAME(set_relative_mouse_mode)(bool enable) {
 	int result = 0;
 	SDL_Window** windows = SDL_GetWindows(nullptr);
+
 	if (windows != nullptr) {
 		for (int i = 0; windows[i] != nullptr; i++)
 			if (!SDL_SetWindowRelativeMouseMode(windows[i], enable))
 				result = -1;
 		SDL_free(windows);
 	}
+
 	if (result == 0)
 		relative_mouse_mode = enable;
+
 	return result;
 }
 DEFINE_PRIM(_I32, set_relative_mouse_mode, _BOOL);
@@ -40,6 +43,7 @@ DEFINE_PRIM(_VOID, warp_mouse_in_window, TWIN _I32 _I32);
 HL_PRIM void HL_NAME(set_window_grab)(SDL_Window* window, bool grabbed) {
 	if (limen_hint_window_grab_keyboard)
 		SDL_SetWindowKeyboardGrab(window, grabbed);
+
 	SDL_SetWindowMouseGrab(window, grabbed);
 }
 DEFINE_PRIM(_VOID, set_window_grab, TWIN _BOOL);

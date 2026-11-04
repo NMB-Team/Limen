@@ -36,20 +36,24 @@ static limen_module* limen_module_get(const char* name) {
 	module->handle = nullptr;
 	module->load_attempted = false;
 	limen_modules = module;
+
 	return module;
 }
 
 void* limen_module_load(const char* name) {
 	limen_module* module = limen_module_get(name);
+
 	if (!module->load_attempted) {
 		module->load_attempted = true;
 		module->handle = SDL_LoadObject(name);
 	}
+
 	return module->handle;
 }
 
 void* limen_module_resolve(const char* module_name, const char* primitive_name, const char** signature) {
 	limen_module* module = limen_module_get(module_name);
+
 	for (limen_primitive* primitive = limen_primitives; primitive != nullptr; primitive = primitive->next) {
 		if (primitive->module == module && SDL_strcmp(primitive->name, primitive_name) == 0) {
 			*signature = primitive->signature;
@@ -66,14 +70,18 @@ void* limen_module_resolve(const char* module_name, const char* primitive_name, 
 	limen_primitives = primitive;
 
 	void* handle = limen_module_load(module_name);
+
 	if (handle != nullptr) {
 		size_t symbol_length = SDL_strlen(primitive_name) + sizeof("hlp_");
 		char* symbol = SDL_malloc(symbol_length);
 		SDL_snprintf(symbol, symbol_length, "hlp_%s", primitive_name);
+
 		limen_primitive_resolver resolver = (limen_primitive_resolver)SDL_LoadFunction(handle, symbol);
 		SDL_free(symbol);
+
 		if (resolver != nullptr) {
 			void* function = resolver(&primitive->signature);
+
 			if (function != nullptr)
 				primitive->function = function;
 		}
@@ -95,8 +103,10 @@ void limen_modules_unload(void) {
 	while (limen_modules != nullptr) {
 		limen_module* module = limen_modules;
 		limen_modules = module->next;
+
 		if (module->handle != nullptr)
 			SDL_UnloadObject(module->handle);
+
 		SDL_free(module->name);
 		SDL_free(module);
 	}

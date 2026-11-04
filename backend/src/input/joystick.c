@@ -6,6 +6,7 @@ HL_PRIM int HL_NAME(joy_count)() {
 	int count;
 	SDL_JoystickID* joysticks = SDL_GetJoysticks(&count);
 	SDL_free(joysticks);
+
 	return count;
 }
 DEFINE_PRIM(_I32, joy_count, _NO_ARG);
@@ -50,9 +51,12 @@ HL_PRIM varray* HL_NAME(get_joysticks)() {
 	SDL_JoystickID* joysticks = SDL_GetJoysticks(&count);
 	varray* result = hl_alloc_array(&hlt_i32, count);
 	SDL_JoystickID* ids = hl_aptr(result, SDL_JoystickID);
+
 	for (int i = 0; i < count; i++)
 		ids[i] = joysticks[i];
+
 	SDL_free(joysticks);
+
 	return result;
 }
 DEFINE_PRIM(_ARR, get_joysticks, _NO_ARG);

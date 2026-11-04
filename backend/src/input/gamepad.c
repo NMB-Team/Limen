@@ -7,6 +7,7 @@ HL_PRIM int HL_NAME(gctrl_count)() {
 	int count;
 	SDL_JoystickID* gamepads = SDL_GetGamepads(&count);
 	SDL_free(gamepads);
+
 	return count;
 }
 DEFINE_PRIM(_I32, gctrl_count, _NO_ARG);
@@ -48,7 +49,9 @@ HL_PRIM bool HL_NAME(gctrl_rumble)(SDL_Gamepad* controller, double strength, int
 		strength = 0;
 	else if (strength > 1)
 		strength = 1;
+
 	Uint16 intensity = (Uint16)(strength * 65535.0);
+
 	return SDL_RumbleGamepad(controller, intensity, intensity, (Uint32)length);
 }
 DEFINE_PRIM(_BOOL, gctrl_rumble, TGCTRL _F64 _I32);

@@ -36,7 +36,8 @@
 #define FSR_ERROR_INVALID_STATE -3
 
 #define CHECK_FFX_LOADED() \
-	if (!ffxInitialized) return FSR_ERROR_NOT_LOADED
+	if (!ffxInitialized)   \
+	return FSR_ERROR_NOT_LOADED
 
 static bool ffxInitialized = false;
 static uint32_t ffxDebugLevel = FFX_API_CONFIGURE_GLOBALDEBUG_LEVEL_ERRORS;
@@ -44,35 +45,43 @@ static int liveContexts = 0;
 static std::mutex fgMutex;
 
 namespace ffxFuncs {
-static ffxReturnCode_t CreateContext(ffxContext* context, ffxCreateContextDescHeader* desc, const ffxAllocationCallbacks*) {
-	Allocator alloc{nullptr};
-	ffxProvider* provider = nullptr;
-	if (ffxProvider_Fsr3FrameGeneration::GetInstance().CanProvide(desc->type))
-		provider = &ffxProvider_Fsr3FrameGeneration::GetInstance();
-	else if (ffxProvider_Fsr3FrameGenerationSwapChain::GetInstance().CanProvide(desc->type))
-		provider = &ffxProvider_Fsr3FrameGenerationSwapChain::GetInstance();
-	if (provider == nullptr)
-		return FFX_API_RETURN_ERROR_PARAMETER;
-	return provider->CreateContext(context, desc, alloc);
-}
-static ffxReturnCode_t DestroyContext(ffxContext* context, const ffxAllocationCallbacks*) {
-	Allocator alloc{nullptr};
-	return GetAssociatedProvider(*context)->DestroyContext(context, alloc);
-}
-static ffxReturnCode_t Configure(ffxContext* context, const ffxConfigureDescHeader* desc) {
-	return GetAssociatedProvider(*context)->Configure(context, desc);
-}
-static ffxReturnCode_t Query(ffxContext* context, ffxQueryDescHeader* desc) {
-	return GetAssociatedProvider(*context)->Query(context, desc);
-}
-static ffxReturnCode_t Dispatch(ffxContext* context, const ffxDispatchDescHeader* desc) {
-	return GetAssociatedProvider(*context)->Dispatch(context, desc);
-}
-}
+	static ffxReturnCode_t CreateContext(ffxContext* context, ffxCreateContextDescHeader* desc, const ffxAllocationCallbacks*) {
+		Allocator alloc{ nullptr };
 
+		ffxProvider* provider = nullptr;
+
+		if (ffxProvider_Fsr3FrameGeneration::GetInstance().CanProvide(desc->type))
+			provider = &ffxProvider_Fsr3FrameGeneration::GetInstance();
+		else if (ffxProvider_Fsr3FrameGenerationSwapChain::GetInstance().CanProvide(desc->type))
+			provider = &ffxProvider_Fsr3FrameGenerationSwapChain::GetInstance();
+		if (provider == nullptr)
+			return FFX_API_RETURN_ERROR_PARAMETER;
+
+		return provider->CreateContext(context, desc, alloc);
+	}
+
+	static ffxReturnCode_t DestroyContext(ffxContext* context, const ffxAllocationCallbacks*) {
+		Allocator alloc{ nullptr };
+
+		return GetAssociatedProvider(*context)->DestroyContext(context, alloc);
+	}
+
+	static ffxReturnCode_t Configure(ffxContext* context, const ffxConfigureDescHeader* desc) {
+		return GetAssociatedProvider(*context)->Configure(context, desc);
+	}
+
+	static ffxReturnCode_t Query(ffxContext* context, ffxQueryDescHeader* desc) {
+		return GetAssociatedProvider(*context)->Query(context, desc);
+	}
+
+	static ffxReturnCode_t Dispatch(ffxContext* context, const ffxDispatchDescHeader* desc) {
+		return GetAssociatedProvider(*context)->Dispatch(context, desc);
+	}
+} // namespace ffxFuncs
 
 static void onFfxMessage(uint32_t type, const wchar_t* message) {
 	int len = WideCharToMultiByte(CP_UTF8, 0, message, -1, nullptr, 0, nullptr, nullptr);
+
 	if (len <= 0)
 		return;
 
@@ -86,31 +95,35 @@ static ffxCreateBackendDX12Desc makeBackendDesc(ID3D12Device* device) {
 	ffxCreateBackendDX12Desc backendDesc{};
 	backendDesc.header.type = FFX_API_CREATE_CONTEXT_DESC_TYPE_BACKEND_DX12;
 	backendDesc.device = device;
+
 	return backendDesc;
 }
 
 static int d3d12_init(ID3D12Device* device, int debugLevel) {
 	if (device == nullptr)
 		return FFX_API_RETURN_ERROR_PARAMETER;
+
 	ffxDebugLevel = (uint32_t)debugLevel;
 	ffxSetPrintMessageCallback(onFfxMessage, ffxDebugLevel);
 	ffxInitialized = true;
+
 	return FFX_API_RETURN_OK;
 }
 
 static int d3d12_shutdown() {
 	if (liveContexts > 0)
 		return FFX_API_RETURN_ERROR;
+
 	ffxSetPrintMessageCallback(nullptr, FFX_API_CONFIGURE_GLOBALDEBUG_LEVEL_SILENCE);
 	ffxInitialized = false;
+
 	return FFX_API_RETURN_OK;
 }
 
 static int d3d12_get_render_resolution(ID3D12Device* device, int quality, int displayWidth, int displayHeight, int* outRenderWidth, int* outRenderHeight) {
 	CHECK_FFX_LOADED();
 
-	if (device == nullptr || outRenderWidth == nullptr || outRenderHeight == nullptr
-		|| displayWidth <= 0 || displayHeight <= 0 || quality < 0 || quality > 4)
+	if (device == nullptr || outRenderWidth == nullptr || outRenderHeight == nullptr || displayWidth <= 0 || displayHeight <= 0 || quality < 0 || quality > 4)
 		return FFX_API_RETURN_ERROR_PARAMETER;
 
 	uint32_t renderWidth = 0;
@@ -141,8 +154,7 @@ static ffxContext d3d12_create_context(ID3D12Device* device, int flags, int maxR
 		return nullptr;
 	}
 
-	if (device == nullptr || maxRenderWidth <= 0 || maxRenderHeight <= 0
-		|| maxUpscaleWidth <= 0 || maxUpscaleHeight <= 0 || (flags & ~1023) != 0) {
+	if (device == nullptr || maxRenderWidth <= 0 || maxRenderHeight <= 0 || maxUpscaleWidth <= 0 || maxUpscaleHeight <= 0 || (flags & ~1023) != 0) {
 		*outResult = FFX_API_RETURN_ERROR_PARAMETER;
 		return nullptr;
 	}
@@ -162,7 +174,8 @@ static ffxContext d3d12_create_context(ID3D12Device* device, int flags, int maxR
 	desc.maxUpscaleSize = { (uint32_t)maxUpscaleWidth, (uint32_t)maxUpscaleHeight };
 	desc.fpMessage = onFfxMessage;
 
-	Allocator alloc{nullptr};
+	Allocator alloc{ nullptr };
+
 	ffxContext context = nullptr;
 	ffxReturnCode_t res = ffxProvider_FSR3Upscale::GetInstance().CreateContext(&context, &desc.header, alloc);
 	*outResult = (int)res;
@@ -174,6 +187,7 @@ static ffxContext d3d12_create_context(ID3D12Device* device, int flags, int maxR
 	debugDesc.fpMessage = onFfxMessage;
 	debugDesc.debugLevel = ffxDebugLevel;
 	res = ffxProvider_FSR3Upscale::GetInstance().Configure(&context, &debugDesc.header);
+
 	if (res != FFX_API_RETURN_OK) {
 		GetAssociatedProvider(context)->DestroyContext(&context, alloc);
 		*outResult = (int)res;
@@ -181,19 +195,24 @@ static ffxContext d3d12_create_context(ID3D12Device* device, int flags, int maxR
 	}
 
 	liveContexts++;
+
 	return context;
 }
 
 static int d3d12_destroy_context(ffxContext context) {
 	std::lock_guard<std::mutex> lock(fgMutex);
 	CHECK_FFX_LOADED();
+
 	if (context == nullptr)
 		return FFX_API_RETURN_ERROR_PARAMETER;
 
-	Allocator alloc{nullptr};
+	Allocator alloc{ nullptr };
+
 	ffxReturnCode_t res = GetAssociatedProvider(context)->DestroyContext(&context, alloc);
+
 	if (res == FFX_API_RETURN_OK)
 		liveContexts--;
+
 	return (int)res;
 }
 
@@ -202,66 +221,75 @@ static vbyte* d3d12_get_version_name(ffxContext context) {
 		return nullptr;
 
 	const char* name = GetAssociatedProvider(context)->GetVersionName();
+
 	return hl_copy_bytes((const vbyte*)name, (int)strlen(name) + 1);
 }
 
 static uint32_t toFfxState(D3D12_RESOURCE_STATES state) {
 	switch (state) {
-	case D3D12_RESOURCE_STATE_COMMON: return FFX_API_RESOURCE_STATE_COMMON;
-	case D3D12_RESOURCE_STATE_UNORDERED_ACCESS: return FFX_API_RESOURCE_STATE_UNORDERED_ACCESS;
-	case D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE: return FFX_API_RESOURCE_STATE_COMPUTE_READ;
-	case D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE: return FFX_API_RESOURCE_STATE_PIXEL_READ;
-	case D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE: return FFX_API_RESOURCE_STATE_PIXEL_COMPUTE_READ;
-	case D3D12_RESOURCE_STATE_COPY_SOURCE: return FFX_API_RESOURCE_STATE_COPY_SRC;
-	case D3D12_RESOURCE_STATE_COPY_DEST: return FFX_API_RESOURCE_STATE_COPY_DEST;
-	case D3D12_RESOURCE_STATE_GENERIC_READ: return FFX_API_RESOURCE_STATE_GENERIC_READ;
-	case D3D12_RESOURCE_STATE_RENDER_TARGET: return FFX_API_RESOURCE_STATE_RENDER_TARGET;
-	case D3D12_RESOURCE_STATE_DEPTH_WRITE: return FFX_API_RESOURCE_STATE_DEPTH_ATTACHMENT;
-	default: return 0;
+		case D3D12_RESOURCE_STATE_COMMON:
+			return FFX_API_RESOURCE_STATE_COMMON;
+		case D3D12_RESOURCE_STATE_UNORDERED_ACCESS:
+			return FFX_API_RESOURCE_STATE_UNORDERED_ACCESS;
+		case D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE:
+			return FFX_API_RESOURCE_STATE_COMPUTE_READ;
+		case D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE:
+			return FFX_API_RESOURCE_STATE_PIXEL_READ;
+		case D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE:
+			return FFX_API_RESOURCE_STATE_PIXEL_COMPUTE_READ;
+		case D3D12_RESOURCE_STATE_COPY_SOURCE:
+			return FFX_API_RESOURCE_STATE_COPY_SRC;
+		case D3D12_RESOURCE_STATE_COPY_DEST:
+			return FFX_API_RESOURCE_STATE_COPY_DEST;
+		case D3D12_RESOURCE_STATE_GENERIC_READ:
+			return FFX_API_RESOURCE_STATE_GENERIC_READ;
+		case D3D12_RESOURCE_STATE_RENDER_TARGET:
+			return FFX_API_RESOURCE_STATE_RENDER_TARGET;
+		case D3D12_RESOURCE_STATE_DEPTH_WRITE:
+			return FFX_API_RESOURCE_STATE_DEPTH_ATTACHMENT;
+		default:
+			return 0;
 	}
 }
 
 static bool toFfxResource(ID3D12Resource* res, D3D12_RESOURCE_STATES state, FfxApiResource& out) {
 	if (res == nullptr) {
 		out = ffxApiGetResourceDX12(nullptr);
+
 		return true;
 	}
 
 	uint32_t ffxState = toFfxState(state);
+
 	if (ffxState == 0) {
 		printf("[FSR] error: unsupported resource state 0x%x\n", (unsigned int)state);
 		fflush(stdout);
+
 		return false;
 	}
 
 	out = ffxApiGetResourceDX12(res, ffxState);
+
 	return true;
 }
 
 static bool toFfxTexture(TextureResource* texture, FfxApiResource& out) {
-	return toFfxResource(texture == nullptr ? nullptr : static_cast<ID3D12Resource*>(texture->native),
-		texture == nullptr ? D3D12_RESOURCE_STATE_COMMON : static_cast<D3D12_RESOURCE_STATES>(texture->state), out);
+	return toFfxResource(texture == nullptr ? nullptr : static_cast<ID3D12Resource*>(texture->native), texture == nullptr ? D3D12_RESOURCE_STATE_COMMON : static_cast<D3D12_RESOURCE_STATES>(texture->state), out);
 }
 
 static int d3d12_dispatch(ffxContext context, ID3D12GraphicsCommandList* cmdList, FsrDispatchParams* params) {
 	CHECK_FFX_LOADED();
-	if (context == nullptr || cmdList == nullptr || params == nullptr
-		|| params->color == nullptr || params->depth == nullptr || params->motionVectors == nullptr || params->output == nullptr
-		|| params->renderWidth <= 0 || params->renderHeight <= 0 || params->upscaleWidth <= 0 || params->upscaleHeight <= 0
-		|| (params->flags & ~7) != 0)
+
+	if (context == nullptr || cmdList == nullptr || params == nullptr || params->color == nullptr || params->depth == nullptr || params->motionVectors == nullptr || params->output == nullptr || params->renderWidth <= 0 || params->renderHeight <= 0 ||
+	    params->upscaleWidth <= 0 || params->upscaleHeight <= 0 || (params->flags & ~7) != 0)
 		return FFX_API_RETURN_ERROR_PARAMETER;
 
 	ffxDispatchDescUpscale desc{};
 	desc.header.type = FFX_API_DISPATCH_DESC_TYPE_UPSCALE;
 	desc.commandList = cmdList;
 
-	if (!toFfxTexture(params->color, desc.color)
-		|| !toFfxTexture(params->depth, desc.depth)
-		|| !toFfxTexture(params->motionVectors, desc.motionVectors)
-		|| !toFfxTexture(params->exposure, desc.exposure)
-		|| !toFfxTexture(params->reactive, desc.reactive)
-		|| !toFfxTexture(params->transparencyAndComposition, desc.transparencyAndComposition)
-		|| !toFfxTexture(params->output, desc.output))
+	if (!toFfxTexture(params->color, desc.color) || !toFfxTexture(params->depth, desc.depth) || !toFfxTexture(params->motionVectors, desc.motionVectors) || !toFfxTexture(params->exposure, desc.exposure) ||
+	    !toFfxTexture(params->reactive, desc.reactive) || !toFfxTexture(params->transparencyAndComposition, desc.transparencyAndComposition) || !toFfxTexture(params->output, desc.output))
 		return FFX_API_RETURN_ERROR_PARAMETER;
 
 	desc.jitterOffset = { params->jitterOffsetX, params->jitterOffsetY };
@@ -284,27 +312,37 @@ static int d3d12_dispatch(ffxContext context, ID3D12GraphicsCommandList* cmdList
 
 static ffxProvider* effectProvider(int effect) {
 	switch (effect) {
-	case 0: return &ffxProvider_FSR3Upscale::GetInstance();
-	case 1: return &ffxProvider_Fsr3FrameGeneration::GetInstance();
-	default: return nullptr;
+		case 0:
+			return &ffxProvider_FSR3Upscale::GetInstance();
+		case 1:
+			return &ffxProvider_Fsr3FrameGeneration::GetInstance();
+		default:
+			return nullptr;
 	}
 }
 
 static int d3d12_get_effect_version_count(ID3D12Device* device, int effect, int* outCount) {
-	if (outCount == nullptr) return FFX_API_RETURN_ERROR_PARAMETER;
+	if (outCount == nullptr)
+		return FFX_API_RETURN_ERROR_PARAMETER;
 	*outCount = 0;
 	CHECK_FFX_LOADED();
+
 	auto provider = effectProvider(effect);
-	if (device == nullptr || provider == nullptr) return FFX_API_RETURN_ERROR_PARAMETER;
+
+	if (device == nullptr || provider == nullptr)
+		return FFX_API_RETURN_ERROR_PARAMETER;
 	*outCount = provider->IsSupported(device) ? 1 : 0;
 	return FFX_API_RETURN_OK;
 }
 
 static vbyte* d3d12_get_effect_version_name(ID3D12Device* device, int effect, int index) {
 	int count = 0;
+
 	if (d3d12_get_effect_version_count(device, effect, &count) != FFX_API_RETURN_OK || index != 0 || count == 0)
 		return nullptr;
+
 	const char* name = effectProvider(effect)->GetVersionName();
+
 	return hl_copy_bytes((const vbyte*)name, (int)strlen(name) + 1);
 }
 
@@ -314,16 +352,21 @@ static IDXGISwapChain4* swapChainProxy = nullptr;
 HL_PRIM IDXGISwapChain4* HL_NAME(create_swap_chain)(void* platformWindow, IDXGIFactory* factory, ID3D12CommandQueue* queue, int width, int height, int bufferCount, DXGI_FORMAT format, int* outResult) {
 	if (outResult == nullptr)
 		return nullptr;
+
 	limen_native_window native{};
+
 	HWND window = limen_get_native_window(platformWindow, &native) && native.type == LIMEN_NATIVE_WIN32 ? (HWND)native.win32.window : nullptr;
+
 	if (window == nullptr || factory == nullptr || queue == nullptr || width <= 0 || height <= 0 || bufferCount < 2) {
 		*outResult = FFX_API_RETURN_ERROR_PARAMETER;
 		return nullptr;
 	}
+
 	if (!ffxInitialized) {
 		*outResult = FSR_ERROR_NOT_LOADED;
 		return nullptr;
 	}
+
 	if (swapChainContext != nullptr || swapChainProxy != nullptr) {
 		*outResult = FSR_ERROR_INVALID_STATE;
 		return nullptr;
@@ -357,6 +400,7 @@ HL_PRIM IDXGISwapChain4* HL_NAME(create_swap_chain)(void* platformWindow, IDXGIF
 
 	ffxContext context = nullptr;
 	ffxReturnCode_t res = ffxFuncs::CreateContext(&context, &desc.header, nullptr);
+
 	if (res != FFX_API_RETURN_OK || swapChain == nullptr) {
 		if (context != nullptr)
 			ffxFuncs::DestroyContext(&context, nullptr);
@@ -377,14 +421,18 @@ HL_PRIM IDXGISwapChain4* HL_NAME(create_swap_chain)(void* platformWindow, IDXGIF
 HL_PRIM int HL_NAME(destroy_swap_chain_context)() {
 	if (swapChainContext == nullptr)
 		return FFX_API_RETURN_OK;
+
 	CHECK_FFX_LOADED();
 
 	std::lock_guard<std::mutex> lock(fgMutex);
+
 	ffxReturnCode_t res = ffxFuncs::DestroyContext(&swapChainContext, nullptr);
+
 	if (res == FFX_API_RETURN_OK) {
 		swapChainContext = nullptr;
 		liveContexts--;
 	}
+
 	return (int)res;
 }
 
@@ -399,37 +447,46 @@ HL_PRIM int HL_NAME(release_swap_chain)(IDXGISwapChain4* swapChain) {
 	proxy->AddRef();
 	swapChain->Release();
 	liveContexts--;
+
 	return (int)proxy->Release();
 }
 
 HL_PRIM int HL_NAME(wait_for_presents)() {
 	CHECK_FFX_LOADED();
+
 	if (swapChainContext == nullptr)
 		return FSR_ERROR_NOT_CREATED;
 
 	ffxDispatchDescFrameGenerationSwapChainWaitForPresentsDX12 desc{};
 	desc.header.type = FFX_API_DISPATCH_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_WAIT_FOR_PRESENTS_DX12;
 	hl_blocking(true);
+
 	ffxReturnCode_t res = ffxFuncs::Dispatch(&swapChainContext, &desc.header);
 	hl_blocking(false);
+
 	return (int)res;
 }
 
 HL_PRIM int HL_NAME(register_ui_resource)(ID3D12Resource* res, D3D12_RESOURCE_STATES state, int flags) {
 	CHECK_FFX_LOADED();
+
 	if (swapChainContext == nullptr)
 		return FSR_ERROR_NOT_CREATED;
 
 	ffxConfigureDescFrameGenerationSwapChainRegisterUiResourceDX12 desc{};
 	desc.header.type = FFX_API_CONFIGURE_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_REGISTERUIRESOURCE_DX12;
+
 	if (!toFfxResource(res, state, desc.uiResource))
 		return FFX_API_RETURN_ERROR_PARAMETER;
+
 	desc.flags = (uint32_t)flags;
+
 	return (int)ffxFuncs::Configure(&swapChainContext, &desc.header);
 }
 
 HL_PRIM int HL_NAME(set_frame_pacing_tuning)(float safetyMarginInMs, float varianceFactor, bool allowHybridSpin, int hybridSpinTime, bool allowWaitForSingleObjectOnFence) {
 	CHECK_FFX_LOADED();
+
 	if (swapChainContext == nullptr)
 		return FSR_ERROR_NOT_CREATED;
 
@@ -444,14 +501,17 @@ HL_PRIM int HL_NAME(set_frame_pacing_tuning)(float safetyMarginInMs, float varia
 	desc.header.type = FFX_API_CONFIGURE_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_KEYVALUE_DX12;
 	desc.key = FFX_API_CONFIGURE_FG_SWAPCHAIN_KEY_FRAMEPACINGTUNING;
 	desc.ptr = &tuning;
+
 	return (int)ffxFuncs::Configure(&swapChainContext, &desc.header);
 }
 
 HL_PRIM int HL_NAME(query_swap_chain_memory)(double* outTotal, double* outAliasable) {
-	if (outTotal == nullptr || outAliasable == nullptr) return FFX_API_RETURN_ERROR_PARAMETER;
+	if (outTotal == nullptr || outAliasable == nullptr)
+		return FFX_API_RETURN_ERROR_PARAMETER;
 	*outTotal = 0;
 	*outAliasable = 0;
 	CHECK_FFX_LOADED();
+
 	if (swapChainContext == nullptr)
 		return FSR_ERROR_NOT_CREATED;
 
@@ -468,7 +528,9 @@ HL_PRIM int HL_NAME(query_swap_chain_memory)(double* outTotal, double* outAliasa
 
 static ffxReturnCode_t fgDispatchCallback(ffxDispatchDescFrameGeneration* params, void* userContext) {
 	std::lock_guard<std::mutex> lock(fgMutex);
+
 	ffxContext context = (ffxContext)userContext;
+
 	return ffxFuncs::Dispatch(&context, &params->header);
 }
 
@@ -479,6 +541,7 @@ HL_PRIM FsrContext* HL_NAME(create_frame_gen_context)(ID3D12Device* device, int 
 		*outResult = FFX_API_RETURN_ERROR_PARAMETER;
 		return nullptr;
 	}
+
 	if (!ffxInitialized) {
 		*outResult = FSR_ERROR_NOT_LOADED;
 		return nullptr;
@@ -517,6 +580,7 @@ HL_PRIM FsrContext* HL_NAME(create_frame_gen_context)(ID3D12Device* device, int 
 	ffxFuncs::Configure(&context, &debugDesc.header);
 
 	liveContexts++;
+
 	return wrapFsrContext(&fsrD3D12, context);
 }
 
@@ -536,9 +600,12 @@ struct FsrFrameGenConfig {
 };
 
 HL_PRIM int HL_NAME(configure_frame_gen)(FsrContext* handle, FsrFrameGenConfig* config) {
-	if (handle == nullptr || handle->backend != &fsrD3D12) return FFX_API_RETURN_ERROR_PARAMETER;
+	if (handle == nullptr || handle->backend != &fsrD3D12)
+		return FFX_API_RETURN_ERROR_PARAMETER;
+
 	ffxContext context = handle->native;
 	CHECK_FFX_LOADED();
+
 	if (context == nullptr || config == nullptr || config->swapChain == nullptr)
 		return FFX_API_RETURN_ERROR_PARAMETER;
 
@@ -551,8 +618,10 @@ HL_PRIM int HL_NAME(configure_frame_gen)(FsrContext* handle, FsrFrameGenConfig* 
 	desc.frameGenerationCallbackUserContext = context;
 	desc.frameGenerationEnabled = config->enabled;
 	desc.allowAsyncWorkloads = config->allowAsyncWorkloads;
+
 	if (!toFfxResource(config->hudless, config->hudlessState, desc.HUDLessColor))
 		return FFX_API_RETURN_ERROR_PARAMETER;
+
 	desc.flags = (uint32_t)config->flags;
 	desc.onlyPresentGenerated = config->onlyPresentGenerated;
 	desc.generationRect = { config->rectX, config->rectY, config->rectWidth, config->rectHeight };
@@ -595,12 +664,13 @@ struct FsrFrameGenPrepareParams {
 };
 
 HL_PRIM int HL_NAME(dispatch_frame_gen_prepare)(FsrContext* handle, ID3D12GraphicsCommandList* cmdList, FsrFrameGenPrepareParams* params) {
-	if (handle == nullptr || handle->backend != &fsrD3D12) return FFX_API_RETURN_ERROR_PARAMETER;
+	if (handle == nullptr || handle->backend != &fsrD3D12)
+		return FFX_API_RETURN_ERROR_PARAMETER;
+
 	ffxContext context = handle->native;
 	CHECK_FFX_LOADED();
-	if (context == nullptr || cmdList == nullptr || params == nullptr
-		|| params->depth == nullptr || params->motionVectors == nullptr
-		|| params->renderWidth <= 0 || params->renderHeight <= 0 || (params->flags & ~31) != 0)
+
+	if (context == nullptr || cmdList == nullptr || params == nullptr || params->depth == nullptr || params->motionVectors == nullptr || params->renderWidth <= 0 || params->renderHeight <= 0 || (params->flags & ~31) != 0)
 		return FFX_API_RETURN_ERROR_PARAMETER;
 
 	ffxDispatchDescFrameGenerationPrepareV2 desc{};
@@ -617,9 +687,10 @@ HL_PRIM int HL_NAME(dispatch_frame_gen_prepare)(FsrContext* handle, ID3D12Graphi
 	desc.cameraFar = params->cameraFar;
 	desc.cameraFovAngleVertical = params->cameraFovAngleVertical;
 	desc.viewSpaceToMetersFactor = params->viewSpaceToMetersFactor;
-	if (!toFfxResource(params->depth, params->depthState, desc.depth)
-		|| !toFfxResource(params->motionVectors, params->motionVectorsState, desc.motionVectors))
+
+	if (!toFfxResource(params->depth, params->depthState, desc.depth) || !toFfxResource(params->motionVectors, params->motionVectorsState, desc.motionVectors))
 		return FFX_API_RETURN_ERROR_PARAMETER;
+
 	desc.cameraPosition[0] = params->cameraPositionX;
 	desc.cameraPosition[1] = params->cameraPositionY;
 	desc.cameraPosition[2] = params->cameraPositionZ;
@@ -634,16 +705,22 @@ HL_PRIM int HL_NAME(dispatch_frame_gen_prepare)(FsrContext* handle, ID3D12Graphi
 	desc.cameraForward[2] = params->cameraForwardZ;
 
 	std::lock_guard<std::mutex> lock(fgMutex);
+
 	return (int)ffxFuncs::Dispatch(&context, &desc.header);
 }
 
 HL_PRIM int HL_NAME(query_frame_gen_memory)(FsrContext* handle, double* outTotal, double* outAliasable) {
-	if (handle == nullptr || handle->backend != &fsrD3D12) return FFX_API_RETURN_ERROR_PARAMETER;
+	if (handle == nullptr || handle->backend != &fsrD3D12)
+		return FFX_API_RETURN_ERROR_PARAMETER;
+
 	ffxContext context = handle->native;
-	if (outTotal == nullptr || outAliasable == nullptr) return FFX_API_RETURN_ERROR_PARAMETER;
+
+	if (outTotal == nullptr || outAliasable == nullptr)
+		return FFX_API_RETURN_ERROR_PARAMETER;
 	*outTotal = 0;
 	*outAliasable = 0;
 	CHECK_FFX_LOADED();
+
 	if (context == nullptr)
 		return FFX_API_RETURN_ERROR_PARAMETER;
 
@@ -677,23 +754,28 @@ HL_PRIM int HL_NAME(antilag2_deinit)() {
 
 HL_PRIM int HL_NAME(antilag2_update)(bool enable, int maxFps) {
 	hl_blocking(true);
+
 	HRESULT hr = AMD::AntiLag2DX12::Update(&antiLag2Context, enable, (unsigned int)(maxFps < 0 ? 0 : maxFps));
 	hl_blocking(false);
+
 	return (int)hr;
 }
 
 HL_PRIM int HL_NAME(antilag2_present)(IDXGISwapChain4* swapChain, bool enabled) {
 	if (swapChain != nullptr) {
 		FfxAntiLag2Data data{ &antiLag2Context, enabled && antiLag2Context.m_pAntiLagAPI != nullptr };
+
 		HRESULT hr = swapChain->SetPrivateData(IID_IFfxAntiLag2Data, sizeof(data), &data);
+
 		if (FAILED(hr))
 			return (int)hr;
 	}
+
 	if (!enabled)
 		return S_OK;
+
 	return (int)AMD::AntiLag2DX12::MarkEndOfFrameRendering(&antiLag2Context);
 }
-
 
 DEFINE_PRIM(_SWAPCHAIN, create_swap_chain, _WINDOW _FACTORY _RES _I32 _I32 _I32 _I32 _REF(_I32));
 DEFINE_PRIM(_I32, destroy_swap_chain_context, _NO_ARG);
@@ -711,24 +793,12 @@ DEFINE_PRIM(_I32, antilag2_deinit, _NO_ARG);
 DEFINE_PRIM(_I32, antilag2_update, _BOOL _I32);
 DEFINE_PRIM(_I32, antilag2_present, _SWAPCHAIN _BOOL);
 
-const FsrBackend fsrD3D12{
-	[](PostProcessDevice* device, int debug) { return d3d12_init(static_cast<ID3D12Device*>(device->device), debug); },
-	d3d12_shutdown,
-	[](PostProcessDevice* device, int quality, int w, int h, int* rw, int* rh) {
-		return d3d12_get_render_resolution(static_cast<ID3D12Device*>(device->device), quality, w, h, rw, rh);
-	},
-	[](PostProcessDevice* device, int flags, int rw, int rh, int ow, int oh, int* result) {
-		return d3d12_create_context(static_cast<ID3D12Device*>(device->device), flags, rw, rh, ow, oh, result);
-	},
-	d3d12_destroy_context,
-	d3d12_get_version_name,
-	[](void* context, void* commands, FsrDispatchParams* params) {
-		return d3d12_dispatch(context, static_cast<ID3D12GraphicsCommandList*>(commands), params);
-	},
-	[](PostProcessDevice* device, int effect, int* count) {
-		return d3d12_get_effect_version_count(static_cast<ID3D12Device*>(device->device), effect, count);
-	},
-	[](PostProcessDevice* device, int effect, int index) {
-		return d3d12_get_effect_version_name(static_cast<ID3D12Device*>(device->device), effect, index);
-	}
-};
+const FsrBackend fsrD3D12{ [](PostProcessDevice* device, int debug) { return d3d12_init(static_cast<ID3D12Device*>(device->device), debug); },
+                           d3d12_shutdown,
+                           [](PostProcessDevice* device, int quality, int w, int h, int* rw, int* rh) { return d3d12_get_render_resolution(static_cast<ID3D12Device*>(device->device), quality, w, h, rw, rh); },
+                           [](PostProcessDevice* device, int flags, int rw, int rh, int ow, int oh, int* result) { return d3d12_create_context(static_cast<ID3D12Device*>(device->device), flags, rw, rh, ow, oh, result); },
+                           d3d12_destroy_context,
+                           d3d12_get_version_name,
+                           [](void* context, void* commands, FsrDispatchParams* params) { return d3d12_dispatch(context, static_cast<ID3D12GraphicsCommandList*>(commands), params); },
+                           [](PostProcessDevice* device, int effect, int* count) { return d3d12_get_effect_version_count(static_cast<ID3D12Device*>(device->device), effect, count); },
+                           [](PostProcessDevice* device, int effect, int index) { return d3d12_get_effect_version_name(static_cast<ID3D12Device*>(device->device), effect, index); } };

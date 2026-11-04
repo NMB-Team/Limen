@@ -37,6 +37,7 @@ bool limen_windows_prepare_fullscreen(SDL_Window* window, int mode) {
 
 	free(saved);
 	SDL_SetPointerProperty(properties, LIMEN_BORDERLESS_SAVE_PROPERTY, nullptr);
+
 	return true;
 }
 
@@ -50,6 +51,7 @@ bool limen_windows_set_borderless_fixed(SDL_Window* window) {
 
 	HMONITOR monitor = MonitorFromWindow(native, MONITOR_DEFAULTTONEAREST);
 	MONITORINFO monitor_info = { sizeof(monitor_info) };
+
 	if (!GetMonitorInfo(monitor, &monitor_info))
 		return false;
 
@@ -63,6 +65,7 @@ bool limen_windows_set_borderless_fixed(SDL_Window* window) {
 
 		if (!GetWindowPlacement(native, &saved->placement)) {
 			free(saved);
+
 			return false;
 		}
 
@@ -74,15 +77,18 @@ bool limen_windows_set_borderless_fixed(SDL_Window* window) {
 
 	if (IsZoomed(native))
 		ShowWindow(native, SW_RESTORE);
+
 	SetWindowLong(native, GWL_STYLE, WS_POPUP | WS_VISIBLE);
 	SetWindowPos(native, nullptr, monitor_info.rcMonitor.left, monitor_info.rcMonitor.top, monitor_info.rcMonitor.right - monitor_info.rcMonitor.left, monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top + 1,
 	             SWP_NOOWNERZORDER | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+
 	return true;
 }
 
 void limen_windows_cleanup_borderless(SDL_Window* window) {
 	SDL_PropertiesID properties = SDL_GetWindowProperties(window);
 	limen_saved_window* saved = (limen_saved_window*)SDL_GetPointerProperty(properties, LIMEN_BORDERLESS_SAVE_PROPERTY, nullptr);
+
 	if (saved != nullptr) {
 		free(saved);
 		SDL_SetPointerProperty(properties, LIMEN_BORDERLESS_SAVE_PROPERTY, nullptr);

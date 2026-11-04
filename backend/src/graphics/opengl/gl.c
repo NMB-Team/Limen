@@ -54,10 +54,10 @@
 #define GL_IMPORT(fun, t) fun = (PFNGL##t##PROC)limen_gl_get_proc_address(#fun)
 #ifndef __APPLE__
 #define GL_IMPORT_OPT(fun, t)                                  \
-	PFNGL##t##PROC fun = nullptr;                                 \
+	PFNGL##t##PROC fun = nullptr;                              \
 	if (!fun) {                                                \
 		fun = (PFNGL##t##PROC)limen_gl_get_proc_address(#fun); \
-		if (fun == nullptr)                                       \
+		if (fun == nullptr)                                    \
 			hl_error("function not resolved");                 \
 	}
 #endif
@@ -75,49 +75,61 @@ static int GLLoadAPI() {
 	if (glGenFramebuffers == nullptr) {
 		glGenFramebuffers = (PFNGLGENFRAMEBUFFERSPROC)limen_gl_get_proc_address("glGenFramebuffersEXT");
 	}
+
 	if (glBindFramebuffer == nullptr) {
 		glBindFramebuffer = (PFNGLBINDFRAMEBUFFERPROC)limen_gl_get_proc_address("glBindFramebufferEXT");
 	}
+
 	if (glFramebufferTexture2D == nullptr) {
 		glFramebufferTexture2D = (PFNGLFRAMEBUFFERTEXTURE2DPROC)limen_gl_get_proc_address("glFramebufferTexture2DEXT");
 	}
+
 	if (glDeleteFramebuffers == nullptr) {
 		glDeleteFramebuffers = (PFNGLDELETEFRAMEBUFFERSPROC)limen_gl_get_proc_address("glDeleteFramebuffersEXT");
 	}
+
 	if (glGenRenderbuffers == nullptr) {
 		glGenRenderbuffers = (PFNGLGENRENDERBUFFERSPROC)limen_gl_get_proc_address("glGenRenderbuffersEXT");
 	}
+
 	if (glBindRenderbuffer == nullptr) {
 		glBindRenderbuffer = (PFNGLBINDRENDERBUFFERPROC)limen_gl_get_proc_address("glBindRenderbufferEXT");
 	}
+
 	if (glRenderbufferStorage == nullptr) {
 		glRenderbufferStorage = (PFNGLRENDERBUFFERSTORAGEPROC)limen_gl_get_proc_address("glRenderbufferStorageEXT");
 	}
+
 	if (glFramebufferRenderbuffer == nullptr) {
 		glFramebufferRenderbuffer = (PFNGLFRAMEBUFFERRENDERBUFFERPROC)limen_gl_get_proc_address("glFramebufferRenderbufferEXT");
 	}
+
 	if (glDeleteRenderbuffers == nullptr) {
 		glDeleteRenderbuffers = (PFNGLDELETERENDERBUFFERSPROC)limen_gl_get_proc_address("glDeleteRenderbuffersEXT");
 	}
+
 	if (glGenerateMipmap == nullptr) {
 		glGenerateMipmap = (PFNGLGENERATEMIPMAPPROC)limen_gl_get_proc_address("glGenerateMipmapEXT");
 	}
+
 	if (glVertexAttribDivisor == nullptr) {
 		glVertexAttribDivisor = (PFNGLVERTEXATTRIBDIVISORPROC)limen_gl_get_proc_address("glVertexAttribDivisorARB");
 	}
+
 	if (glDrawArraysInstanced == nullptr) {
 		glDrawArraysInstanced = (PFNGLDRAWARRAYSINSTANCEDPROC)limen_gl_get_proc_address("glDrawArraysInstancedARB");
 	}
+
 	if (glDrawElementsInstanced == nullptr) {
 		glDrawElementsInstanced = (PFNGLDRAWELEMENTSINSTANCEDPROC)limen_gl_get_proc_address("glDrawElementsInstancedARB");
 	}
 
-	if (glCreateProgram == nullptr || glDeleteProgram == nullptr || glLinkProgram == nullptr || glAttachShader == nullptr || glGetProgramInfoLog == nullptr || glGetUniformLocation == nullptr || glGetAttribLocation == nullptr || glCreateShader == nullptr ||
-		glDeleteShader == nullptr || glShaderSource == nullptr || glCompileShader == nullptr || glGetShaderInfoLog == nullptr || glGetShaderiv == nullptr || glGetProgramiv == nullptr || glUseProgram == nullptr || glGenBuffers == nullptr || glBindBuffer == nullptr ||
-		glBufferData == nullptr || glBufferSubData == nullptr || glDeleteBuffers == nullptr || glEnableVertexAttribArray == nullptr || glDisableVertexAttribArray == nullptr || glVertexAttribPointer == nullptr || glDrawBuffers == nullptr || glGenFramebuffers == nullptr ||
-		glBindFramebuffer == nullptr || glFramebufferTexture2D == nullptr || glDeleteFramebuffers == nullptr || glGenRenderbuffers == nullptr || glBindRenderbuffer == nullptr || glRenderbufferStorage == nullptr || glFramebufferRenderbuffer == nullptr ||
-		glDeleteRenderbuffers == nullptr || glGenerateMipmap == nullptr || glUniform1i == nullptr || glUniform3fv == nullptr || glUniform4fv == nullptr || glUniformMatrix3fv == nullptr || glUniformMatrix4fv == nullptr || glUniform1f == nullptr || glUniform2f == nullptr ||
-		glUniform3f == nullptr || glUniform4f == nullptr) {
+	if (glCreateProgram == nullptr || glDeleteProgram == nullptr || glLinkProgram == nullptr || glAttachShader == nullptr || glGetProgramInfoLog == nullptr || glGetUniformLocation == nullptr || glGetAttribLocation == nullptr ||
+	    glCreateShader == nullptr || glDeleteShader == nullptr || glShaderSource == nullptr || glCompileShader == nullptr || glGetShaderInfoLog == nullptr || glGetShaderiv == nullptr || glGetProgramiv == nullptr || glUseProgram == nullptr ||
+	    glGenBuffers == nullptr || glBindBuffer == nullptr || glBufferData == nullptr || glBufferSubData == nullptr || glDeleteBuffers == nullptr || glEnableVertexAttribArray == nullptr || glDisableVertexAttribArray == nullptr ||
+	    glVertexAttribPointer == nullptr || glDrawBuffers == nullptr || glGenFramebuffers == nullptr || glBindFramebuffer == nullptr || glFramebufferTexture2D == nullptr || glDeleteFramebuffers == nullptr || glGenRenderbuffers == nullptr ||
+	    glBindRenderbuffer == nullptr || glRenderbufferStorage == nullptr || glFramebufferRenderbuffer == nullptr || glDeleteRenderbuffers == nullptr || glGenerateMipmap == nullptr || glUniform1i == nullptr || glUniform3fv == nullptr ||
+	    glUniform4fv == nullptr || glUniformMatrix3fv == nullptr || glUniformMatrix4fv == nullptr || glUniform1f == nullptr || glUniform2f == nullptr || glUniform3f == nullptr || glUniform4f == nullptr) {
 		return 1;
 	}
 #endif
@@ -147,6 +159,7 @@ HL_PRIM bool HL_NAME(gl_set_debug)(bool enable) {
 	} else {
 		glDisable(GL_DEBUG_OUTPUT);
 	}
+
 	return true;
 #else
 	return false;
@@ -279,13 +292,16 @@ static vdynamic* alloc_i32(int v) {
 	vdynamic* ret;
 	ret = hl_alloc_dynamic(&hlt_i32);
 	ret->v.i = v;
+
 	return ret;
 }
 
 HL_PRIM vdynamic* HL_NAME(gl_create_program)() {
 	int v = glCreateProgram();
+
 	if (v == 0)
 		return nullptr;
+
 	return alloc_i32(v);
 }
 
@@ -312,11 +328,13 @@ HL_PRIM vdynamic* HL_NAME(gl_get_program_parameter)(vdynamic* p, int param) {
 			{
 				int ret = 0;
 				glGetProgramiv(p->v.i, param, &ret);
+
 				return alloc_i32(ret);
 			}
 		default:
 			hl_error("Unsupported param %d", param);
 	}
+
 	return nullptr;
 }
 
@@ -324,19 +342,23 @@ HL_PRIM vbyte* HL_NAME(gl_get_program_info_bytes)(vdynamic* p) {
 	char log[4096];
 	*log = 0;
 	glGetProgramInfoLog(p->v.i, 4096, nullptr, log);
+
 	return hl_copy_bytes((vbyte*)log, (int)strlen(log) + 1);
 }
 
 HL_PRIM vdynamic* HL_NAME(gl_get_uniform_location)(vdynamic* p, vstring* name) {
 	char* cname = hl_to_utf8(name->bytes);
 	int u = glGetUniformLocation(p->v.i, cname);
+
 	if (u < 0)
 		return nullptr;
+
 	return alloc_i32(u);
 }
 
 HL_PRIM int HL_NAME(gl_get_attrib_location)(vdynamic* p, vstring* name) {
 	char* cname = hl_to_utf8(name->bytes);
+
 	return glGetAttribLocation(p->v.i, cname);
 }
 
@@ -348,8 +370,10 @@ HL_PRIM void HL_NAME(gl_use_program)(vdynamic* p) {
 
 HL_PRIM vdynamic* HL_NAME(gl_create_shader)(int type) {
 	int s = glCreateShader(type);
+
 	if (s == 0)
 		return nullptr;
+
 	return alloc_i32(s);
 }
 
@@ -366,6 +390,7 @@ HL_PRIM vbyte* HL_NAME(gl_get_shader_info_bytes)(vdynamic* s) {
 	char log[4096];
 	*log = 0;
 	glGetShaderInfoLog(s->v.i, 4096, nullptr, log);
+
 	return hl_copy_bytes((vbyte*)log, (int)strlen(log) + 1);
 }
 
@@ -377,11 +402,13 @@ HL_PRIM vdynamic* HL_NAME(gl_get_shader_parameter)(vdynamic* s, int param) {
 			{
 				int ret = 0;
 				glGetShaderiv(s->v.i, param, &ret);
+
 				return alloc_i32(ret);
 			}
 		default:
 			hl_error("Unsupported param %d", param);
 	}
+
 	return nullptr;
 }
 
@@ -394,6 +421,7 @@ HL_PRIM void HL_NAME(gl_delete_shader)(vdynamic* s) {
 HL_PRIM vdynamic* HL_NAME(gl_create_texture)() {
 	unsigned int t = 0;
 	glGenTextures(1, &t);
+
 	return alloc_i32(t);
 }
 
@@ -425,7 +453,7 @@ HL_PRIM void HL_NAME(gl_tex_image3d)(int target, int level, int internalFormat, 
 	glTexImage3D(target, level, internalFormat, width, height, depth, border, format, type, image);
 }
 
-HL_PRIM void HL_NAME(gl_copy_image_sub_data)( vdynamic *src, int srcTarget, int srcLevel, int srcX, int srcY, int srcZ, vdynamic *dst, int dstTarget, int dstLevel, int dstX, int dstY, int dstZ, int width, int height, int depth ) {
+HL_PRIM void HL_NAME(gl_copy_image_sub_data)(vdynamic* src, int srcTarget, int srcLevel, int srcX, int srcY, int srcZ, vdynamic* dst, int dstTarget, int dstLevel, int dstX, int dstY, int dstZ, int width, int height, int depth) {
 	// GL 4.3+ / ARB_copy_image
 	GL_IMPORT_OPT(glCopyImageSubData, COPYIMAGESUBDATA)
 	glCopyImageSubData(ZIDX(src), srcTarget, srcLevel, srcX, srcY, srcZ, ZIDX(dst), dstTarget, dstLevel, dstX, dstY, dstZ, width, height, depth);
@@ -493,6 +521,7 @@ HL_PRIM void HL_NAME(gl_blit_framebuffer)(int src_x0, int src_y0, int src_x1, in
 HL_PRIM vdynamic* HL_NAME(gl_create_framebuffer)() {
 	unsigned int f = 0;
 	glGenFramebuffers(1, &f);
+
 	return alloc_i32(f);
 }
 
@@ -535,6 +564,7 @@ HL_PRIM void HL_NAME(gl_draw_buffers)(int count, unsigned int* buffers) {
 HL_PRIM vdynamic* HL_NAME(gl_create_renderbuffer)() {
 	unsigned int buf = 0;
 	glGenRenderbuffers(1, &buf);
+
 	return alloc_i32(buf);
 }
 
@@ -565,6 +595,7 @@ HL_PRIM void HL_NAME(gl_delete_renderbuffer)(vdynamic* b) {
 HL_PRIM vdynamic* HL_NAME(gl_create_buffer)() {
 	unsigned int b = 0;
 	glGenBuffers(1, &b);
+
 	return alloc_i32(b);
 }
 
@@ -705,10 +736,13 @@ HL_PRIM int HL_NAME(gl_get_config_parameter)(int feature) {
 			{
 				int r = -1;
 				glGetIntegerv(feature, &r);
+
 				return r;
 			}
+
 			break;
 	}
+
 	return -1;
 }
 
@@ -716,6 +750,7 @@ HL_PRIM bool HL_NAME(gl_has_extension)(vstring* name) {
 	const char* cname = hl_to_utf8(name->bytes);
 	const char* version = (const char*)glGetString(GL_VERSION);
 	int major = 0;
+
 	if (version != nullptr) {
 		const char* number = strstr(version, "OpenGL ES ");
 		number = number == nullptr ? version : number + 10;
@@ -728,22 +763,28 @@ HL_PRIM bool HL_NAME(gl_has_extension)(vstring* name) {
 #endif
 		GLint numExtensions = 0;
 		glGetIntegerv(GL_NUM_EXTENSIONS, &numExtensions);
+
 		for (int i = 0; i < numExtensions; i++) {
 			const char* ext = (const char*)glGetStringi(GL_EXTENSIONS, i);
+
 			if (ext && strcmp(cname, ext) == 0)
 				return true;
 		}
 	}
 
 	const char* extensions = (const char*)glGetString(GL_EXTENSIONS);
+
 	if (extensions == nullptr)
 		return false;
+
 	size_t nameLength = strlen(cname);
+
 	for (const char* ext = strstr(extensions, cname); ext != nullptr; ext = strstr(ext + nameLength, cname)) {
 		if ((ext == extensions || ext[-1] == ' ') && (ext[nameLength] == 0 || ext[nameLength] == ' ')) {
 			return true;
 		}
 	}
+
 	return false;
 }
 
@@ -752,6 +793,7 @@ HL_PRIM bool HL_NAME(gl_has_extension)(vstring* name) {
 HL_PRIM vdynamic* HL_NAME(gl_create_query)() {
 	unsigned int t = 0;
 	glGenQueries(1, &t);
+
 	return alloc_i32(t);
 }
 
@@ -770,12 +812,14 @@ HL_PRIM void HL_NAME(gl_end_query)(int target) {
 HL_PRIM bool HL_NAME(gl_query_result_available)(vdynamic* q) {
 	int v = 0;
 	glGetQueryObjectiv(q->v.i, GL_QUERY_RESULT_AVAILABLE, &v);
+
 	return v == GL_TRUE;
 }
 
 HL_PRIM double HL_NAME(gl_query_result)(vdynamic* q) {
 	GLuint64 v = -1;
 	glGetQueryObjectui64v(q->v.i, GL_QUERY_RESULT, &v);
+
 	return (double)v;
 }
 
@@ -788,6 +832,7 @@ HL_PRIM void HL_NAME(gl_query_counter)(vdynamic* q, int target) {
 HL_PRIM vdynamic* HL_NAME(gl_create_vertex_array)() {
 	unsigned int f = 0;
 	glGenVertexArrays(1, &f);
+
 	return alloc_i32(f);
 }
 
@@ -805,6 +850,7 @@ HL_PRIM void HL_NAME(gl_delete_vertex_array)(vdynamic* b) {
 
 HL_PRIM int HL_NAME(gl_get_uniform_block_index)(vdynamic* p, vstring* name) {
 	char* cname = hl_to_utf8(name->bytes);
+
 	return (int)glGetUniformBlockIndex(p->v.i, cname);
 }
 
@@ -817,6 +863,7 @@ HL_PRIM void HL_NAME(gl_uniform_block_binding)(vdynamic* p, int index, int bindi
 HL_PRIM int HL_NAME(gl_get_program_resource_index)(vdynamic* p, int type, vstring* name) {
 #ifndef __APPLE__
 	char* cname = hl_to_utf8(name->bytes);
+
 	return (int)glGetProgramResourceIndex(p->v.i, type, cname);
 #else
 	hl_error("glGetProgramResourceIndex is not supported on Apple platforms");
@@ -894,7 +941,7 @@ DEFINE_PRIM(_VOID, gl_tex_sub_image2d, _I32 _I32 _I32 _I32 _I32 _I32 _I32 _I32 _
 DEFINE_PRIM(_VOID, gl_tex_sub_image3d, _I32 _I32 _I32 _I32 _I32 _I32 _I32 _I32 _I32 _I32 _BYTES);
 DEFINE_PRIM(_VOID, gl_compressed_tex_sub_image2d, _I32 _I32 _I32 _I32 _I32 _I32 _I32 _I32 _BYTES);
 DEFINE_PRIM(_VOID, gl_compressed_tex_sub_image3d, _I32 _I32 _I32 _I32 _I32 _I32 _I32 _I32 _I32 _I32 _BYTES);
-DEFINE_PRIM(_VOID,gl_copy_image_sub_data,_NULL(_I32) _I32 _I32 _I32 _I32 _I32 _NULL(_I32) _I32 _I32 _I32 _I32 _I32 _I32 _I32 _I32);
+DEFINE_PRIM(_VOID, gl_copy_image_sub_data, _NULL(_I32) _I32 _I32 _I32 _I32 _I32 _NULL(_I32) _I32 _I32 _I32 _I32 _I32 _I32 _I32 _I32);
 DEFINE_PRIM(_VOID, gl_generate_mipmap, _I32);
 DEFINE_PRIM(_VOID, gl_delete_texture, _NULL(_I32));
 DEFINE_PRIM(_VOID, gl_blit_framebuffer, _I32 _I32 _I32 _I32 _I32 _I32 _I32 _I32 _I32 _I32);

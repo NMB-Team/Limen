@@ -6,6 +6,7 @@ HL_PRIM void HL_NAME(text_input)(bool enable) {
 	SDL_SetEventEnabled(SDL_EVENT_TEXT_INPUT, true);
 	SDL_SetEventEnabled(SDL_EVENT_TEXT_EDITING, true);
 	windows = SDL_GetWindows(nullptr);
+
 	if (windows == nullptr)
 		return;
 	for (int i = 0; windows[i] != nullptr; i++)
@@ -30,6 +31,7 @@ HL_PRIM const char* HL_NAME(detect_keyboard_layout)() {
 		return "qwertz";
 	if (q == 'q' && w == 'z' && y == 'y')
 		return "qzerty";
+
 	return "unknown";
 }
 DEFINE_PRIM(_BYTES, detect_keyboard_layout, _NO_ARG);

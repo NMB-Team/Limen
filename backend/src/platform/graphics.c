@@ -33,10 +33,10 @@ static bool limen_gl_set_attribute(SDL_GLAttr attribute, int value, const char* 
 }
 
 // macro attribute helper
-#define LIMEN_GL_SET_ATTRIBUTE(attribute, value) \
-	do { \
+#define LIMEN_GL_SET_ATTRIBUTE(attribute, value)                       \
+	do {                                                               \
 		if (!limen_gl_set_attribute((attribute), (value), #attribute)) \
-			return false; \
+			return false;                                              \
 	} while (0)
 
 bool limen_gl_configure(int major, int minor, int depth, int stencil, int flags, int samples) {
@@ -45,6 +45,7 @@ bool limen_gl_configure(int major, int minor, int depth, int stencil, int flags,
 	LIMEN_GL_SET_ATTRIBUTE(SDL_GL_DEPTH_SIZE, depth);
 	LIMEN_GL_SET_ATTRIBUTE(SDL_GL_STENCIL_SIZE, stencil);
 	LIMEN_GL_SET_ATTRIBUTE(SDL_GL_DOUBLEBUFFER, flags & 1);
+
 	if (flags & 8)
 		LIMEN_GL_SET_ATTRIBUTE(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
 	else if (major < 3 || (major == 3 && minor < 2))
@@ -55,8 +56,10 @@ bool limen_gl_configure(int major, int minor, int depth, int stencil, int flags,
 		LIMEN_GL_SET_ATTRIBUTE(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
 	else
 		LIMEN_GL_SET_ATTRIBUTE(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+
 	LIMEN_GL_SET_ATTRIBUTE(SDL_GL_MULTISAMPLEBUFFERS, samples > 1);
 	LIMEN_GL_SET_ATTRIBUTE(SDL_GL_MULTISAMPLESAMPLES, samples > 1 ? samples : 0);
+
 	return true;
 }
 
@@ -110,6 +113,7 @@ void* limen_gl_get_proc_address(const char* name) {
 bool limen_vulkan_create_surface(void* window, void* instance, uint64_t* surface) {
 #if defined(LIMEN_HAS_VULKAN)
 	VkSurfaceKHR result = VK_NULL_HANDLE;
+
 	if (!SDL_Vulkan_CreateSurface(window, instance, nullptr, &result))
 		return false;
 	*surface = (uint64_t)result;
@@ -118,6 +122,7 @@ bool limen_vulkan_create_surface(void* window, void* instance, uint64_t* surface
 	(void)window;
 	(void)instance;
 	(void)surface;
+
 	return false;
 #endif
 }

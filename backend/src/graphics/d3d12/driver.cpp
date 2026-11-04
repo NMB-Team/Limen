@@ -26,6 +26,7 @@
 inline bool operator<(const GFSDK_Aftermath_ShaderDebugInfoIdentifier& lhs, const GFSDK_Aftermath_ShaderDebugInfoIdentifier& rhs) {
 	if (lhs.id[0] == rhs.id[0])
 		return lhs.id[1] < rhs.id[1];
+
 	return lhs.id[0] < rhs.id[0];
 }
 #endif
@@ -52,7 +53,7 @@ inline bool operator<(const GFSDK_Aftermath_ShaderDebugInfoIdentifier& lhs, cons
 	{                                       \
 		HRESULT __ret = cmd;                \
 		if (__ret == E_OUTOFMEMORY)         \
-			return nullptr;                    \
+			return nullptr;                 \
 		if (__ret != S_OK)                  \
 			ReportDxError(__ret, __LINE__); \
 	}
@@ -95,8 +96,10 @@ class GpuCrashTracker {
 			return;
 
 		std::lock_guard<std::mutex> lock(mutex);
+
 		GFSDK_Aftermath_ShaderBinaryHash hash;
 		GFSDK_Aftermath_GetShaderHash(GFSDK_Aftermath_Version_API, &shader, &hash);
+
 		if (shaders.find(hash.hash) == shaders.end()) {
 			const auto* bytes = (const uint8_t*)shader.pShaderBytecode;
 			shaders[hash.hash].assign(bytes, bytes + shader.BytecodeLength);
@@ -105,61 +108,59 @@ class GpuCrashTracker {
 
 	void onCrashDump(const void* gpuCrashDump, uint32_t gpuCrashDumpSize) {
 		std::lock_guard<std::mutex> lock(mutex);
+
 		if (!onGpuCrashFile)
 			return;
 
 		bool registeredThread = hl_get_thread() != nullptr;
+
 		if (!registeredThread) {
 			vdynamic* context;
 			hl_register_thread(&context);
 		}
 
 		GFSDK_Aftermath_GpuCrashDump_Decoder decoder;
-		GFSDK_Aftermath_GpuCrashDump_CreateDecoder(
-			GFSDK_Aftermath_Version_API,
-			gpuCrashDump,
-			gpuCrashDumpSize,
-			&decoder
-		);
+		GFSDK_Aftermath_GpuCrashDump_CreateDecoder(GFSDK_Aftermath_Version_API, gpuCrashDump, gpuCrashDumpSize, &decoder);
 
 		GFSDK_Aftermath_GpuCrashDump_BaseInfo baseInfo;
 		GFSDK_Aftermath_GpuCrashDump_GetBaseInfo(decoder, &baseInfo);
 
 		uint32_t shaderCount = 0;
 		GFSDK_Aftermath_GpuCrashDump_GetActiveShadersInfoCount(decoder, &shaderCount);
+
 		if (shaderCount == 0 && !hasFault(decoder)) {
 			GFSDK_Aftermath_GpuCrashDump_DestroyDecoder(decoder);
-			if (!registeredThread) hl_unregister_thread();
+
+			if (!registeredThread)
+				hl_unregister_thread();
+
 			return;
 		}
+
 		std::vector<GFSDK_Aftermath_GpuCrashDump_ShaderInfo> shaderInfos(shaderCount);
 		GFSDK_Aftermath_GpuCrashDump_GetActiveShadersInfo(decoder, shaderCount, shaderInfos.data());
 
 		for (const GFSDK_Aftermath_GpuCrashDump_ShaderInfo& shaderInfo : shaderInfos) {
 			GFSDK_Aftermath_ShaderBinaryHash hash;
 			GFSDK_Aftermath_GetShaderHashForShaderInfo(decoder, &shaderInfo, &hash);
+
 			auto shader = shaders.find(hash.hash);
+
 			if (shader != shaders.end()) {
 				std::ostringstream filename;
-				filename << "shader-"
-						<< std::hex
-						<< std::setfill('0')
-						<< std::setw(16) << hash.hash
-						<< ".bin";
+				filename << "shader-" << std::hex << std::setfill('0') << std::setw(16) << hash.hash << ".bin";
+
 				const auto& bytecode = shader->second;
 				onCrashFile(filename.str().c_str(), bytecode.data(), (uint32_t)bytecode.size());
 			}
 
 			GFSDK_Aftermath_ShaderDebugInfoIdentifier identifier{ { shaderInfo.shaderHash, shaderInfo.shaderDebugInfoUid } };
+
 			auto shaderDebugInfo = shaderDebugInfos.find(identifier);
+
 			if (shaderDebugInfo != shaderDebugInfos.end()) {
 				std::ostringstream filename;
-				filename << "shader-"
-						<< std::hex
-						<< std::setfill('0')
-						<< std::setw(16) << identifier.id[0]
-						<< std::setw(16) << identifier.id[1]
-						<< ".nvdbg";
+				filename << "shader-" << std::hex << std::setfill('0') << std::setw(16) << identifier.id[0] << std::setw(16) << identifier.id[1] << ".nvdbg";
 				onCrashFile(filename.str().c_str(), shaderDebugInfo->second.data(), (uint32_t)shaderDebugInfo->second.size());
 			}
 		}
@@ -174,19 +175,22 @@ class GpuCrashTracker {
 
 	static bool hasFault(GFSDK_Aftermath_GpuCrashDump_Decoder decoder) {
 		GFSDK_Aftermath_GpuCrashDump_PageFaultInfo pageFault;
+
 		if (GFSDK_Aftermath_GpuCrashDump_GetPageFaultInfo(decoder, &pageFault) == GFSDK_Aftermath_Result_Success)
 			return true;
+
 		GFSDK_Aftermath_GpuCrashDump_DeviceInfo device;
+
 		if (GFSDK_Aftermath_GpuCrashDump_GetDeviceInfo(decoder, &device) != GFSDK_Aftermath_Result_Success)
 			return false;
 		switch (device.status) {
-		case GFSDK_Aftermath_Device_Status_Timeout:
-		case GFSDK_Aftermath_Device_Status_OutOfMemory:
-		case GFSDK_Aftermath_Device_Status_PageFault:
-		case GFSDK_Aftermath_Device_Status_DmaFault:
-			return true;
-		default:
-			return false;
+			case GFSDK_Aftermath_Device_Status_Timeout:
+			case GFSDK_Aftermath_Device_Status_OutOfMemory:
+			case GFSDK_Aftermath_Device_Status_PageFault:
+			case GFSDK_Aftermath_Device_Status_DmaFault:
+				return true;
+			default:
+				return false;
 		}
 	}
 
@@ -206,13 +210,9 @@ class GpuCrashTracker {
 
 	void onShaderDebugInfo(const void* shaderDebugInfo, uint32_t shaderDebugInfoSize) {
 		std::lock_guard<std::mutex> lock(mutex);
+
 		GFSDK_Aftermath_ShaderDebugInfoIdentifier identifier;
-		GFSDK_Aftermath_GetShaderDebugInfoIdentifier(
-			GFSDK_Aftermath_Version_API,
-			shaderDebugInfo,
-			shaderDebugInfoSize,
-			&identifier
-		);
+		GFSDK_Aftermath_GetShaderDebugInfoIdentifier(GFSDK_Aftermath_Version_API, shaderDebugInfo, shaderDebugInfoSize, &identifier);
 		std::vector<uint8_t> data((const uint8_t*)shaderDebugInfo, (const uint8_t*)shaderDebugInfo + shaderDebugInfoSize);
 		shaderDebugInfos[identifier].swap(data);
 	}
@@ -223,27 +223,13 @@ class GpuCrashTracker {
 
 public:
 	GpuCrashTracker() {
-		GFSDK_Aftermath_EnableGpuCrashDumps(
-			GFSDK_Aftermath_Version_API,
-			GFSDK_Aftermath_GpuCrashDumpWatchedApiFlags_DX,
-			GFSDK_Aftermath_GpuCrashDumpFeatureFlags_Default,
-			gpuCrashDumpCallback,
-			shaderDebugInfoCallback,
-			nullptr,
-			nullptr,
-			this
-		);
+		GFSDK_Aftermath_EnableGpuCrashDumps(GFSDK_Aftermath_Version_API, GFSDK_Aftermath_GpuCrashDumpWatchedApiFlags_DX, GFSDK_Aftermath_GpuCrashDumpFeatureFlags_Default, gpuCrashDumpCallback, shaderDebugInfoCallback, nullptr, nullptr, this);
 	}
 
 	void initDevice(ID3D12Device* device) {
-		GFSDK_Aftermath_DX12_Initialize(
-			GFSDK_Aftermath_Version_API,
-			GFSDK_Aftermath_FeatureFlags_EnableMarkers
-				| GFSDK_Aftermath_FeatureFlags_EnableResourceTracking
-				| GFSDK_Aftermath_FeatureFlags_GenerateShaderDebugInfo
-				| GFSDK_Aftermath_FeatureFlags_EnableShaderErrorReporting,
-			device
-		);
+		GFSDK_Aftermath_DX12_Initialize(GFSDK_Aftermath_Version_API,
+		                                GFSDK_Aftermath_FeatureFlags_EnableMarkers | GFSDK_Aftermath_FeatureFlags_EnableResourceTracking | GFSDK_Aftermath_FeatureFlags_GenerateShaderDebugInfo | GFSDK_Aftermath_FeatureFlags_EnableShaderErrorReporting,
+		                                device);
 	}
 
 	void onCreateGraphicsPipeline(const D3D12_GRAPHICS_PIPELINE_STATE_DESC* desc) {
@@ -260,19 +246,23 @@ public:
 
 	void waitCrashDump() {
 		GFSDK_Aftermath_CrashDump_Status status = GFSDK_Aftermath_CrashDump_Status_Unknown;
+
 		if (GFSDK_Aftermath_GetCrashDumpStatus(&status) != GFSDK_Aftermath_Result_Success)
 			return;
 
 		// Crash callbacks enter HashLink on another thread and may need the GC lock.
 		hl_blocking(true);
+
 		for (int i = 0; i < 600; i++) {
 			if (status == GFSDK_Aftermath_CrashDump_Status_Finished || status == GFSDK_Aftermath_CrashDump_Status_CollectingDataFailed)
 				break;
 			if (i >= 100 && status != GFSDK_Aftermath_CrashDump_Status_InvokingCallback)
 				break;
+
 			Sleep(50);
 			GFSDK_Aftermath_GetCrashDumpStatus(&status);
 		}
+
 		hl_blocking(false);
 	}
 
@@ -340,16 +330,19 @@ using dx_swapchain = IDXGISwapChain;
 
 HL_PRIM ID3D12Device* HL_NAME(get_device)() {
 	dx_driver* drv = static_driver;
+
 	return drv->device;
 }
 
 HL_PRIM IDXGIFactory4* HL_NAME(get_factory)() {
 	dx_driver* drv = static_driver;
+
 	return drv->factory;
 }
 
 HL_PRIM IDXGIAdapter* HL_NAME(get_adapter)() {
 	dx_driver* drv = static_driver;
+
 	return drv->adapter;
 }
 
@@ -388,16 +381,20 @@ HL_PRIM void HL_NAME(flush_messages)();
 HL_PRIM void HL_NAME(suppress_debug_messages)(D3D12_INFO_QUEUE_FILTER* filter) {
 #ifndef HL_XBS
 	dx_driver* drv = static_driver;
+
 	if (!drv->infoQueue)
 		return;
+
 	drv->infoQueue->AddStorageFilterEntries(filter);
 #endif
 }
 
 static void ReportDxError(HRESULT err, int line) {
 	HL_NAME(flush_messages)();
+
 	if ((err == DXGI_ERROR_DEVICE_REMOVED || err == DXGI_ERROR_DEVICE_HUNG || err == DXGI_ERROR_DEVICE_RESET) && GpuCrashTracker::instance)
 		GpuCrashTracker::instance->waitCrashDump();
+
 	hl_error("DXERROR %X line %d", (DWORD)err, line);
 }
 
@@ -413,6 +410,7 @@ HL_PRIM varray* HL_NAME(list_devices)() {
 	IDXGIAdapter1* adapter = nullptr;
 	IDXGIFactory4* factory = nullptr;
 	varray* arr = hl_alloc_array(&hlt_bytes, MAX_DEVICES);
+
 	if (static_driver)
 		factory = static_driver->factory;
 	else
@@ -420,18 +418,23 @@ HL_PRIM varray* HL_NAME(list_devices)() {
 	while (write < MAX_DEVICES && factory->EnumAdapters1(index++, &adapter) != DXGI_ERROR_NOT_FOUND) {
 		DXGI_ADAPTER_DESC1 desc;
 		adapter->GetDesc1(&desc);
+
 		if ((desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) == 0)
 			hl_aptr(arr, uchar*)[write++] = ustrdup(desc.Description);
+
 		adapter->Release();
 	}
+
 	if (!static_driver)
 		factory->Release();
+
 	return arr;
 #else
 	varray* arr = hl_alloc_array(&hlt_bytes, 1);
 	DXGI_ADAPTER_DESC desc;
 	static_driver->adapter->GetDesc(&desc);
 	hl_aptr(arr, uchar*)[0] = ustrdup(desc.Description);
+
 	return arr;
 #endif
 }
@@ -444,9 +447,12 @@ HL_PRIM dx_driver* HL_NAME(create_sdl)(void* window, DriverInitFlag flags, uchar
 	if (!limen_get_native_window(window, &native) || native.type != LIMEN_NATIVE_WIN32) {
 		hl_error("Could not get Win32 window handle from SDL window");
 	}
+
 	drv->wnd = (HWND)native.win32.window;
+
 	if (GpuCrashTracker::onGpuCrashFile && !GpuCrashTracker::instance)
 		GpuCrashTracker::instance = new GpuCrashTracker();
+
 	flags = (DriverInitFlag)(flags & ~(DEBUG | GPU_BASED_VALIDATION));
 
 	if (flags & DEBUG) {
@@ -466,38 +472,50 @@ HL_PRIM dx_driver* HL_NAME(create_sdl)(void* window, DriverInitFlag flags, uchar
 
 #ifndef HL_XBS
 	CHKERR(CreateDXGIFactory2(dxgiFlags, IID_PPV_ARGS(&drv->factory)));
+
 	IDXGIFactory5* factory5 = nullptr;
+
 	if (SUCCEEDED(drv->factory->QueryInterface(IID_PPV_ARGS(&factory5)))) {
 		BOOL allowTearing = FALSE;
+
 		if (SUCCEEDED(factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing))))
 			drv->allow_tearing = allowTearing == TRUE;
+
 		factory5->Release();
 	}
 
 	UINT index = 0;
 	IDXGIAdapter1* adapter = nullptr;
 	IDXGIAdapter3* adapter3 = nullptr;
+
 	while (drv->factory->EnumAdapters1(index++, &adapter) != DXGI_ERROR_NOT_FOUND) {
 		DXGI_ADAPTER_DESC1 desc;
 		adapter->GetDesc1(&desc);
+
 		if ((desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) || (dev_desc && !wcsstr(desc.Description, dev_desc))) {
 			adapter->Release();
 			continue;
 		}
+
 		if (!SUCCEEDED(adapter->QueryInterface(__uuidof(IDXGIAdapter3), (void**)&adapter3))) {
 			adapter->Release();
 			continue;
 		}
+
 		if (SUCCEEDED(D3D12CreateDevice(adapter3, D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&drv->device)))) {
 			drv->adapter = adapter3;
 			adapter->CheckInterfaceSupport(__uuidof(IDXGIDevice), &driver_version);
 			break;
 		}
+
 		adapter->Release();
 	}
+
 	if (!drv->device)
 		return nullptr;
+
 	drv->device->SetName(L"HL_DX12");
+
 	if (drv->debug) {
 		CHKERR(drv->device->QueryInterface(IID_PPV_ARGS(&drv->debugDevice)));
 		CHKERR(drv->device->QueryInterface(IID_PPV_ARGS(&drv->infoQueue)));
@@ -528,12 +546,16 @@ HL_PRIM dx_driver* HL_NAME(create_sdl)(void* window, DriverInitFlag flags, uchar
 	{
 		IDXGIDevice1* dxgiDevice;
 		CHKERR(drv->device->QueryInterface(IID_PPV_ARGS(&dxgiDevice)));
+
 		IDXGIAdapter* dxgiAdapter;
 		CHKERR(dxgiDevice->GetAdapter(&dxgiAdapter));
+
 		DXGI_ADAPTER_DESC desc;
 		dxgiAdapter->GetDesc(&desc);
+
 		if (dev_desc)
 			wcsstr(desc.Description, dev_desc);
+
 		drv->adapter = dxgiAdapter;
 	}
 #endif
@@ -544,6 +566,7 @@ HL_PRIM dx_driver* HL_NAME(create_sdl)(void* window, DriverInitFlag flags, uchar
 	}
 
 	static_driver = drv;
+
 	return drv;
 }
 
@@ -575,6 +598,7 @@ HL_PRIM void HL_NAME(dispose_driver)(dx_driver* drv) {
 				drv->swapBuffers[i]->Release();
 		free(drv->swapBuffers);
 	}
+
 	if (drv->debugDevice)
 		drv->debugDevice->Release();
 	if (drv->debug)
@@ -611,6 +635,7 @@ HL_PRIM int64 HL_NAME(get_driver_version)() {
 		int64 i64;
 	} v;
 	v.i = driver_version;
+
 	return v.i64;
 }
 
@@ -632,8 +657,10 @@ HL_PRIM void HL_NAME(resize)(ID3D12CommandQueue* directQueue, int width, int hei
 
 		IDXGISwapChain1* swapchain = nullptr;
 		drv->factory->CreateSwapChainForHwnd(directQueue, drv->wnd, &desc, nullptr, nullptr, &swapchain);
+
 		if (!swapchain)
 			CHKERR(E_INVALIDARG);
+
 		swapchain->QueryInterface(IID_PPV_ARGS(&drv->swapchain));
 		drv->swapchain->SetMaximumFrameLatency(1);
 		drv->factory->MakeWindowAssociation(drv->wnd, DXGI_MWA_NO_ALT_ENTER);
@@ -644,18 +671,23 @@ HL_PRIM void HL_NAME(resize)(ID3D12CommandQueue* directQueue, int width, int hei
 
 	// Create swap buffers
 	CD3DX12_HEAP_PROPERTIES swapChainHeapProperties(D3D12_HEAP_TYPE_DEFAULT);
+
 	D3D12_RESOURCE_DESC swapChainBufferDesc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height,
 	                                                                       1, // This resource has only one texture.
 	                                                                       1  // Use a single mipmap level.
 	);
 	swapChainBufferDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+
 	D3D12_CLEAR_VALUE swapChainOptimizedClearValue = {};
 	swapChainOptimizedClearValue.Format = format;
 	drv->swapBuffers = (ID3D12Resource**)malloc(sizeof(ID3D12Resource*) * buffer_count);
+
 	if (drv->swapBuffers == nullptr)
 		hl_error("malloc drv->swapBuffers failed");
+
 	drv->swapBufferCount = buffer_count;
 	drv->backBufferIndex = 0;
+
 	for (int n = 0; n < buffer_count; n++) {
 		drv->device->CreateCommittedResource(&swapChainHeapProperties, D3D12_HEAP_FLAG_ALLOW_DISPLAY, &swapChainBufferDesc, D3D12_RESOURCE_STATE_PRESENT, &swapChainOptimizedClearValue, IID_PPV_ARGS(&drv->swapBuffers[n]));
 	}
@@ -675,23 +707,32 @@ HL_PRIM int HL_NAME(get_current_back_buffer_index)() {
 HL_PRIM void HL_NAME(flush_messages)() {
 #ifndef HL_XBS
 	dx_driver* drv = static_driver;
+
 	if (!drv->infoQueue)
 		return;
+
 	int count = (int)drv->infoQueue->GetNumStoredMessages();
+
 	if (!count)
 		return;
+
 	int i;
+
 	for (i = 0; i < count; i++) {
 		SIZE_T len = 0;
 		drv->infoQueue->GetMessage(i, nullptr, &len);
+
 		D3D12_MESSAGE* msg = (D3D12_MESSAGE*)malloc(len);
+
 		if (msg == nullptr)
 			break;
+
 		drv->infoQueue->GetMessage(i, msg, &len);
 		printf("%s\n", msg->pDescription);
 		free(msg);
 		fflush(stdout);
 	}
+
 	drv->infoQueue->ClearStoredMessages();
 #endif
 }
@@ -700,9 +741,11 @@ HL_PRIM const uchar* HL_NAME(get_device_name)() {
 	DXGI_ADAPTER_DESC desc;
 #ifndef HL_XBS
 	IDXGIAdapter* adapter = nullptr;
+
 	if (!static_driver) {
 		IDXGIFactory4* factory = nullptr;
 		CreateDXGIFactory2(0, IID_PPV_ARGS(&factory));
+
 		if (factory)
 			factory->EnumAdapters(0, &adapter);
 		if (!adapter)
@@ -710,6 +753,7 @@ HL_PRIM const uchar* HL_NAME(get_device_name)() {
 	} else {
 		adapter = static_driver->adapter;
 	}
+
 	adapter->GetDesc(&desc);
 #else
 	static_driver->adapter->GetDesc(&desc);
@@ -750,11 +794,13 @@ struct CD3DX12_TEXTURE_COPY_LOCATION : public D3D12_TEXTURE_COPY_LOCATION {
 		Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 		PlacedFootprint = {};
 	}
+
 	CD3DX12_TEXTURE_COPY_LOCATION(_In_ ID3D12Resource* pRes, D3D12_PLACED_SUBRESOURCE_FOOTPRINT const& Footprint) noexcept {
 		pResource = pRes;
 		Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
 		PlacedFootprint = Footprint;
 	}
+
 	CD3DX12_TEXTURE_COPY_LOCATION(_In_ ID3D12Resource* pRes, UINT Sub) noexcept {
 		pResource = pRes;
 		Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
@@ -767,6 +813,7 @@ inline void MemcpySubresource(_In_ const D3D12_MEMCPY_DEST* pDest, _In_ const D3
 	for (UINT z = 0; z < NumSlices; ++z) {
 		auto pDestSlice = static_cast<BYTE*>(pDest->pData) + pDest->SlicePitch * z;
 		auto pSrcSlice = static_cast<const BYTE*>(pSrc->pData) + pSrc->SlicePitch * LONG_PTR(z);
+
 		for (UINT y = 0; y < NumRows; ++y) {
 			memcpy(pDestSlice + pDest->RowPitch * y, pSrcSlice + pSrc->RowPitch * LONG_PTR(y), RowSizeInBytes);
 		}
@@ -774,27 +821,31 @@ inline void MemcpySubresource(_In_ const D3D12_MEMCPY_DEST* pDest, _In_ const D3
 }
 
 inline UINT64 UpdateSubresources(_In_ ID3D12GraphicsCommandList* pCmdList, _In_ ID3D12Resource* pDestinationResource, _In_ ID3D12Resource* pIntermediate, _In_range_(0, D3D12_REQ_SUBRESOURCES) UINT FirstSubresource,
-									_In_range_(0, D3D12_REQ_SUBRESOURCES - FirstSubresource) UINT NumSubresources, UINT64 RequiredSize, _In_reads_(NumSubresources) const D3D12_PLACED_SUBRESOURCE_FOOTPRINT* pLayouts,
-									_In_reads_(NumSubresources) const UINT* pNumRows, _In_reads_(NumSubresources) const UINT64* pRowSizesInBytes, _In_reads_(NumSubresources) const D3D12_SUBRESOURCE_DATA* pSrcData) noexcept {
+                                 _In_range_(0, D3D12_REQ_SUBRESOURCES - FirstSubresource) UINT NumSubresources, UINT64 RequiredSize, _In_reads_(NumSubresources) const D3D12_PLACED_SUBRESOURCE_FOOTPRINT* pLayouts,
+                                 _In_reads_(NumSubresources) const UINT* pNumRows, _In_reads_(NumSubresources) const UINT64* pRowSizesInBytes, _In_reads_(NumSubresources) const D3D12_SUBRESOURCE_DATA* pSrcData) noexcept {
 	// Minor validation
 	auto IntermediateDesc = pIntermediate->GetDesc();
 	auto DestinationDesc = pDestinationResource->GetDesc();
+
 	if (IntermediateDesc.Dimension != D3D12_RESOURCE_DIMENSION_BUFFER || IntermediateDesc.Width < RequiredSize + pLayouts[0].Offset || RequiredSize > SIZE_T(-1) ||
-		(DestinationDesc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER && (FirstSubresource != 0 || NumSubresources != 1))) {
+	    (DestinationDesc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER && (FirstSubresource != 0 || NumSubresources != 1))) {
 		return 0;
 	}
 
 	BYTE* pData;
 	HRESULT hr = pIntermediate->Map(0, nullptr, reinterpret_cast<void**>(&pData));
+
 	if (FAILED(hr))
 		return 0;
 
 	for (UINT i = 0; i < NumSubresources; ++i) {
 		if (pRowSizesInBytes[i] > SIZE_T(-1))
 			return 0;
+
 		D3D12_MEMCPY_DEST DestData = { pData + pLayouts[i].Offset, pLayouts[i].Footprint.RowPitch, SIZE_T(pLayouts[i].Footprint.RowPitch) * SIZE_T(pNumRows[i]) };
 		MemcpySubresource(&DestData, &pSrcData[i], static_cast<SIZE_T>(pRowSizesInBytes[i]), pNumRows[i], pLayouts[i].Footprint.Depth);
 	}
+
 	pIntermediate->Unmap(0, nullptr);
 
 	if (DestinationDesc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER) {
@@ -806,18 +857,23 @@ inline UINT64 UpdateSubresources(_In_ ID3D12GraphicsCommandList* pCmdList, _In_ 
 			pCmdList->CopyTextureRegion(&Dst, 0, 0, 0, &Src, nullptr);
 		}
 	}
+
 	return RequiredSize;
 }
 
 inline UINT64 UpdateSubresources(_In_ ID3D12GraphicsCommandList* pCmdList, _In_ ID3D12Resource* pDestinationResource, _In_ ID3D12Resource* pIntermediate, UINT64 IntermediateOffset, _In_range_(0, D3D12_REQ_SUBRESOURCES) UINT FirstSubresource,
-								_In_range_(0, D3D12_REQ_SUBRESOURCES - FirstSubresource) UINT NumSubresources, _In_reads_(NumSubresources) const D3D12_SUBRESOURCE_DATA* pSrcData) noexcept {
+                                 _In_range_(0, D3D12_REQ_SUBRESOURCES - FirstSubresource) UINT NumSubresources, _In_reads_(NumSubresources) const D3D12_SUBRESOURCE_DATA* pSrcData) noexcept {
 	UINT64 RequiredSize = 0;
 	auto MemToAlloc = static_cast<UINT64>(sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(UINT) + sizeof(UINT64)) * NumSubresources;
+
 	if (MemToAlloc > SIZE_MAX)
 		return 0;
+
 	void* pMem = HeapAlloc(GetProcessHeap(), 0, static_cast<SIZE_T>(MemToAlloc));
+
 	if (pMem == nullptr)
 		return 0;
+
 	auto pLayouts = static_cast<D3D12_PLACED_SUBRESOURCE_FOOTPRINT*>(pMem);
 	auto pRowSizesInBytes = reinterpret_cast<UINT64*>(pLayouts + NumSubresources);
 	auto pNumRows = reinterpret_cast<UINT*>(pRowSizesInBytes + NumSubresources);
@@ -827,6 +883,7 @@ inline UINT64 UpdateSubresources(_In_ ID3D12GraphicsCommandList* pCmdList, _In_ 
 
 	UINT64 Result = UpdateSubresources(pCmdList, pDestinationResource, pIntermediate, FirstSubresource, NumSubresources, RequiredSize, pLayouts, pNumRows, pRowSizesInBytes, pSrcData);
 	HeapFree(GetProcessHeap(), 0, pMem);
+
 	return Result;
 }
 
@@ -852,12 +909,14 @@ HL_PRIM ID3D12Resource* HL_NAME(create_committed_resource)(D3D12_HEAP_PROPERTIES
 	initialState = (D3D12_RESOURCE_STATES)(initialState & ~D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
 #endif
 	DXERR(static_driver->device->CreateCommittedResource(heapProperties, heapFlags, desc, initialState, clearValue, IID_PPV_ARGS(&res)));
+
 	return res;
 }
 
 HL_PRIM ID3D12Heap* HL_NAME(create_heap)(D3D12_HEAP_DESC* desc) {
 	ID3D12Heap* heap = nullptr;
 	DXERR(static_driver->device->CreateHeap(desc, IID_PPV_ARGS(&heap)));
+
 	return heap;
 }
 
@@ -871,6 +930,7 @@ HL_PRIM ID3D12Resource* HL_NAME(create_placed_resource)(ID3D12Heap* heap, int64 
 	initialState = (D3D12_RESOURCE_STATES)(initialState & ~D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
 #endif
 	DXERR(static_driver->device->CreatePlacedResource(heap, offset, desc, initialState, clearValue, IID_PPV_ARGS(&res)));
+
 	return res;
 }
 
@@ -908,6 +968,7 @@ HL_PRIM void HL_NAME(resource_release)(IUnknown* res) {
 
 HL_PRIM void HL_NAME(resource_set_name)(ID3D12Resource* res, vbyte* name) {
 	res->SetName((LPCWSTR)name);
+
 	if (static_driver->gpuCrashTracker)
 		static_driver->gpuCrashTracker->onResourceSetName(res);
 }
@@ -915,6 +976,7 @@ HL_PRIM void HL_NAME(resource_set_name)(ID3D12Resource* res, vbyte* name) {
 HL_PRIM void* HL_NAME(resource_map)(ID3D12Resource* res, int subres, D3D12_RANGE* range) {
 	void* data = nullptr;
 	DXERR(res->Map(subres, range, &data));
+
 	return data;
 }
 
@@ -926,6 +988,7 @@ HL_PRIM int64 HL_NAME(get_required_intermediate_size)(ID3D12Resource* res, int f
 	auto desc = res->GetDesc();
 	UINT64 size = 0;
 	static_driver->device->GetCopyableFootprints(&desc, first, count, 0, nullptr, nullptr, nullptr, &size);
+
 	return size;
 }
 
@@ -1010,6 +1073,7 @@ HL_PRIM vbyte* HL_NAME(compiler_compile)(dx_compiler* comp, uchar* source, uchar
 	BOOL knownEncoding = FALSE;
 	UINT32 encoding = 0U;
 	blob->GetEncoding(&knownEncoding, &encoding);
+
 	DxcBuffer dxcBuffer = { blob->GetBufferPointer(), blob->GetBufferSize(), encoding };
 	std::vector<LPCWSTR> arguments(hl_aptr(args, LPCWSTR), hl_aptr(args, LPCWSTR) + args->size);
 	arguments.insert(arguments.end(), { L"-E", L"main", L"-T", profile, L"-D", L"__XBOX_DISABLE_PRECOMPILE" });
@@ -1017,15 +1081,18 @@ HL_PRIM vbyte* HL_NAME(compiler_compile)(dx_compiler* comp, uchar* source, uchar
 #endif
 	HRESULT hr;
 	result->GetStatus(&hr);
+
 	if (!SUCCEEDED(hr)) {
 		IDxcBlobEncoding* error = nullptr;
 		result->GetErrorBuffer(&error);
+
 		uchar* c = hl_to_utf16((char*)error->GetBufferPointer());
 		blob->Release();
 		result->Release();
 		error->Release();
 		hl_error("%s", c);
 	}
+
 	IDxcBlob* out = nullptr;
 	result->GetResult(&out);
 	*dataLen = (int)out->GetBufferSize();
@@ -1033,6 +1100,7 @@ HL_PRIM vbyte* HL_NAME(compiler_compile)(dx_compiler* comp, uchar* source, uchar
 	out->Release();
 	blob->Release();
 	result->Release();
+
 	return bytes;
 }
 
@@ -1040,48 +1108,59 @@ HL_PRIM vbyte* HL_NAME(serialize_root_signature)(D3D12_ROOT_SIGNATURE_DESC* sign
 	ID3DBlob* data = nullptr;
 	ID3DBlob* error = nullptr;
 	HRESULT r = D3D12SerializeRootSignature(signature, version, &data, &error);
+
 	if (!SUCCEEDED(r)) {
 		const uchar* c = error ? hl_to_utf16((char*)error->GetBufferPointer()) : USTR("Invalid argument");
+
 		if (error)
 			error->Release();
+
 		hl_error("%s", c);
 	}
 	*dataLen = (int)data->GetBufferSize();
 	vbyte* bytes = hl_copy_bytes((vbyte*)data->GetBufferPointer(), *dataLen);
 	data->Release();
+
 	return bytes;
 }
 
 HL_PRIM ID3D12RootSignature* HL_NAME(rootsignature_create)(vbyte* bytes, int len) {
 	ID3D12RootSignature* sign = nullptr;
 	DXERR(static_driver->device->CreateRootSignature(CURRENT_NODEMASK, bytes, len, IID_PPV_ARGS(&sign)));
+
 	return sign;
 }
 
 HL_PRIM ID3D12PipelineState* HL_NAME(create_graphics_pipeline_state)(D3D12_GRAPHICS_PIPELINE_STATE_DESC* desc) {
 	if (static_driver->gpuCrashTracker)
 		static_driver->gpuCrashTracker->onCreateGraphicsPipeline(desc);
+
 	ID3D12PipelineState* state = nullptr;
 	// if shader is considered invalid, maybe you're missing dxil.dll
 	hl_blocking(true);
-	HRESULT hr = static_driver->device->CreateGraphicsPipelineState(desc,IID_PPV_ARGS(&state));
+
+	HRESULT hr = static_driver->device->CreateGraphicsPipelineState(desc, IID_PPV_ARGS(&state));
 	hl_blocking(false);
 	DXERR(hr);
+
 	return state;
 }
 
 HL_PRIM ID3D12PipelineState* HL_NAME(create_compute_pipeline_state)(D3D12_COMPUTE_PIPELINE_STATE_DESC* desc) {
 	if (static_driver->gpuCrashTracker)
 		static_driver->gpuCrashTracker->onCreateComputePipeline(desc);
+
 	ID3D12PipelineState* state = nullptr;
 	// if shader is considered invalid, maybe you're missing dxil.dll
 	DXERR(static_driver->device->CreateComputePipelineState(desc, IID_PPV_ARGS(&state)));
+
 	return state;
 }
 
 HL_PRIM ID3D12CommandSignature* HL_NAME(create_command_signature)(D3D12_COMMAND_SIGNATURE_DESC* desc, ID3D12RootSignature* rootSign) {
 	ID3D12CommandSignature* sign = nullptr;
 	DXERR(static_driver->device->CreateCommandSignature(desc, rootSign, IID_PPV_ARGS(&sign)));
+
 	return sign;
 }
 
@@ -1099,6 +1178,7 @@ DEFINE_PRIM(_RES, create_command_signature, _STRUCT _RES);
 HL_PRIM ID3D12DescriptorHeap* HL_NAME(descriptor_heap_create)(D3D12_DESCRIPTOR_HEAP_DESC* desc) {
 	ID3D12DescriptorHeap* heap = nullptr;
 	DXERR(static_driver->device->CreateDescriptorHeap(desc, IID_PPV_ARGS(&heap)));
+
 	return heap;
 }
 
@@ -1108,12 +1188,14 @@ HL_PRIM int HL_NAME(get_descriptor_handle_increment_size)(D3D12_DESCRIPTOR_HEAP_
 
 HL_PRIM int64 HL_NAME(descriptor_heap_get_handle)(ID3D12DescriptorHeap* heap, bool gpu) {
 	UINT64 handle = gpu ? heap->GetGPUDescriptorHandleForHeapStart().ptr : heap->GetCPUDescriptorHandleForHeapStart().ptr;
+
 	return handle;
 }
 
 HL_PRIM ID3D12QueryHeap* HL_NAME(create_query_heap)(D3D12_QUERY_HEAP_DESC* desc) {
 	ID3D12QueryHeap* heap = nullptr;
 	DXERR(static_driver->device->CreateQueryHeap(desc, IID_PPV_ARGS(&heap)));
+
 	return heap;
 }
 
@@ -1127,6 +1209,7 @@ DEFINE_PRIM(_RES, create_query_heap, _STRUCT);
 HL_PRIM ID3D12Fence* HL_NAME(fence_create)(int64 value, D3D12_FENCE_FLAGS flags) {
 	ID3D12Fence* f = nullptr;
 	DXERR(static_driver->device->CreateFence(value, flags, IID_PPV_ARGS(&f)));
+
 	return f;
 }
 
@@ -1144,8 +1227,10 @@ HL_PRIM HANDLE HL_NAME(waitevent_create)(bool initState) {
 
 HL_PRIM bool HL_NAME(waitevent_wait)(HANDLE event, int time) {
 	hl_blocking(true);
+
 	bool ret = WaitForSingleObject(event, time) == 0;
 	hl_blocking(false);
+
 	return ret;
 }
 
@@ -1164,8 +1249,10 @@ HL_PRIM ID3D12CommandQueue* HL_NAME(command_queue_create)(D3D12_COMMAND_LIST_TYP
 	desc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
 	desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 	desc.NodeMask = CURRENT_NODEMASK;
+
 	ID3D12CommandQueue* q = nullptr;
 	CHKERR(static_driver->device->CreateCommandQueue(&desc, IID_PPV_ARGS(&q)));
+
 	return q;
 }
 
@@ -1223,12 +1310,14 @@ HL_PRIM void HL_NAME(command_queue_resume)(ID3D12CommandQueue* q) {
 HL_PRIM int64 HL_NAME(command_queue_get_timestamp_frequency)(ID3D12CommandQueue* q) {
 	UINT64 f = 0;
 	CHKERR(q->GetTimestampFrequency(&f));
+
 	return (int64)f;
 }
 
 HL_PRIM ID3D12CommandAllocator* HL_NAME(command_allocator_create)(D3D12_COMMAND_LIST_TYPE type) {
 	ID3D12CommandAllocator* a = nullptr;
 	DXERR(static_driver->device->CreateCommandAllocator(type, IID_PPV_ARGS(&a)));
+
 	return a;
 }
 
@@ -1239,6 +1328,7 @@ HL_PRIM void HL_NAME(command_allocator_reset)(ID3D12CommandAllocator* a) {
 HL_PRIM ID3D12GraphicsCommandList* HL_NAME(command_list_create)(D3D12_COMMAND_LIST_TYPE type, ID3D12CommandAllocator* alloc, ID3D12PipelineState* initState) {
 	ID3D12GraphicsCommandList* l = nullptr;
 	DXERR(static_driver->device->CreateCommandList(CURRENT_NODEMASK, type, alloc, initState, IID_PPV_ARGS(&l)));
+
 	return l;
 }
 
@@ -1463,12 +1553,17 @@ HL_PRIM void HL_NAME(set_gpu_crash_handler)(vclosure* handler) {
 	if (!GpuCrashTracker::onGpuCrashFile) {
 		if (!handler)
 			return;
+
 		hl_add_root(&GpuCrashTracker::onGpuCrashFile);
 	}
+
 	GpuCrashTracker::onGpuCrashFile = handler;
+
 	if (GpuCrashTracker::instance)
 		return;
+
 	GpuCrashTracker::instance = new GpuCrashTracker();
+
 	if (static_driver && !static_driver->gpuCrashTracker) {
 		GpuCrashTracker::instance->initDevice(static_driver->device);
 		static_driver->gpuCrashTracker = GpuCrashTracker::instance;

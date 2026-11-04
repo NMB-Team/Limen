@@ -12,7 +12,9 @@ bool limen_windows_set_dark_mode(SDL_Window* window, bool enabled) {
 		return false;
 
 	result = DwmSetWindowAttribute(native, 20, &value, sizeof(value));
+
 	if (FAILED(result))
 		result = DwmSetWindowAttribute(native, 19, &value, sizeof(value));
+
 	return SUCCEEDED(result);
 }

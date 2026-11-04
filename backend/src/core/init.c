@@ -16,8 +16,10 @@ HL_PRIM bool HL_NAME(init_once)() {
 #endif
 	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
 		hl_error("SDL_Init failed: %s", hl_to_utf16(SDL_GetError()));
+
 		return false;
 	}
+
 	setlocale(LC_ALL, "C");
 #ifdef _WIN32
 	timeBeginPeriod(1);
@@ -49,17 +51,25 @@ HL_PRIM int HL_NAME(get_video_backend)() {
 	if (!driver)
 		return 0;
 
-	if (strcmp(driver, "windows") == 0) return 1;
-	if (strcmp(driver, "x11") == 0) return 2;
-	if (strcmp(driver, "wayland") == 0) return 3;
-	if (strcmp(driver, "cocoa") == 0) return 4;
+	if (strcmp(driver, "windows") == 0)
+		return 1;
+	if (strcmp(driver, "x11") == 0)
+		return 2;
+	if (strcmp(driver, "wayland") == 0)
+		return 3;
+	if (strcmp(driver, "cocoa") == 0)
+		return 4;
 
-	if (strcmp(driver, "android") == 0) return 5;
+	if (strcmp(driver, "android") == 0)
+		return 5;
 
-	if (strcmp(driver, "kmsdrm") == 0) return 6;
+	if (strcmp(driver, "kmsdrm") == 0)
+		return 6;
 
-	if (strcmp(driver, "offscreen") == 0) return 7;
-	if (strcmp(driver, "dummy") == 0) return 8;
+	if (strcmp(driver, "offscreen") == 0)
+		return 7;
+	if (strcmp(driver, "dummy") == 0)
+		return 8;
 
 	return 0;
 }

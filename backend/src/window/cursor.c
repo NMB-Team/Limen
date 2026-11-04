@@ -4,6 +4,7 @@
 
 HL_PRIM SDL_Surface* HL_NAME(surface_from)(vbyte* pixels, int width, int height, int depth, int pitch, int red_mask, int green_mask, int blue_mask, int alpha_mask) {
 	SDL_PixelFormat format = SDL_GetPixelFormatForMasks(depth, red_mask, green_mask, blue_mask, alpha_mask);
+
 	return SDL_CreateSurfaceFrom(width, height, format, pixels, pitch);
 }
 DEFINE_PRIM(_SURF, surface_from, _BYTES _I32 _I32 _I32 _I32 _I32 _I32 _I32 _I32);

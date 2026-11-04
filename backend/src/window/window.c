@@ -50,8 +50,10 @@ HL_PRIM SDL_Window* HL_NAME(win_create_ex)(int x, int y, int width, int height, 
 	SDL_Window* window = SDL_CreateWindow("", width, height, SDL_WINDOW_BORDERLESS | window_flags);
 #else
 	SDL_PropertiesID properties = SDL_CreateProperties();
+
 	if (properties == 0)
 		return nullptr;
+
 	SDL_SetStringProperty(properties, SDL_PROP_WINDOW_CREATE_TITLE_STRING, "");
 	SDL_SetNumberProperty(properties, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, width);
 	SDL_SetNumberProperty(properties, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, height);
@@ -70,6 +72,7 @@ HL_PRIM SDL_Window* HL_NAME(win_create_ex)(int x, int y, int width, int height, 
 		SDL_HideWindow(window);
 		SDL_ShowWindow(window);
 	}
+
 	SDL_RaiseWindow(window);
 #endif
 
@@ -93,23 +96,31 @@ HL_PRIM bool HL_NAME(win_set_fullscreen)(SDL_Window* window, int mode) {
 #endif
 	if (requested_mode == LIMEN_WINDOWED) {
 		bool result = SDL_SetWindowFullscreen(window, false);
+
 		if (result) {
 			sync_window_state(window);
 			SDL_SetWindowFullscreenMode(window, nullptr);
 		}
+
 		return result;
 	}
+
 	if (requested_mode == LIMEN_FULLSCREEN_EXCLUSIVE) {
 		const SDL_DisplayMode* fullscreen_mode = SDL_GetWindowFullscreenMode(window);
+
 		if (fullscreen_mode == nullptr) {
 			SDL_DisplayID display = SDL_GetDisplayForWindow(window);
 			fullscreen_mode = SDL_GetDesktopDisplayMode(display);
+
 			if (fullscreen_mode != nullptr)
 				SDL_SetWindowFullscreenMode(window, fullscreen_mode);
 		}
+
 		bool result = SDL_SetWindowFullscreen(window, true);
+
 		if (result)
 			sync_window_state(window);
+
 		return result;
 	}
 
@@ -120,10 +131,13 @@ HL_PRIM bool HL_NAME(win_set_fullscreen)(SDL_Window* window, int mode) {
 		// alias to desktop fullscreen
 		// TODO: add native X11 EWMH support
 		SDL_SetWindowFullscreenMode(window, nullptr);
+
 		return SDL_SetWindowFullscreen(window, true);
 #endif
 	}
+
 	SDL_SetWindowFullscreenMode(window, nullptr);
+
 	return SDL_SetWindowFullscreen(window, true);
 }
 DEFINE_PRIM(_BOOL, win_set_fullscreen, TWIN _I32);
@@ -131,12 +145,16 @@ DEFINE_PRIM(_BOOL, win_set_fullscreen, TWIN _I32);
 HL_PRIM bool HL_NAME(win_set_display_mode)(SDL_Window* window, int width, int height, double refresh_rate) {
 	SDL_DisplayMode mode;
 	SDL_DisplayID display = SDL_GetDisplayForWindow(window);
+
 	if (!SDL_GetClosestFullscreenDisplayMode(display, width, height, (float)refresh_rate, true, &mode)) {
 		return false;
 	}
+
 	bool result = SDL_SetWindowFullscreenMode(window, &mode);
+
 	if (result)
 		sync_window_state(window);
+
 	return result;
 }
 DEFINE_PRIM(_BOOL, win_set_display_mode, TWIN _I32 _I32 _F64);
@@ -151,6 +169,7 @@ HL_PRIM bool HL_NAME(win_get_native_window_info)(SDL_Window* window, int* type, 
 		return false;
 
 	limen_native_window info;
+
 	if (!limen_get_native_window(window, &info))
 		return false;
 
@@ -230,6 +249,7 @@ DEFINE_PRIM(_VOID, win_set_max_size, TWIN _I32 _I32);
 
 HL_PRIM bool HL_NAME(win_maximized)(SDL_Window* win) {
 	SDL_WindowFlags flags = SDL_GetWindowFlags(win);
+
 	return (flags & SDL_WINDOW_MAXIMIZED) != 0;
 }
 DEFINE_PRIM(_BOOL, win_maximized, TWIN);
@@ -283,6 +303,7 @@ HL_PRIM bool HL_NAME(win_set_dark_mode)(SDL_Window* window, bool enabled) {
 #else
 	(void)window;
 	(void)enabled;
+
 	return false;
 #endif
 }

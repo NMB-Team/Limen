@@ -58,40 +58,40 @@ VkInstance vk_get_instance() {
 
 static const char* vk_result_name(VkResult result) {
 	switch (result) {
-	case VK_SUCCESS:
-		return "VK_SUCCESS";
-	case VK_NOT_READY:
-		return "VK_NOT_READY";
-	case VK_TIMEOUT:
-		return "VK_TIMEOUT";
-	case VK_INCOMPLETE:
-		return "VK_INCOMPLETE";
-	case VK_ERROR_OUT_OF_HOST_MEMORY:
-		return "VK_ERROR_OUT_OF_HOST_MEMORY";
-	case VK_ERROR_OUT_OF_DEVICE_MEMORY:
-		return "VK_ERROR_OUT_OF_DEVICE_MEMORY";
-	case VK_ERROR_INITIALIZATION_FAILED:
-		return "VK_ERROR_INITIALIZATION_FAILED";
-	case VK_ERROR_DEVICE_LOST:
-		return "VK_ERROR_DEVICE_LOST";
-	case VK_ERROR_LAYER_NOT_PRESENT:
-		return "VK_ERROR_LAYER_NOT_PRESENT";
-	case VK_ERROR_EXTENSION_NOT_PRESENT:
-		return "VK_ERROR_EXTENSION_NOT_PRESENT";
-	case VK_ERROR_FEATURE_NOT_PRESENT:
-		return "VK_ERROR_FEATURE_NOT_PRESENT";
-	case VK_ERROR_INCOMPATIBLE_DRIVER:
-		return "VK_ERROR_INCOMPATIBLE_DRIVER";
-	case VK_ERROR_SURFACE_LOST_KHR:
-		return "VK_ERROR_SURFACE_LOST_KHR";
-	case VK_ERROR_NATIVE_WINDOW_IN_USE_KHR:
-		return "VK_ERROR_NATIVE_WINDOW_IN_USE_KHR";
-	case VK_SUBOPTIMAL_KHR:
-		return "VK_SUBOPTIMAL_KHR";
-	case VK_ERROR_OUT_OF_DATE_KHR:
-		return "VK_ERROR_OUT_OF_DATE_KHR";
-	default:
-		return "VK_ERROR_UNKNOWN";
+		case VK_SUCCESS:
+			return "VK_SUCCESS";
+		case VK_NOT_READY:
+			return "VK_NOT_READY";
+		case VK_TIMEOUT:
+			return "VK_TIMEOUT";
+		case VK_INCOMPLETE:
+			return "VK_INCOMPLETE";
+		case VK_ERROR_OUT_OF_HOST_MEMORY:
+			return "VK_ERROR_OUT_OF_HOST_MEMORY";
+		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+			return "VK_ERROR_OUT_OF_DEVICE_MEMORY";
+		case VK_ERROR_INITIALIZATION_FAILED:
+			return "VK_ERROR_INITIALIZATION_FAILED";
+		case VK_ERROR_DEVICE_LOST:
+			return "VK_ERROR_DEVICE_LOST";
+		case VK_ERROR_LAYER_NOT_PRESENT:
+			return "VK_ERROR_LAYER_NOT_PRESENT";
+		case VK_ERROR_EXTENSION_NOT_PRESENT:
+			return "VK_ERROR_EXTENSION_NOT_PRESENT";
+		case VK_ERROR_FEATURE_NOT_PRESENT:
+			return "VK_ERROR_FEATURE_NOT_PRESENT";
+		case VK_ERROR_INCOMPATIBLE_DRIVER:
+			return "VK_ERROR_INCOMPATIBLE_DRIVER";
+		case VK_ERROR_SURFACE_LOST_KHR:
+			return "VK_ERROR_SURFACE_LOST_KHR";
+		case VK_ERROR_NATIVE_WINDOW_IN_USE_KHR:
+			return "VK_ERROR_NATIVE_WINDOW_IN_USE_KHR";
+		case VK_SUBOPTIMAL_KHR:
+			return "VK_SUBOPTIMAL_KHR";
+		case VK_ERROR_OUT_OF_DATE_KHR:
+			return "VK_ERROR_OUT_OF_DATE_KHR";
+		default:
+			return "VK_ERROR_UNKNOWN";
 	}
 }
 
@@ -111,6 +111,7 @@ static bool has_extension(const VkExtensionProperties* properties, uint32_t coun
 		if (strcmp(properties[i].extensionName, name) == 0)
 			return true;
 	}
+
 	return false;
 }
 
@@ -119,6 +120,7 @@ static bool has_layer(const VkLayerProperties* properties, uint32_t count, const
 		if (strcmp(properties[i].layerName, name) == 0)
 			return true;
 	}
+
 	return false;
 }
 
@@ -129,11 +131,13 @@ static const char* validation_severity(VkDebugUtilsMessageSeverityFlagBitsEXT se
 		return "WARNING";
 	if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
 		return "INFO";
+
 	return "VERBOSE";
 }
 
 static void validation_types(VkDebugUtilsMessageTypeFlagsEXT types, char* output, size_t capacity) {
 	output[0] = '\0';
+
 	if (types & VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT)
 		strncat(output, "GENERAL|", capacity - strlen(output) - 1);
 	if (types & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)
@@ -144,57 +148,53 @@ static void validation_types(VkDebugUtilsMessageTypeFlagsEXT types, char* output
 		output[strlen(output) - 1] = '\0';
 }
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL validation_callback(
-	VkDebugUtilsMessageSeverityFlagBitsEXT severity,
-	VkDebugUtilsMessageTypeFlagsEXT types,
-	const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
-	void* user_data
-) {
+static VKAPI_ATTR VkBool32 VKAPI_CALL validation_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity, VkDebugUtilsMessageTypeFlagsEXT types, const VkDebugUtilsMessengerCallbackDataEXT* callback_data, void* user_data) {
 	(void)user_data;
+
 	char type_names[64];
 	validation_types(types, type_names, sizeof(type_names));
-	fprintf(
-		stderr,
-		"VULKAN_VALIDATION|%s|%s|%s|%s\n",
-		validation_severity(severity),
-		type_names,
-		callback_data->pMessageIdName ? callback_data->pMessageIdName : "-",
-		callback_data->pMessage ? callback_data->pMessage : ""
-	);
+	fprintf(stderr, "VULKAN_VALIDATION|%s|%s|%s|%s\n", validation_severity(severity), type_names, callback_data->pMessageIdName ? callback_data->pMessageIdName : "-", callback_data->pMessage ? callback_data->pMessage : "");
 	fflush(stderr);
+
 	return VK_FALSE;
 }
 
 static VkDebugUtilsMessengerCreateInfoEXT debug_messenger_info() {
-	return (VkDebugUtilsMessengerCreateInfoEXT) {
+	return (VkDebugUtilsMessengerCreateInfoEXT){
 		.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
-		.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-			VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
-		.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-			VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
+		.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
+		.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
 		.pfnUserCallback = validation_callback,
 	};
 }
 
 HL_PRIM bool HL_NAME(vk_init)(bool enable_validation, VulkanRequirements* requirements) {
 	vk_clear_error();
+
 	if (instance) {
 		if (requirements && requirements->instanceExtensions) {
 			for (int i = 0; i < requirements->instanceExtensions->size; i++) {
 				const char* name = hl_aptr(requirements->instanceExtensions, const char*)[i];
 				bool enabled = false;
-				for (uint32_t j = 0; j < instance_extension_count; j++) enabled |= strcmp(name, instance_extensions[j]) == 0;
+
+				for (uint32_t j = 0; j < instance_extension_count; j++)
+					enabled |= strcmp(name, instance_extensions[j]) == 0;
 				if (!enabled) {
 					vk_set_error("Recreate Vulkan surfaces to enable required instance extension: %s", name);
+
 					return false;
 				}
 			}
 		}
+
 		if (enable_validation && !validation_enabled) {
 			vk_set_error("Vulkan was initialized without validation; recreate all Vulkan surfaces before enabling validation");
+
 			return false;
 		}
+
 		instance_references++;
+
 		return true;
 	}
 #if defined(_WIN32)
@@ -203,23 +203,22 @@ HL_PRIM bool HL_NAME(vk_init)(bool enable_validation, VulkanRequirements* requir
 	}
 #endif
 
-	PFN_vkEnumerateInstanceVersion enumerate_instance_version =
-		(PFN_vkEnumerateInstanceVersion)vkGetInstanceProcAddr(nullptr, "vkEnumerateInstanceVersion");
+	PFN_vkEnumerateInstanceVersion enumerate_instance_version = (PFN_vkEnumerateInstanceVersion)vkGetInstanceProcAddr(nullptr, "vkEnumerateInstanceVersion");
 	loader_api_version = VK_API_VERSION_1_0;
+
 	if (enumerate_instance_version) {
 		VkResult result = enumerate_instance_version(&loader_api_version);
+
 		if (result != VK_SUCCESS) {
 			vk_set_error("vkEnumerateInstanceVersion failed: %s (%d)", vk_result_name(result), result);
+
 			return false;
 		}
 	}
+
 	if (loader_api_version < VK_API_VERSION_1_2) {
-		vk_set_error(
-			"Vulkan 1.2 is required, but the loader provides %u.%u.%u",
-			VK_API_VERSION_MAJOR(loader_api_version),
-			VK_API_VERSION_MINOR(loader_api_version),
-			VK_API_VERSION_PATCH(loader_api_version)
-		);
+		vk_set_error("Vulkan 1.2 is required, but the loader provides %u.%u.%u", VK_API_VERSION_MAJOR(loader_api_version), VK_API_VERSION_MINOR(loader_api_version), VK_API_VERSION_PATCH(loader_api_version));
+
 		return false;
 	}
 
@@ -231,15 +230,20 @@ HL_PRIM bool HL_NAME(vk_init)(bool enable_validation, VulkanRequirements* requir
 
 	uint32_t extension_count = 0;
 	VkResult result = vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr);
+
 	if (result != VK_SUCCESS) {
 		vk_set_error("Failed to enumerate Vulkan instance extensions: %s (%d)", vk_result_name(result), result);
+
 		return false;
 	}
+
 	VkExtensionProperties* extension_properties = malloc(sizeof(VkExtensionProperties) * extension_count);
 	result = vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extension_properties);
+
 	if (result != VK_SUCCESS) {
 		free(extension_properties);
 		vk_set_error("Failed to read Vulkan instance extensions: %s (%d)", vk_result_name(result), result);
+
 		return false;
 	}
 
@@ -247,48 +251,63 @@ HL_PRIM bool HL_NAME(vk_init)(bool enable_validation, VulkanRequirements* requir
 	const char** enabled_extensions = (const char**)hl_gc_alloc_noptr((6 + extra_extension_count) * sizeof(char*));
 	uint32_t enabled_extension_count = 0;
 	const char* required_extensions[] = { VK_KHR_SURFACE_EXTENSION_NAME, HL_VK_PLATFORM_EXTENSION };
+
 	for (uint32_t i = 0; i < 2; i++) {
 		if (required_extensions[i] == nullptr || !has_extension(extension_properties, extension_count, required_extensions[i])) {
 			vk_set_error("Required Vulkan instance extension is unavailable: %s", required_extensions[i] ? required_extensions[i] : "platform surface extension");
 			free(extension_properties);
+
 			return false;
 		}
+
 		enabled_extensions[enabled_extension_count++] = required_extensions[i];
 	}
-	surface_maintenance1_enabled =
-		has_extension(extension_properties, extension_count, VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME) &&
-		has_extension(extension_properties, extension_count, VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+
+	surface_maintenance1_enabled = has_extension(extension_properties, extension_count, VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME) && has_extension(extension_properties, extension_count, VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+
 	if (surface_maintenance1_enabled) {
 		enabled_extensions[enabled_extension_count++] = VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME;
 		enabled_extensions[enabled_extension_count++] = VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME;
 	}
+
 	if (enable_validation) {
 		if (!has_extension(extension_properties, extension_count, VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
 			free(extension_properties);
 			vk_set_error("Validation requested, but %s is unavailable", VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+
 			return false;
 		}
+
 		enabled_extensions[enabled_extension_count++] = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
 	}
 #if defined(__APPLE__)
 	if (!has_extension(extension_properties, extension_count, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
 		free(extension_properties);
 		vk_set_error("Required Vulkan instance extension is unavailable: %s", VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+
 		return false;
 	}
+
 	enabled_extensions[enabled_extension_count++] = VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME;
 #endif
 	for (uint32_t i = 0; i < extra_extension_count; i++) {
 		const char* name = hl_aptr(requirements->instanceExtensions, const char*)[i];
+
 		if (!has_extension(extension_properties, extension_count, name)) {
 			free(extension_properties);
 			vk_set_error("Required Vulkan instance extension is unavailable: %s", name);
+
 			return false;
 		}
+
 		bool duplicate = false;
-		for (uint32_t j = 0; j < enabled_extension_count; j++) duplicate |= strcmp(name, enabled_extensions[j]) == 0;
-		if (!duplicate) enabled_extensions[enabled_extension_count++] = name;
+
+		for (uint32_t j = 0; j < enabled_extension_count; j++)
+			duplicate |= strcmp(name, enabled_extensions[j]) == 0;
+		if (!duplicate)
+			enabled_extensions[enabled_extension_count++] = name;
 	}
+
 	free(extension_properties);
 
 	const char* validation_layer = "VK_LAYER_KHRONOS_validation";
@@ -296,26 +315,36 @@ HL_PRIM bool HL_NAME(vk_init)(bool enable_validation, VulkanRequirements* requir
 	const char* enabled_layers[2];
 	uint32_t enabled_layer_count = 0;
 	bool enable_renderdoc = requirements && requirements->renderdoc;
+
 	if (enable_validation || enable_renderdoc) {
 		uint32_t layer_count = 0;
 		result = vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
+
 		if (result != VK_SUCCESS) {
 			vk_set_error("Failed to enumerate Vulkan instance layers: %s (%d)", vk_result_name(result), result);
+
 			return false;
 		}
+
 		VkLayerProperties* layers = malloc(sizeof(*layers) * layer_count);
 		result = vkEnumerateInstanceLayerProperties(&layer_count, layers);
+
 		if (result != VK_SUCCESS || (enable_validation && !has_layer(layers, layer_count, validation_layer))) {
 			free(layers);
 			vk_set_error("Requested Vulkan validation layer is unavailable or layer enumeration failed (%d)", result);
+
 			return false;
 		}
-		if (enable_validation) enabled_layers[enabled_layer_count++] = validation_layer;
+
+		if (enable_validation)
+			enabled_layers[enabled_layer_count++] = validation_layer;
 		if (enable_renderdoc) {
 			if (has_layer(layers, layer_count, renderdoc_layer))
 				enabled_layers[enabled_layer_count++] = renderdoc_layer;
-			else fprintf(stderr, "[Vulkan] %s not found, capture disabled\n", renderdoc_layer);
+			else
+				fprintf(stderr, "[Vulkan] %s not found, capture disabled\n", renderdoc_layer);
 		}
+
 		free(layers);
 	}
 
@@ -327,6 +356,7 @@ HL_PRIM bool HL_NAME(vk_init)(bool enable_validation, VulkanRequirements* requir
 		.engineVersion = VK_MAKE_VERSION(1, 0, 0),
 		.apiVersion = instance_api_version,
 	};
+
 	VkDebugUtilsMessengerCreateInfoEXT debug_info = debug_messenger_info();
 	VkInstanceCreateInfo info = {
 		.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
@@ -342,80 +372,84 @@ HL_PRIM bool HL_NAME(vk_init)(bool enable_validation, VulkanRequirements* requir
 	};
 
 	result = vkCreateInstance(&info, nullptr, &instance);
+
 	if (result != VK_SUCCESS) {
 		instance = nullptr;
 		vk_set_error("vkCreateInstance failed: %s (%d)", vk_result_name(result), result);
+
 		return false;
 	}
 
 	if (enable_validation) {
-		PFN_vkCreateDebugUtilsMessengerEXT create_debug_messenger =
-			(PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+		PFN_vkCreateDebugUtilsMessengerEXT create_debug_messenger = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+
 		if (!create_debug_messenger) {
 			vkDestroyInstance(instance, nullptr);
 			instance = nullptr;
 			vk_set_error("%s was enabled, but vkCreateDebugUtilsMessengerEXT is unavailable", VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+
 			return false;
 		}
+
 		result = create_debug_messenger(instance, &debug_info, nullptr, &debug_messenger);
+
 		if (result != VK_SUCCESS) {
 			vkDestroyInstance(instance, nullptr);
 			instance = nullptr;
 			vk_set_error("vkCreateDebugUtilsMessengerEXT failed: %s (%d)", vk_result_name(result), result);
+
 			return false;
 		}
 	}
 
 	instance_extension_count = enabled_extension_count;
 	instance_extensions = malloc(sizeof(char*) * instance_extension_count);
+
 	for (uint32_t i = 0; i < instance_extension_count; i++) {
 		const size_t length = strlen(enabled_extensions[i]) + 1;
 		instance_extensions[i] = malloc(length);
 		memcpy(instance_extensions[i], enabled_extensions[i], length);
 	}
+
 	validation_enabled = enable_validation;
 	instance_references = 1;
-	snprintf(
-		instance_report,
-		sizeof(instance_report),
-		"loader=%u.%u.%u;instance=%u.%u.%u;validation=%s;extensions=%s,%s%s%s%s%s",
-		VK_API_VERSION_MAJOR(loader_api_version),
-		VK_API_VERSION_MINOR(loader_api_version),
-		VK_API_VERSION_PATCH(loader_api_version),
-		VK_API_VERSION_MAJOR(instance_api_version),
-		VK_API_VERSION_MINOR(instance_api_version),
-		VK_API_VERSION_PATCH(instance_api_version),
-		validation_enabled ? "true" : "false",
-		VK_KHR_SURFACE_EXTENSION_NAME,
-		HL_VK_PLATFORM_EXTENSION,
-		surface_maintenance1_enabled ? "," VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME : "",
-		surface_maintenance1_enabled ? "," VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME : "",
-		validation_enabled ? "," VK_EXT_DEBUG_UTILS_EXTENSION_NAME : "",
+	snprintf(instance_report, sizeof(instance_report), "loader=%u.%u.%u;instance=%u.%u.%u;validation=%s;extensions=%s,%s%s%s%s%s", VK_API_VERSION_MAJOR(loader_api_version), VK_API_VERSION_MINOR(loader_api_version),
+	         VK_API_VERSION_PATCH(loader_api_version), VK_API_VERSION_MAJOR(instance_api_version), VK_API_VERSION_MINOR(instance_api_version), VK_API_VERSION_PATCH(instance_api_version), validation_enabled ? "true" : "false",
+	         VK_KHR_SURFACE_EXTENSION_NAME, HL_VK_PLATFORM_EXTENSION, surface_maintenance1_enabled ? "," VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME : "", surface_maintenance1_enabled ? "," VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME : "",
+	         validation_enabled ? "," VK_EXT_DEBUG_UTILS_EXTENSION_NAME : "",
 #if defined(__APPLE__)
-		"," VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME
+	         "," VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME
 #else
-		""
+	         ""
 #endif
 	);
+
 	return true;
 }
 
 HL_PRIM void HL_NAME(vk_shutdown)() {
 	if (!instance || instance_references == 0)
 		return;
+
 	instance_references--;
+
 	if (instance_references > 0)
 		return;
 	if (debug_messenger) {
-		PFN_vkDestroyDebugUtilsMessengerEXT destroy_debug_messenger =
-			(PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+		PFN_vkDestroyDebugUtilsMessengerEXT destroy_debug_messenger = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+
 		if (destroy_debug_messenger)
 			destroy_debug_messenger(instance, debug_messenger, nullptr);
+
 		debug_messenger = nullptr;
 	}
+
 	vkDestroyInstance(instance, nullptr);
 	instance = nullptr;
-	for (uint32_t i = 0; i < instance_extension_count; i++) free(instance_extensions[i]);
+
+	for (uint32_t i = 0; i < instance_extension_count; i++)
+		free(instance_extensions[i]);
+
 	free(instance_extensions);
 	instance_extensions = nullptr;
 	instance_extension_count = 0;
@@ -453,6 +487,7 @@ HL_PRIM bool HL_NAME(vk_validation_enabled)() {
 HL_PRIM vbyte* HL_NAME(vk_make_ref)(vdynamic* v) {
 	if (v->t->kind != HSTRUCT)
 		hl_error("assert");
+
 	return v->v.ptr;
 }
 
@@ -470,8 +505,10 @@ HL_PRIM vbyte* HL_NAME(vk_make_array)(varray* a) {
 	int size = a->at->obj->rt->size;
 	vbyte* ptr = hl_alloc_bytes(size * a->size);
 	int i;
+
 	for (i = 0; i < a->size; i++)
 		memcpy(ptr + i * size, hl_aptr(a, vbyte*)[i], size);
+
 	return ptr;
 }
 
@@ -528,11 +565,7 @@ typedef struct _VkContext {
 }* VkContext;
 
 static const char* compat_extensions[] = {
-	VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
-	VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-	VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME,
-	VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
-	VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME,
+	VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME, VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME,
 };
 
 // Only 1.2 command buffers need a registry entry; 1.3 keeps the direct dispatch path.
@@ -552,41 +585,46 @@ static uint32_t compat_bucket(VkCommandBuffer command) {
 static VkCompatDispatch* command_dispatch(VkCommandBuffer command) {
 	if (compat_command_count)
 		for (VkCompatCommand* entry = compat_commands[compat_bucket(command)]; entry; entry = entry->next)
-			if (entry->command == command) return &entry->context->compat;
+			if (entry->command == command)
+				return &entry->context->compat;
 	return nullptr;
 }
 
 static void remove_compat_commands(VkContext context, VkCommandPool pool, VkCommandBuffer command) {
-	if (!compat_command_count) return;
+	if (!compat_command_count)
+		return;
 	for (uint32_t i = 0; i < 256; i++) {
 		VkCompatCommand** link = &compat_commands[i];
+
 		while (*link) {
 			VkCompatCommand* entry = *link;
+
 			if (entry->context == context && (!pool || entry->pool == pool) && (!command || entry->command == command)) {
 				*link = entry->next;
 				free(entry);
 				compat_command_count--;
-			} else link = &entry->next;
+			} else
+				link = &entry->next;
 		}
 	}
 }
 
-static void compat_vkCmdBeginRendering(VkCommandBuffer                   commandBuffer, const VkRenderingInfo*                              pRenderingInfo) {
+static void compat_vkCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) {
 	VkCompatDispatch* dispatch = command_dispatch(commandBuffer);
 	(dispatch ? dispatch->vkCmdBeginRendering : vkCmdBeginRendering)(commandBuffer, pRenderingInfo);
 }
 
-static void compat_vkCmdEndRendering(VkCommandBuffer                   commandBuffer) {
+static void compat_vkCmdEndRendering(VkCommandBuffer commandBuffer) {
 	VkCompatDispatch* dispatch = command_dispatch(commandBuffer);
 	(dispatch ? dispatch->vkCmdEndRendering : vkCmdEndRendering)(commandBuffer);
 }
 
-static void compat_vkCmdPipelineBarrier2(VkCommandBuffer                   commandBuffer, const VkDependencyInfo*                             pDependencyInfo) {
+static void compat_vkCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo) {
 	VkCompatDispatch* dispatch = command_dispatch(commandBuffer);
 	(dispatch ? dispatch->vkCmdPipelineBarrier2 : vkCmdPipelineBarrier2)(commandBuffer, pDependencyInfo);
 }
 
-static void compat_vkCmdWriteTimestamp2(VkCommandBuffer                   commandBuffer, VkPipelineStageFlags2               stage, VkQueryPool                                         queryPool, uint32_t                                            query) {
+static void compat_vkCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkQueryPool queryPool, uint32_t query) {
 	VkCompatDispatch* dispatch = command_dispatch(commandBuffer);
 	(dispatch ? dispatch->vkCmdWriteTimestamp2 : vkCmdWriteTimestamp2)(commandBuffer, stage, queryPool, query);
 }
@@ -645,7 +683,6 @@ static void compat_vkCmdSetDepthBiasEnable(VkCommandBuffer commandBuffer, VkBool
 	VkCompatDispatch* dispatch = command_dispatch(commandBuffer);
 	(dispatch ? dispatch->vkCmdSetDepthBiasEnable : vkCmdSetDepthBiasEnable)(commandBuffer, depthBiasEnable);
 }
-
 
 enum {
 	VK_CAP_DYNAMIC_RENDERING = 1 << 0,
@@ -724,8 +761,10 @@ typedef struct {
 
 static void append_text(char* output, size_t capacity, const char* format, ...) {
 	size_t length = strlen(output);
+
 	if (length >= capacity - 1)
 		return;
+
 	va_list args;
 	va_start(args, format);
 	vsnprintf(output + length, capacity - length, format, args);
@@ -735,23 +774,29 @@ static void append_text(char* output, size_t capacity, const char* format, ...) 
 static void reject_device(char* reason, size_t capacity, const char* format, ...) {
 	if (reason[0] != '\0')
 		append_text(reason, capacity, ", ");
+
 	va_list args;
 	va_start(args, format);
+
 	size_t length = strlen(reason);
 	vsnprintf(reason + length, capacity - length, format, args);
 	va_end(args);
 }
 
 static bool requested_features_supported(const vbyte* requested, const void* supported, size_t begin, size_t end) {
-	if (requested == nullptr) return true;
+	if (requested == nullptr)
+		return true;
 	for (size_t offset = begin; offset < end; offset += sizeof(VkBool32)) {
-		if (*(const VkBool32*)(requested + offset) && !*(const VkBool32*)((const char*)supported + offset)) return false;
+		if (*(const VkBool32*)(requested + offset) && !*(const VkBool32*)((const char*)supported + offset))
+			return false;
 	}
+
 	return true;
 }
 
 static void enable_requested_features(const vbyte* requested, void* enabled, size_t begin, size_t end) {
-	if (requested == nullptr) return;
+	if (requested == nullptr)
+		return;
 	for (size_t offset = begin; offset < end; offset += sizeof(VkBool32))
 		*(VkBool32*)((char*)enabled + offset) |= *(const VkBool32*)(requested + offset);
 }
@@ -761,16 +806,8 @@ static void enable_requested_features(const vbyte* requested, void* enabled, siz
 #define FEATURES13_BEGIN offsetof(VkPhysicalDeviceVulkan13Features, robustImageAccess)
 #define FEATURES13_END (offsetof(VkPhysicalDeviceVulkan13Features, maintenance4) + sizeof(VkBool32))
 
-static bool evaluate_device(
-	VkPhysicalDevice device,
-	VkSurfaceKHR surface,
-	uint32_t required_capabilities,
-	VulkanRequirements* requirements,
-	VkDeviceCandidate* candidate,
-	char* rejection,
-	size_t rejection_capacity
-) {
-	*candidate = (VkDeviceCandidate) {
+static bool evaluate_device(VkPhysicalDevice device, VkSurfaceKHR surface, uint32_t required_capabilities, VulkanRequirements* requirements, VkDeviceCandidate* candidate, char* rejection, size_t rejection_capacity) {
+	*candidate = (VkDeviceCandidate){
 		.handle = device,
 		.graphics_queue_family = UINT32_MAX,
 		.present_queue_family = UINT32_MAX,
@@ -780,23 +817,19 @@ static bool evaluate_device(
 	rejection[0] = '\0';
 
 	vkGetPhysicalDeviceProperties(device, &candidate->properties);
+
 	if (candidate->properties.apiVersion < VK_API_VERSION_1_2) {
-		reject_device(
-			rejection,
-			rejection_capacity,
-			"requires Vulkan 1.2 (device provides %u.%u.%u)",
-			VK_API_VERSION_MAJOR(candidate->properties.apiVersion),
-			VK_API_VERSION_MINOR(candidate->properties.apiVersion),
-			VK_API_VERSION_PATCH(candidate->properties.apiVersion)
-		);
+		reject_device(rejection, rejection_capacity, "requires Vulkan 1.2 (device provides %u.%u.%u)", VK_API_VERSION_MAJOR(candidate->properties.apiVersion), VK_API_VERSION_MINOR(candidate->properties.apiVersion),
+		              VK_API_VERSION_PATCH(candidate->properties.apiVersion));
 	}
 
 	VkPhysicalDeviceVulkan11Properties properties11 = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES,
 	};
-	candidate->properties12 = (VkPhysicalDeviceVulkan12Properties) {
+	candidate->properties12 = (VkPhysicalDeviceVulkan12Properties){
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES,
 	};
+
 	VkPhysicalDeviceVulkan13Properties properties13 = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_PROPERTIES,
 	};
@@ -808,6 +841,7 @@ static bool evaluate_device(
 #endif
 	candidate->properties12.pNext = candidate->properties.apiVersion >= VK_API_VERSION_1_3 ? &properties13 : nullptr;
 	properties11.pNext = &candidate->properties12;
+
 	VkPhysicalDeviceProperties2 properties2 = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
 		.pNext = &properties11,
@@ -823,46 +857,61 @@ static bool evaluate_device(
 
 	uint32_t extension_count = 0;
 	VkResult result = vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
+
 	if (result != VK_SUCCESS) {
 		reject_device(rejection, rejection_capacity, "extension enumeration failed: %s (%d)", vk_result_name(result), result);
+
 		return false;
 	}
+
 	VkExtensionProperties* extensions = malloc(sizeof(VkExtensionProperties) * extension_count);
 	result = vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, extensions);
+
 	if (result != VK_SUCCESS) {
 		free(extensions);
 		reject_device(rejection, rejection_capacity, "extension query failed: %s (%d)", vk_result_name(result), result);
+
 		return false;
 	}
+
 	if (!has_extension(extensions, extension_count, VK_KHR_SWAPCHAIN_EXTENSION_NAME))
 		reject_device(rejection, rejection_capacity, "missing %s", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+
 	candidate->swapchain_maintenance1 = surface_maintenance1_enabled && has_extension(extensions, extension_count, VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
 	candidate->portability_subset = has_extension(extensions, extension_count, "VK_KHR_portability_subset");
 	candidate->memory_budget = has_extension(extensions, extension_count, VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
 	candidate->maintenance4 = has_extension(extensions, extension_count, VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
 	candidate->shader_demote = has_extension(extensions, extension_count, VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME);
+
 	if (requirements && requirements->deviceExtensions) {
 		for (int i = 0; i < requirements->deviceExtensions->size; i++) {
 			const char* name = hl_aptr(requirements->deviceExtensions, const char*)[i];
-			if (!has_extension(extensions, extension_count, name)) reject_device(rejection, rejection_capacity, "missing %s", name);
+
+			if (!has_extension(extensions, extension_count, name))
+				reject_device(rejection, rejection_capacity, "missing %s", name);
 		}
 	}
+
 	if (candidate->properties.apiVersion < VK_API_VERSION_1_3) {
 		for (uint32_t i = 0; i < sizeof(compat_extensions) / sizeof(*compat_extensions); i++)
 			if (!has_extension(extensions, extension_count, compat_extensions[i]))
 				reject_device(rejection, rejection_capacity, "missing %s", compat_extensions[i]);
 	}
+
 	free(extensions);
 
 	VkPhysicalDeviceSwapchainMaintenance1FeaturesKHR maintenance1 = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SWAPCHAIN_MAINTENANCE_1_FEATURES_KHR,
 	};
+
 	VkPhysicalDeviceVulkan11Features features11 = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
 	};
+
 	VkPhysicalDeviceVulkan12Features features12 = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
 	};
+
 	VkPhysicalDeviceVulkan13Features features13 = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
 	};
@@ -870,59 +919,74 @@ static bool evaluate_device(
 	VkPhysicalDeviceVulkan14Features features14 = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES,
 	};
+
 	if (candidate->properties.apiVersion >= VK_API_VERSION_1_4) {
 		features13.pNext = &features14;
 		features14.pNext = candidate->swapchain_maintenance1 ? &maintenance1 : nullptr;
 	} else
 #endif
 		features13.pNext = candidate->swapchain_maintenance1 ? &maintenance1 : nullptr;
+
 	VkPhysicalDeviceMaintenance4Features maintenance4 = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES,
 		.maintenance4 = VK_TRUE,
 	};
+
 	VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures demote = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES,
 		.shaderDemoteToHelperInvocation = VK_TRUE,
 	};
+
 	VkPhysicalDeviceExtendedDynamicState2FeaturesEXT dynamic_state2 = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT,
 		.extendedDynamicState2 = VK_TRUE,
 	};
+
 	VkPhysicalDeviceExtendedDynamicStateFeaturesEXT dynamic_state = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT,
 		.pNext = &dynamic_state2,
 		.extendedDynamicState = VK_TRUE,
 	};
+
 	VkPhysicalDeviceDynamicRenderingFeatures rendering = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
 		.pNext = &dynamic_state,
 		.dynamicRendering = VK_TRUE,
 	};
+
 	VkPhysicalDeviceSynchronization2Features synchronization = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES,
 		.pNext = &rendering,
 		.synchronization2 = VK_TRUE,
 	};
+
 	if (candidate->properties.apiVersion < VK_API_VERSION_1_3) {
 		synchronization.synchronization2 = rendering.dynamicRendering = VK_FALSE;
 		dynamic_state.extendedDynamicState = dynamic_state2.extendedDynamicState2 = VK_FALSE;
 		dynamic_state2.pNext = candidate->swapchain_maintenance1 ? &maintenance1 : nullptr;
+
 		if (candidate->maintenance4) {
 			maintenance4.pNext = dynamic_state2.pNext;
 			dynamic_state2.pNext = &maintenance4;
 		}
+
 		if (candidate->shader_demote) {
 			demote.pNext = dynamic_state2.pNext;
 			dynamic_state2.pNext = &demote;
 		}
+
 		features12.pNext = &synchronization;
-	} else features12.pNext = &features13;
+	} else
+		features12.pNext = &features13;
+
 	features11.pNext = &features12;
+
 	VkPhysicalDeviceFeatures2 features2 = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
 		.pNext = &features11,
 	};
 	vkGetPhysicalDeviceFeatures2(device, &features2);
+
 	if (candidate->properties.apiVersion < VK_API_VERSION_1_3) {
 		features13.dynamicRendering = rendering.dynamicRendering;
 		features13.synchronization2 = synchronization.synchronization2;
@@ -930,12 +994,14 @@ static bool evaluate_device(
 		features13.shaderDemoteToHelperInvocation = candidate->shader_demote ? demote.shaderDemoteToHelperInvocation : VK_FALSE;
 		candidate->maintenance4 = features13.maintenance4;
 		candidate->shader_demote = features13.shaderDemoteToHelperInvocation;
+
 		if (!dynamic_state.extendedDynamicState || !dynamic_state2.extendedDynamicState2)
 			reject_device(rejection, rejection_capacity, "missing extended dynamic state features");
 	}
-	if (requirements && (!requested_features_supported(requirements->features12, &features12, FEATURES12_BEGIN, FEATURES12_END)
-		|| !requested_features_supported(requirements->features13, &features13, FEATURES13_BEGIN, FEATURES13_END)))
+
+	if (requirements && (!requested_features_supported(requirements->features12, &features12, FEATURES12_BEGIN, FEATURES12_END) || !requested_features_supported(requirements->features13, &features13, FEATURES13_BEGIN, FEATURES13_END)))
 		reject_device(rejection, rejection_capacity, "missing required postprocess features");
+
 	candidate->dynamic_rendering = features13.dynamicRendering;
 	candidate->synchronization2 = features13.synchronization2;
 	candidate->timeline_semaphore = features12.timelineSemaphore;
@@ -964,6 +1030,7 @@ static bool evaluate_device(
 	candidate->variable_descriptor_count = features12.descriptorBindingVariableDescriptorCount;
 	candidate->update_unused_while_pending = features12.descriptorBindingUpdateUnusedWhilePending;
 	candidate->swapchain_maintenance1 = candidate->swapchain_maintenance1 && maintenance1.swapchainMaintenance1;
+
 	if (!candidate->dynamic_rendering)
 		reject_device(rejection, rejection_capacity, "missing dynamicRendering");
 	if (!candidate->synchronization2)
@@ -979,25 +1046,33 @@ static bool evaluate_device(
 
 	uint32_t queue_count = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties2(device, &queue_count, nullptr);
+
 	VkQueueFamilyProperties2* queues = malloc(sizeof(VkQueueFamilyProperties2) * queue_count);
+
 	for (uint32_t i = 0; i < queue_count; i++)
-		queues[i] = (VkQueueFamilyProperties2) { .sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2 };
+		queues[i] = (VkQueueFamilyProperties2){ .sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2 };
+
 	vkGetPhysicalDeviceQueueFamilyProperties2(device, &queue_count, queues);
+
 	for (uint32_t i = 0; i < queue_count; i++) {
 		VkQueueFlags flags = queues[i].queueFamilyProperties.queueFlags;
-		if ((flags & VK_QUEUE_GRAPHICS_BIT) && (candidate->graphics_queue_family == UINT32_MAX
-			|| (!(candidate->graphics_queue_flags & VK_QUEUE_COMPUTE_BIT) && (flags & VK_QUEUE_COMPUTE_BIT)))) {
+
+		if ((flags & VK_QUEUE_GRAPHICS_BIT) && (candidate->graphics_queue_family == UINT32_MAX || (!(candidate->graphics_queue_flags & VK_QUEUE_COMPUTE_BIT) && (flags & VK_QUEUE_COMPUTE_BIT)))) {
 			candidate->graphics_queue_family = i;
 			candidate->graphics_queue_flags = flags;
 			candidate->graphics_timestamp_valid_bits = queues[i].queueFamilyProperties.timestampValidBits;
 		}
+
 		VkBool32 present = VK_FALSE;
 		result = vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &present);
+
 		if (result != VK_SUCCESS) {
 			free(queues);
 			reject_device(rejection, rejection_capacity, "surface support query failed: %s (%d)", vk_result_name(result), result);
+
 			return false;
 		}
+
 		if (candidate->present_queue_family == UINT32_MAX && present)
 			candidate->present_queue_family = i;
 		if (flags & VK_QUEUE_COMPUTE_BIT) {
@@ -1006,6 +1081,7 @@ static bool evaluate_device(
 				candidate->compute_queue_flags = flags;
 			}
 		}
+
 		if (flags & VK_QUEUE_TRANSFER_BIT) {
 			if (candidate->transfer_queue_family == UINT32_MAX || !(flags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT))) {
 				candidate->transfer_queue_family = i;
@@ -1013,18 +1089,25 @@ static bool evaluate_device(
 			}
 		}
 	}
+
 	if (requirements) {
 		for (uint32_t i = 0; i < queue_count; i++) {
 			uint64_t needed = 1;
-			if (i == candidate->graphics_queue_family) needed += requirements->graphicsQueues;
-			if (i == candidate->compute_queue_family) needed += requirements->computeQueues;
+
+			if (i == candidate->graphics_queue_family)
+				needed += requirements->graphicsQueues;
+			if (i == candidate->compute_queue_family)
+				needed += requirements->computeQueues;
 			if (needed > queues[i].queueFamilyProperties.queueCount)
 				reject_device(rejection, rejection_capacity, "insufficient postprocess queues in family %u", i);
 		}
+
 		if (requirements->computeQueues && candidate->compute_queue_family == UINT32_MAX)
 			reject_device(rejection, rejection_capacity, "no compute queue for postprocessing");
 	}
+
 	free(queues);
+
 	if (candidate->graphics_queue_family == UINT32_MAX)
 		reject_device(rejection, rejection_capacity, "no graphics queue");
 	if (candidate->present_queue_family == UINT32_MAX)
@@ -1032,12 +1115,15 @@ static bool evaluate_device(
 
 	uint32_t format_count = 0;
 	result = vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_count, nullptr);
+
 	if (result != VK_SUCCESS)
 		reject_device(rejection, rejection_capacity, "surface format query failed: %s (%d)", vk_result_name(result), result);
 	else if (format_count == 0)
 		reject_device(rejection, rejection_capacity, "surface has no formats");
+
 	uint32_t present_mode_count = 0;
 	result = vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_count, nullptr);
+
 	if (result != VK_SUCCESS)
 		reject_device(rejection, rejection_capacity, "present mode query failed: %s (%d)", vk_result_name(result), result);
 	else if (present_mode_count == 0)
@@ -1045,68 +1131,71 @@ static bool evaluate_device(
 
 	if (rejection[0] != '\0')
 		return false;
+
 	candidate->score = (int)candidate->properties.limits.maxImageDimension2D;
+
 	if (candidate->properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
 		candidate->score += 100000;
 	else if (candidate->properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
 		candidate->score += 50000;
+
 	return true;
 }
 
 HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, int required_capability_flags, VulkanRequirements* requirements) {
 	vk_clear_error();
-	const uint32_t known_capabilities = VK_CAP_DYNAMIC_RENDERING | VK_CAP_SYNCHRONIZATION_2 |
-		VK_CAP_TIMELINE_SEMAPHORE | VK_CAP_SWAPCHAIN_MAINTENANCE_1 |
-		VK_CAP_VULKAN_1_4 | VK_CAP_PORTABILITY_SUBSET;
+
+	const uint32_t known_capabilities = VK_CAP_DYNAMIC_RENDERING | VK_CAP_SYNCHRONIZATION_2 | VK_CAP_TIMELINE_SEMAPHORE | VK_CAP_SWAPCHAIN_MAINTENANCE_1 | VK_CAP_VULKAN_1_4 | VK_CAP_PORTABILITY_SUBSET;
+
 	if (((uint32_t)required_capability_flags & ~known_capabilities) != 0) {
 		vk_set_error("Unknown Vulkan capability requirement mask: 0x%08x", required_capability_flags);
+
 		return nullptr;
 	}
+
 	if (!instance || !surface) {
 		vk_set_error("Cannot create a Vulkan context without an initialized instance and surface");
+
 		return nullptr;
 	}
 
 	uint32_t device_count = 0;
 	VkResult result = vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
+
 	if (result != VK_SUCCESS || device_count == 0) {
-		vk_set_error(
-			result == VK_SUCCESS ? "No Vulkan physical devices were found" : "Failed to enumerate Vulkan physical devices: %s (%d)",
-			vk_result_name(result),
-			result
-		);
+		vk_set_error(result == VK_SUCCESS ? "No Vulkan physical devices were found" : "Failed to enumerate Vulkan physical devices: %s (%d)", vk_result_name(result), result);
+
 		return nullptr;
 	}
+
 	VkPhysicalDevice* devices = malloc(sizeof(VkPhysicalDevice) * device_count);
 	result = vkEnumeratePhysicalDevices(instance, &device_count, devices);
+
 	if (result != VK_SUCCESS) {
 		free(devices);
 		vk_set_error("Failed to read Vulkan physical devices: %s (%d)", vk_result_name(result), result);
+
 		return nullptr;
 	}
 
 	VkDeviceCandidate selected = {};
 	char selection_report[8192] = {};
+
 	for (uint32_t i = 0; i < device_count; i++) {
 		VkDeviceCandidate candidate;
 		char rejection[1024];
 		bool accepted = evaluate_device(devices[i], surface, (uint32_t)required_capability_flags, requirements, &candidate, rejection, sizeof(rejection));
-		append_text(
-			selection_report,
-			sizeof(selection_report),
-			"candidate[%u]=%s;%s=%s%s",
-			i,
-			candidate.properties.deviceName,
-			accepted ? "accepted" : "rejected",
-			accepted ? "true" : rejection,
-			i + 1 == device_count ? "" : "\n"
-		);
+		append_text(selection_report, sizeof(selection_report), "candidate[%u]=%s;%s=%s%s", i, candidate.properties.deviceName, accepted ? "accepted" : "rejected", accepted ? "true" : rejection, i + 1 == device_count ? "" : "\n");
+
 		if (accepted && (!selected.handle || candidate.score > selected.score))
 			selected = candidate;
 	}
+
 	free(devices);
+
 	if (!selected.handle) {
 		vk_set_error("No Vulkan device satisfies the renderer contract: %s", selection_report);
+
 		return nullptr;
 	}
 
@@ -1116,29 +1205,37 @@ HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, 
 		selected.compute_queue_family,
 		selected.transfer_queue_family,
 	};
+
 	uint32_t unique_queues[4];
 	uint32_t unique_queue_count = 0;
+
 	for (uint32_t i = 0; i < 4; i++) {
 		if (queue_candidates[i] == UINT32_MAX)
 			continue;
+
 		bool duplicate = false;
+
 		for (uint32_t j = 0; j < unique_queue_count; j++)
 			duplicate |= unique_queues[j] == queue_candidates[i];
 		if (!duplicate)
 			unique_queues[unique_queue_count++] = queue_candidates[i];
 	}
+
 	uint32_t graphics_extra = requirements ? requirements->graphicsQueues : 0;
 	uint32_t compute_extra = requirements ? requirements->computeQueues : 0;
 	uint32_t priority_count = 1 + graphics_extra + compute_extra;
 	float* queue_priorities = (float*)hl_gc_alloc_noptr(sizeof(float) * priority_count);
-	for (uint32_t i = 0; i < priority_count; i++) queue_priorities[i] = 1.0f;
+
+	for (uint32_t i = 0; i < priority_count; i++)
+		queue_priorities[i] = 1.0f;
+
 	VkDeviceQueueCreateInfo queue_infos[4];
+
 	for (uint32_t i = 0; i < unique_queue_count; i++) {
-		queue_infos[i] = (VkDeviceQueueCreateInfo) {
+		queue_infos[i] = (VkDeviceQueueCreateInfo){
 			.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
 			.queueFamilyIndex = unique_queues[i],
-			.queueCount = 1 + (unique_queues[i] == selected.graphics_queue_family ? graphics_extra : 0)
-				+ (unique_queues[i] == selected.compute_queue_family ? compute_extra : 0),
+			.queueCount = 1 + (unique_queues[i] == selected.graphics_queue_family ? graphics_extra : 0) + (unique_queues[i] == selected.compute_queue_family ? compute_extra : 0),
 			.pQueuePriorities = queue_priorities,
 		};
 	}
@@ -1146,7 +1243,9 @@ HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, 
 	uint32_t extra_extension_count = requirements && requirements->deviceExtensions ? requirements->deviceExtensions->size : 0;
 	const char** enabled_extensions = (const char**)hl_gc_alloc_noptr((11 + extra_extension_count) * sizeof(char*));
 	enabled_extensions[0] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+
 	uint32_t enabled_extension_count = 1;
+
 	if (selected.swapchain_maintenance1)
 		enabled_extensions[enabled_extension_count++] = VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME;
 	if (selected.portability_subset)
@@ -1155,8 +1254,10 @@ HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, 
 		enabled_extensions[enabled_extension_count++] = VK_EXT_MEMORY_BUDGET_EXTENSION_NAME;
 
 	if (selected.properties.apiVersion < VK_API_VERSION_1_3) {
-		if (selected.maintenance4) enabled_extensions[enabled_extension_count++] = VK_KHR_MAINTENANCE_4_EXTENSION_NAME;
-		if (selected.shader_demote) enabled_extensions[enabled_extension_count++] = VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME;
+		if (selected.maintenance4)
+			enabled_extensions[enabled_extension_count++] = VK_KHR_MAINTENANCE_4_EXTENSION_NAME;
+		if (selected.shader_demote)
+			enabled_extensions[enabled_extension_count++] = VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME;
 		for (uint32_t i = 0; i < sizeof(compat_extensions) / sizeof(*compat_extensions); i++)
 			enabled_extensions[enabled_extension_count++] = compat_extensions[i];
 	}
@@ -1164,18 +1265,23 @@ HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, 
 	for (uint32_t i = 0; i < extra_extension_count; i++) {
 		const char* name = hl_aptr(requirements->deviceExtensions, const char*)[i];
 		bool duplicate = false;
-		for (uint32_t j = 0; j < enabled_extension_count; j++) duplicate |= strcmp(name, enabled_extensions[j]) == 0;
-		if (!duplicate) enabled_extensions[enabled_extension_count++] = name;
+
+		for (uint32_t j = 0; j < enabled_extension_count; j++)
+			duplicate |= strcmp(name, enabled_extensions[j]) == 0;
+		if (!duplicate)
+			enabled_extensions[enabled_extension_count++] = name;
 	}
 
 	VkPhysicalDeviceSwapchainMaintenance1FeaturesKHR maintenance1 = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SWAPCHAIN_MAINTENANCE_1_FEATURES_KHR,
 		.swapchainMaintenance1 = selected.swapchain_maintenance1,
 	};
+
 	VkPhysicalDeviceVulkan11Features features11 = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
 		.storageBuffer16BitAccess = selected.storage_buffer16_bit_access,
 	};
+
 	VkPhysicalDeviceVulkan12Features features12 = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
 		.pNext = nullptr,
@@ -1192,6 +1298,7 @@ HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, 
 		.descriptorBindingVariableDescriptorCount = selected.variable_descriptor_count,
 		.runtimeDescriptorArray = selected.runtime_descriptor_array,
 	};
+
 	VkPhysicalDeviceVulkan13Features features13 = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
 		.pNext = selected.swapchain_maintenance1 ? &maintenance1 : nullptr,
@@ -1200,50 +1307,64 @@ HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, 
 		.subgroupSizeControl = selected.subgroup_size_control,
 		.computeFullSubgroups = selected.compute_full_subgroups,
 	};
+
 	if (requirements) {
 		enable_requested_features(requirements->features12, &features12, FEATURES12_BEGIN, FEATURES12_END);
 		enable_requested_features(requirements->features13, &features13, FEATURES13_BEGIN, FEATURES13_END);
 	}
+
 	features11.pNext = &features12;
+
 	VkPhysicalDeviceMaintenance4Features maintenance4 = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES,
 		.maintenance4 = VK_TRUE,
 	};
+
 	VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures demote = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES,
 		.shaderDemoteToHelperInvocation = VK_TRUE,
 	};
+
 	VkPhysicalDeviceExtendedDynamicState2FeaturesEXT dynamic_state2 = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT,
 		.extendedDynamicState2 = VK_TRUE,
 	};
+
 	VkPhysicalDeviceExtendedDynamicStateFeaturesEXT dynamic_state = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT,
 		.pNext = &dynamic_state2,
 		.extendedDynamicState = VK_TRUE,
 	};
+
 	VkPhysicalDeviceDynamicRenderingFeatures rendering = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
 		.pNext = &dynamic_state,
 		.dynamicRendering = VK_TRUE,
 	};
+
 	VkPhysicalDeviceSynchronization2Features synchronization = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES,
 		.pNext = &rendering,
 		.synchronization2 = VK_TRUE,
 	};
+
 	if (selected.properties.apiVersion < VK_API_VERSION_1_3) {
 		dynamic_state2.pNext = selected.swapchain_maintenance1 ? &maintenance1 : nullptr;
+
 		if (selected.maintenance4) {
 			maintenance4.pNext = dynamic_state2.pNext;
 			dynamic_state2.pNext = &maintenance4;
 		}
+
 		if (selected.shader_demote) {
 			demote.pNext = dynamic_state2.pNext;
 			dynamic_state2.pNext = &demote;
 		}
+
 		features12.pNext = &synchronization;
-	} else features12.pNext = &features13;
+	} else
+		features12.pNext = &features13;
+
 	VkPhysicalDeviceFeatures2 enabled_features = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
 		.pNext = &features11,
@@ -1260,6 +1381,7 @@ HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, 
 			.occlusionQueryPrecise = selected.occlusion_query_precise,
 		},
 	};
+
 	VkDeviceCreateInfo device_info = {
 		.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
 		.pNext = &enabled_features,
@@ -1270,11 +1392,13 @@ HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, 
 	};
 
 	VkContext ctx = malloc(sizeof(struct _VkContext));
+
 	if (!ctx) {
 		vk_set_error("Failed to allocate Vulkan context state");
+
 		return nullptr;
 	}
-	*ctx = (struct _VkContext) {
+	*ctx = (struct _VkContext){
 		.surface = surface,
 		.pdevice = selected.handle,
 		.properties = selected.properties,
@@ -1290,54 +1414,106 @@ HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, 
 		.postprocess_compute_queue_index = compute_extra ? 1 + (selected.compute_queue_family == selected.graphics_queue_family ? graphics_extra : 0) : 0,
 	};
 	result = vkCreateDevice(ctx->pdevice, &device_info, nullptr, &ctx->device);
+
 	if (result != VK_SUCCESS) {
 		free(ctx);
 		vk_set_error("vkCreateDevice failed for %s: %s (%d)", selected.properties.deviceName, vk_result_name(result), result);
+
 		return nullptr;
 	}
 
 	if (selected.properties.apiVersion < VK_API_VERSION_1_3) {
 		ctx->compat.vkCmdBeginRendering = (PFN_vkCmdBeginRendering)vkGetDeviceProcAddr(ctx->device, "vkCmdBeginRenderingKHR");
-		if (!ctx->compat.vkCmdBeginRendering) goto missing_compat_command;
+
+		if (!ctx->compat.vkCmdBeginRendering)
+			goto missing_compat_command;
+
 		ctx->compat.vkCmdEndRendering = (PFN_vkCmdEndRendering)vkGetDeviceProcAddr(ctx->device, "vkCmdEndRenderingKHR");
-		if (!ctx->compat.vkCmdEndRendering) goto missing_compat_command;
+
+		if (!ctx->compat.vkCmdEndRendering)
+			goto missing_compat_command;
+
 		ctx->compat.vkCmdPipelineBarrier2 = (PFN_vkCmdPipelineBarrier2)vkGetDeviceProcAddr(ctx->device, "vkCmdPipelineBarrier2KHR");
-		if (!ctx->compat.vkCmdPipelineBarrier2) goto missing_compat_command;
+
+		if (!ctx->compat.vkCmdPipelineBarrier2)
+			goto missing_compat_command;
+
 		ctx->compat.vkCmdWriteTimestamp2 = (PFN_vkCmdWriteTimestamp2)vkGetDeviceProcAddr(ctx->device, "vkCmdWriteTimestamp2KHR");
-		if (!ctx->compat.vkCmdWriteTimestamp2) goto missing_compat_command;
+
+		if (!ctx->compat.vkCmdWriteTimestamp2)
+			goto missing_compat_command;
+
 		ctx->compat.vkCmdCopyBufferToImage2 = (PFN_vkCmdCopyBufferToImage2)vkGetDeviceProcAddr(ctx->device, "vkCmdCopyBufferToImage2KHR");
-		if (!ctx->compat.vkCmdCopyBufferToImage2) goto missing_compat_command;
+
+		if (!ctx->compat.vkCmdCopyBufferToImage2)
+			goto missing_compat_command;
+
 		ctx->compat.vkCmdCopyImageToBuffer2 = (PFN_vkCmdCopyImageToBuffer2)vkGetDeviceProcAddr(ctx->device, "vkCmdCopyImageToBuffer2KHR");
-		if (!ctx->compat.vkCmdCopyImageToBuffer2) goto missing_compat_command;
+
+		if (!ctx->compat.vkCmdCopyImageToBuffer2)
+			goto missing_compat_command;
+
 		ctx->compat.vkCmdBlitImage2 = (PFN_vkCmdBlitImage2)vkGetDeviceProcAddr(ctx->device, "vkCmdBlitImage2KHR");
-		if (!ctx->compat.vkCmdBlitImage2) goto missing_compat_command;
+
+		if (!ctx->compat.vkCmdBlitImage2)
+			goto missing_compat_command;
+
 		ctx->compat.vkCmdCopyBuffer2 = (PFN_vkCmdCopyBuffer2)vkGetDeviceProcAddr(ctx->device, "vkCmdCopyBuffer2KHR");
-		if (!ctx->compat.vkCmdCopyBuffer2) goto missing_compat_command;
+
+		if (!ctx->compat.vkCmdCopyBuffer2)
+			goto missing_compat_command;
+
 		ctx->compat.vkCmdSetCullMode = (PFN_vkCmdSetCullMode)vkGetDeviceProcAddr(ctx->device, "vkCmdSetCullModeEXT");
-		if (!ctx->compat.vkCmdSetCullMode) goto missing_compat_command;
+
+		if (!ctx->compat.vkCmdSetCullMode)
+			goto missing_compat_command;
+
 		ctx->compat.vkCmdSetFrontFace = (PFN_vkCmdSetFrontFace)vkGetDeviceProcAddr(ctx->device, "vkCmdSetFrontFaceEXT");
-		if (!ctx->compat.vkCmdSetFrontFace) goto missing_compat_command;
+
+		if (!ctx->compat.vkCmdSetFrontFace)
+			goto missing_compat_command;
+
 		ctx->compat.vkCmdSetPrimitiveTopology = (PFN_vkCmdSetPrimitiveTopology)vkGetDeviceProcAddr(ctx->device, "vkCmdSetPrimitiveTopologyEXT");
-		if (!ctx->compat.vkCmdSetPrimitiveTopology) goto missing_compat_command;
+
+		if (!ctx->compat.vkCmdSetPrimitiveTopology)
+			goto missing_compat_command;
+
 		ctx->compat.vkCmdSetDepthTestEnable = (PFN_vkCmdSetDepthTestEnable)vkGetDeviceProcAddr(ctx->device, "vkCmdSetDepthTestEnableEXT");
-		if (!ctx->compat.vkCmdSetDepthTestEnable) goto missing_compat_command;
+
+		if (!ctx->compat.vkCmdSetDepthTestEnable)
+			goto missing_compat_command;
+
 		ctx->compat.vkCmdSetDepthWriteEnable = (PFN_vkCmdSetDepthWriteEnable)vkGetDeviceProcAddr(ctx->device, "vkCmdSetDepthWriteEnableEXT");
-		if (!ctx->compat.vkCmdSetDepthWriteEnable) goto missing_compat_command;
+
+		if (!ctx->compat.vkCmdSetDepthWriteEnable)
+			goto missing_compat_command;
+
 		ctx->compat.vkCmdSetDepthCompareOp = (PFN_vkCmdSetDepthCompareOp)vkGetDeviceProcAddr(ctx->device, "vkCmdSetDepthCompareOpEXT");
-		if (!ctx->compat.vkCmdSetDepthCompareOp) goto missing_compat_command;
+
+		if (!ctx->compat.vkCmdSetDepthCompareOp)
+			goto missing_compat_command;
+
 		ctx->compat.vkCmdSetDepthBiasEnable = (PFN_vkCmdSetDepthBiasEnable)vkGetDeviceProcAddr(ctx->device, "vkCmdSetDepthBiasEnableEXT");
-		if (!ctx->compat.vkCmdSetDepthBiasEnable) goto missing_compat_command;
+
+		if (!ctx->compat.vkCmdSetDepthBiasEnable)
+			goto missing_compat_command;
+
 		ctx->compat.vkQueueSubmit2 = (PFN_vkQueueSubmit2)vkGetDeviceProcAddr(ctx->device, "vkQueueSubmit2KHR");
-		if (!ctx->compat.vkQueueSubmit2) goto missing_compat_command;
+
+		if (!ctx->compat.vkQueueSubmit2)
+			goto missing_compat_command;
 	}
 
 	vkGetDeviceQueue(ctx->device, ctx->graphics_queue_family, 0, &ctx->graphics_queue);
 	vkGetDeviceQueue(ctx->device, ctx->present_queue_family, 0, &ctx->present_queue);
+
 	if (ctx->compute_queue_family != UINT32_MAX)
 		vkGetDeviceQueue(ctx->device, ctx->compute_queue_family, 0, &ctx->compute_queue);
 	if (ctx->transfer_queue_family != UINT32_MAX)
 		vkGetDeviceQueue(ctx->device, ctx->transfer_queue_family, 0, &ctx->transfer_queue);
+
 	ctx->capability_flags = VK_CAP_DYNAMIC_RENDERING | VK_CAP_SYNCHRONIZATION_2 | VK_CAP_TIMELINE_SEMAPHORE;
+
 	if (selected.swapchain_maintenance1)
 		ctx->capability_flags |= VK_CAP_SWAPCHAIN_MAINTENANCE_1;
 	if (selected.properties.apiVersion >= VK_API_VERSION_1_4)
@@ -1380,70 +1556,33 @@ HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, 
 		ctx->capability_flags |= VK_CAP_VARIABLE_DESCRIPTOR_COUNT;
 	if (selected.update_unused_while_pending)
 		ctx->capability_flags |= VK_CAP_UPDATE_UNUSED_WHILE_PENDING;
+
 	char extension_report[256] = {};
+
 	for (uint32_t i = 0; i < enabled_extension_count; i++)
 		append_text(extension_report, sizeof(extension_report), "%s%s", i == 0 ? "" : ",", enabled_extensions[i]);
-	snprintf(
-		ctx->report,
-		sizeof(ctx->report),
-		"device=%s;vendor=0x%04x;deviceId=0x%04x;driver=%u;api=%u.%u.%u;deviceExtensions=%s;enabledFeatures=dynamicRendering,synchronization2,timelineSemaphore%s%s%s%s%s%s%s%s%s%s;graphicsQueue=%u;graphicsQueueFlags=0x%x;graphicsQueueCompute=%s;presentQueue=%u;computeQueue=%u;computeQueueFlags=0x%x;transferQueue=%u;transferQueueFlags=0x%x;dynamicRendering=true;synchronization2=true;timelineSemaphore=true;swapchainMaintenance1=%s;portabilitySubset=%s;samplerAnisotropy=%s;independentBlend=%s;depthClamp=%s;fillModeNonSolid=%s;multiDrawIndirect=%s;drawIndirectFirstInstance=%s;drawIndirectCount=%s;timestampValidBits=%u;timestampPeriod=%.9g;occlusionQueryPrecise=%s;descriptorIndexing=%s;shaderSampledImageArrayNonUniformIndexing=%s;shaderStorageBufferArrayNonUniformIndexing=%s;descriptorBindingPartiallyBound=%s;descriptorBindingSampledImageUpdateAfterBind=%s;descriptorBindingStorageBufferUpdateAfterBind=%s;runtimeDescriptorArray=%s;descriptorBindingVariableDescriptorCount=%s;descriptorBindingUpdateUnusedWhilePending=%s;maxUpdateAfterBindDescriptorsInAllPools=%u;maxPerStageUpdateAfterBindResources=%u;maxPerStageDescriptorUpdateAfterBindSamplers=%u;maxPerStageDescriptorUpdateAfterBindSampledImages=%u;maxPerStageDescriptorUpdateAfterBindStorageBuffers=%u;maxDescriptorSetUpdateAfterBindSamplers=%u;maxDescriptorSetUpdateAfterBindSampledImages=%u;maxDescriptorSetUpdateAfterBindStorageBuffers=%u\n%s",
-		selected.properties.deviceName,
-		selected.properties.vendorID,
-		selected.properties.deviceID,
-		selected.properties.driverVersion,
-		VK_API_VERSION_MAJOR(selected.properties.apiVersion),
-		VK_API_VERSION_MINOR(selected.properties.apiVersion),
-		VK_API_VERSION_PATCH(selected.properties.apiVersion),
-		extension_report,
-		selected.swapchain_maintenance1 ? ",swapchainMaintenance1" : "",
-		selected.sampler_anisotropy ? ",samplerAnisotropy" : "",
-		selected.independent_blend ? ",independentBlend" : "",
-		selected.depth_clamp ? ",depthClamp" : "",
-		selected.fill_mode_non_solid ? ",fillModeNonSolid" : "",
-		selected.multi_draw_indirect ? ",multiDrawIndirect" : "",
-		selected.draw_indirect_first_instance ? ",drawIndirectFirstInstance" : "",
-		selected.draw_indirect_count ? ",drawIndirectCount" : "",
-		selected.occlusion_query_precise ? ",occlusionQueryPrecise" : "",
-		selected.descriptor_indexing ? ",descriptorIndexing" : "",
-		ctx->graphics_queue_family,
-		selected.graphics_queue_flags,
-		(selected.graphics_queue_flags & VK_QUEUE_COMPUTE_BIT) ? "true" : "false",
-		ctx->present_queue_family,
-		ctx->compute_queue_family,
-		selected.compute_queue_flags,
-		ctx->transfer_queue_family,
-		selected.transfer_queue_flags,
-		selected.swapchain_maintenance1 ? "true" : "false",
-		selected.portability_subset ? "true" : "false",
-		selected.sampler_anisotropy ? "true" : "false",
-		selected.independent_blend ? "true" : "false",
-		selected.depth_clamp ? "true" : "false",
-		selected.fill_mode_non_solid ? "true" : "false",
-		selected.multi_draw_indirect ? "true" : "false",
-		selected.draw_indirect_first_instance ? "true" : "false",
-		selected.draw_indirect_count ? "true" : "false",
-		selected.graphics_timestamp_valid_bits,
-		selected.properties.limits.timestampPeriod,
-		selected.occlusion_query_precise ? "true" : "false",
-		selected.descriptor_indexing ? "true" : "false",
-		selected.sampled_image_non_uniform ? "true" : "false",
-		selected.storage_buffer_non_uniform ? "true" : "false",
-		selected.descriptor_partially_bound ? "true" : "false",
-		selected.sampled_image_update_after_bind ? "true" : "false",
-		selected.storage_buffer_update_after_bind ? "true" : "false",
-		selected.runtime_descriptor_array ? "true" : "false",
-		selected.variable_descriptor_count ? "true" : "false",
-		selected.update_unused_while_pending ? "true" : "false",
-		selected.properties12.maxUpdateAfterBindDescriptorsInAllPools,
-		selected.properties12.maxPerStageUpdateAfterBindResources,
-		selected.properties12.maxPerStageDescriptorUpdateAfterBindSamplers,
-		selected.properties12.maxPerStageDescriptorUpdateAfterBindSampledImages,
-		selected.properties12.maxPerStageDescriptorUpdateAfterBindStorageBuffers,
-		selected.properties12.maxDescriptorSetUpdateAfterBindSamplers,
-		selected.properties12.maxDescriptorSetUpdateAfterBindSampledImages,
-		selected.properties12.maxDescriptorSetUpdateAfterBindStorageBuffers,
-		selection_report
-	);
+
+	snprintf(ctx->report, sizeof(ctx->report),
+	         "device=%s;vendor=0x%04x;deviceId=0x%04x;driver=%u;api=%u.%u.%u;deviceExtensions=%s;enabledFeatures=dynamicRendering,synchronization2,timelineSemaphore%s%s%s%s%s%s%s%s%s%s;graphicsQueue=%u;graphicsQueueFlags=0x%x;graphicsQueueCompute=%"
+	         "s;presentQueue=%u;computeQueue=%u;computeQueueFlags=0x%x;transferQueue=%u;transferQueueFlags=0x%x;dynamicRendering=true;synchronization2=true;timelineSemaphore=true;swapchainMaintenance1=%s;portabilitySubset=%s;samplerAnisotropy=%s;"
+	         "independentBlend=%s;depthClamp=%s;fillModeNonSolid=%s;multiDrawIndirect=%s;drawIndirectFirstInstance=%s;drawIndirectCount=%s;timestampValidBits=%u;timestampPeriod=%.9g;occlusionQueryPrecise=%s;descriptorIndexing=%s;"
+	         "shaderSampledImageArrayNonUniformIndexing=%s;shaderStorageBufferArrayNonUniformIndexing=%s;descriptorBindingPartiallyBound=%s;descriptorBindingSampledImageUpdateAfterBind=%s;descriptorBindingStorageBufferUpdateAfterBind=%s;"
+	         "runtimeDescriptorArray=%s;descriptorBindingVariableDescriptorCount=%s;descriptorBindingUpdateUnusedWhilePending=%s;maxUpdateAfterBindDescriptorsInAllPools=%u;maxPerStageUpdateAfterBindResources=%u;"
+	         "maxPerStageDescriptorUpdateAfterBindSamplers=%u;maxPerStageDescriptorUpdateAfterBindSampledImages=%u;maxPerStageDescriptorUpdateAfterBindStorageBuffers=%u;maxDescriptorSetUpdateAfterBindSamplers=%u;"
+	         "maxDescriptorSetUpdateAfterBindSampledImages=%u;maxDescriptorSetUpdateAfterBindStorageBuffers=%u\n%s",
+	         selected.properties.deviceName, selected.properties.vendorID, selected.properties.deviceID, selected.properties.driverVersion, VK_API_VERSION_MAJOR(selected.properties.apiVersion), VK_API_VERSION_MINOR(selected.properties.apiVersion),
+	         VK_API_VERSION_PATCH(selected.properties.apiVersion), extension_report, selected.swapchain_maintenance1 ? ",swapchainMaintenance1" : "", selected.sampler_anisotropy ? ",samplerAnisotropy" : "",
+	         selected.independent_blend ? ",independentBlend" : "", selected.depth_clamp ? ",depthClamp" : "", selected.fill_mode_non_solid ? ",fillModeNonSolid" : "", selected.multi_draw_indirect ? ",multiDrawIndirect" : "",
+	         selected.draw_indirect_first_instance ? ",drawIndirectFirstInstance" : "", selected.draw_indirect_count ? ",drawIndirectCount" : "", selected.occlusion_query_precise ? ",occlusionQueryPrecise" : "",
+	         selected.descriptor_indexing ? ",descriptorIndexing" : "", ctx->graphics_queue_family, selected.graphics_queue_flags, (selected.graphics_queue_flags & VK_QUEUE_COMPUTE_BIT) ? "true" : "false", ctx->present_queue_family,
+	         ctx->compute_queue_family, selected.compute_queue_flags, ctx->transfer_queue_family, selected.transfer_queue_flags, selected.swapchain_maintenance1 ? "true" : "false", selected.portability_subset ? "true" : "false",
+	         selected.sampler_anisotropy ? "true" : "false", selected.independent_blend ? "true" : "false", selected.depth_clamp ? "true" : "false", selected.fill_mode_non_solid ? "true" : "false", selected.multi_draw_indirect ? "true" : "false",
+	         selected.draw_indirect_first_instance ? "true" : "false", selected.draw_indirect_count ? "true" : "false", selected.graphics_timestamp_valid_bits, selected.properties.limits.timestampPeriod,
+	         selected.occlusion_query_precise ? "true" : "false", selected.descriptor_indexing ? "true" : "false", selected.sampled_image_non_uniform ? "true" : "false", selected.storage_buffer_non_uniform ? "true" : "false",
+	         selected.descriptor_partially_bound ? "true" : "false", selected.sampled_image_update_after_bind ? "true" : "false", selected.storage_buffer_update_after_bind ? "true" : "false", selected.runtime_descriptor_array ? "true" : "false",
+	         selected.variable_descriptor_count ? "true" : "false", selected.update_unused_while_pending ? "true" : "false", selected.properties12.maxUpdateAfterBindDescriptorsInAllPools, selected.properties12.maxPerStageUpdateAfterBindResources,
+	         selected.properties12.maxPerStageDescriptorUpdateAfterBindSamplers, selected.properties12.maxPerStageDescriptorUpdateAfterBindSampledImages, selected.properties12.maxPerStageDescriptorUpdateAfterBindStorageBuffers,
+	         selected.properties12.maxDescriptorSetUpdateAfterBindSamplers, selected.properties12.maxDescriptorSetUpdateAfterBindSampledImages, selected.properties12.maxDescriptorSetUpdateAfterBindStorageBuffers, selection_report);
 	*outQueue = (int)ctx->graphics_queue_family;
 	return ctx;
 
@@ -1451,47 +1590,58 @@ missing_compat_command:
 	vkDestroyDevice(ctx->device, nullptr);
 	free(ctx);
 	vk_set_error("Required Vulkan 1.2 extension command is unavailable");
+
 	return nullptr;
 }
 
 #ifdef LIMEN_VMA
 HL_PRIM void* HL_NAME(memory_create)(VkContext ctx, int* result) {
-	if (!ctx) { *result = VK_ERROR_INITIALIZATION_FAILED; return nullptr; }
-	return limen_vma_create(instance, ctx->pdevice, ctx->device,
-		instance_api_version < ctx->properties.apiVersion ? instance_api_version : ctx->properties.apiVersion,
-		ctx->memory_budget, result);
+	if (!ctx) {
+		*result = VK_ERROR_INITIALIZATION_FAILED;
+		return nullptr;
+	}
+
+	return limen_vma_create(instance, ctx->pdevice, ctx->device, instance_api_version < ctx->properties.apiVersion ? instance_api_version : ctx->properties.apiVersion, ctx->memory_budget, result);
 }
 #endif
 
 HL_PRIM bool HL_NAME(vk_destroy_context)(VkContext ctx) {
 	if (!ctx)
 		return true;
+
 	vk_clear_error();
 #ifdef LIMEN_VMA
 	if (limen_vma_has_allocators(ctx->device)) {
 		vk_set_error("Destroy VMA allocators before destroying the Vulkan context");
+
 		return false;
 	}
 #endif
 	VkResult result = vkDeviceWaitIdle(ctx->device);
+
 	if (ctx->swapchain)
 		vkDestroySwapchainKHR(ctx->device, ctx->swapchain, nullptr);
 	for (uint32_t i = 0; i < ctx->retired_swapchain_count; i++)
 		vkDestroySwapchainKHR(ctx->device, ctx->retired_swapchains[i], nullptr);
+
 	free(ctx->retired_swapchains);
 	remove_compat_commands(ctx, nullptr, nullptr);
 	vkDestroyDevice(ctx->device, nullptr);
 	free(ctx);
+
 	if (result != VK_SUCCESS) {
 		vk_set_error("vkDeviceWaitIdle during context shutdown failed: %s (%d)", vk_result_name(result), result);
+
 		return false;
 	}
+
 	return true;
 }
 
 HL_PRIM vbyte* HL_NAME(vk_get_context_report)(VkContext ctx) {
 	char report[sizeof(ctx->report) + sizeof(ctx->wsi_report) + 2];
 	snprintf(report, sizeof(report), "%s%s%s", ctx->report, ctx->wsi_report[0] ? "\n" : "", ctx->wsi_report);
+
 	return hl_copy_bytes((const vbyte*)report, (int)strlen(report) + 1);
 }
 
@@ -1601,12 +1751,14 @@ HL_PRIM int HL_NAME(vk_get_memory_type_count)(VkContext ctx) {
 HL_PRIM int HL_NAME(vk_get_memory_type_properties)(VkContext ctx, int index) {
 	if (index < 0 || (uint32_t)index >= ctx->memProps.memoryTypeCount)
 		return 0;
+
 	return (int)ctx->memProps.memoryTypes[index].propertyFlags;
 }
 
 HL_PRIM int HL_NAME(vk_get_memory_type_heap_index)(VkContext ctx, int index) {
 	if (index < 0 || (uint32_t)index >= ctx->memProps.memoryTypeCount)
 		return -1;
+
 	return (int)ctx->memProps.memoryTypes[index].heapIndex;
 }
 
@@ -1617,12 +1769,14 @@ HL_PRIM int HL_NAME(vk_get_memory_heap_count)(VkContext ctx) {
 HL_PRIM int64_t HL_NAME(vk_get_memory_heap_size)(VkContext ctx, int index) {
 	if (index < 0 || (uint32_t)index >= ctx->memProps.memoryHeapCount)
 		return 0;
+
 	return (int64_t)ctx->memProps.memoryHeaps[index].size;
 }
 
 HL_PRIM int HL_NAME(vk_get_memory_heap_flags)(VkContext ctx, int index) {
 	if (index < 0 || (uint32_t)index >= ctx->memProps.memoryHeapCount)
 		return 0;
+
 	return (int)ctx->memProps.memoryHeaps[index].flags;
 }
 
@@ -1641,12 +1795,14 @@ HL_PRIM bool HL_NAME(vk_get_memory_heap_budget)(VkContext ctx, int index, HLVkMe
 	if (!ctx->memory_budget) {
 		output->budget = (int64_t)ctx->memProps.memoryHeaps[index].size;
 		output->usage = 0;
+
 		return false;
 	}
 
 	VkPhysicalDeviceMemoryBudgetPropertiesEXT budget = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT,
 	};
+
 	VkPhysicalDeviceMemoryProperties2 properties = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2,
 		.pNext = &budget,
@@ -1654,23 +1810,28 @@ HL_PRIM bool HL_NAME(vk_get_memory_heap_budget)(VkContext ctx, int index, HLVkMe
 	vkGetPhysicalDeviceMemoryProperties2(ctx->pdevice, &properties);
 	output->budget = (int64_t)budget.heapBudget[index];
 	output->usage = (int64_t)budget.heapUsage[index];
+
 	return true;
 }
 
 static bool set_object_name(VkContext ctx, VkObjectType type, uint64_t handle, vbyte* name) {
 	if (!validation_enabled || !handle || !name)
 		return false;
-	PFN_vkSetDebugUtilsObjectNameEXT set_name =
-		(PFN_vkSetDebugUtilsObjectNameEXT)vkGetDeviceProcAddr(ctx->device, "vkSetDebugUtilsObjectNameEXT");
+
+	PFN_vkSetDebugUtilsObjectNameEXT set_name = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetDeviceProcAddr(ctx->device, "vkSetDebugUtilsObjectNameEXT");
+
 	if (!set_name)
 		return false;
+
 	VkDebugUtilsObjectNameInfoEXT info = {
 		.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
 		.objectType = type,
 		.objectHandle = handle,
 		.pObjectName = (const char*)name,
 	};
+
 	VkResult result = set_name(ctx->device, &info);
+
 	return result == VK_SUCCESS;
 }
 
@@ -1692,11 +1853,13 @@ HL_PRIM bool HL_NAME(vk_set_memory_name)(VkContext ctx, VkDeviceMemory memory, v
 
 HL_PRIM int HL_NAME(vk_find_memory_type)(VkContext ctx, int allowed, int req) {
 	unsigned int i;
+
 	for (i = 0; i < ctx->memProps.memoryTypeCount; i++) {
 		if ((allowed & (1 << i)) && (ctx->memProps.memoryTypes[i].propertyFlags & req) == req) {
 			return i;
 		}
 	}
+
 	return -1;
 }
 
@@ -1716,32 +1879,37 @@ enum {
 
 static int wsi_status(VkResult result) {
 	switch (result) {
-	case VK_SUCCESS:
-		return VK_WSI_SUCCESS;
-	case VK_SUBOPTIMAL_KHR:
-		return VK_WSI_SUBOPTIMAL;
-	case VK_ERROR_OUT_OF_DATE_KHR:
-		return VK_WSI_OUT_OF_DATE;
-	case VK_ERROR_SURFACE_LOST_KHR:
-		return VK_WSI_SURFACE_LOST;
-	case VK_ERROR_DEVICE_LOST:
-		return VK_WSI_DEVICE_LOST;
-	default:
-		return VK_WSI_ERROR;
+		case VK_SUCCESS:
+			return VK_WSI_SUCCESS;
+		case VK_SUBOPTIMAL_KHR:
+			return VK_WSI_SUBOPTIMAL;
+		case VK_ERROR_OUT_OF_DATE_KHR:
+			return VK_WSI_OUT_OF_DATE;
+		case VK_ERROR_SURFACE_LOST_KHR:
+			return VK_WSI_SURFACE_LOST;
+		case VK_ERROR_DEVICE_LOST:
+			return VK_WSI_DEVICE_LOST;
+		default:
+			return VK_WSI_ERROR;
 	}
 }
 
 static bool reserve_retired_swapchain(VkContext ctx) {
 	if (!ctx->swapchain || ctx->retired_swapchain_count < ctx->retired_swapchain_capacity)
 		return true;
+
 	uint32_t capacity = ctx->retired_swapchain_capacity == 0 ? 4 : ctx->retired_swapchain_capacity * 2;
 	VkSwapchainKHR* swapchains = realloc(ctx->retired_swapchains, sizeof(VkSwapchainKHR) * capacity);
+
 	if (!swapchains) {
 		vk_set_error("Failed to allocate retired swapchain storage");
+
 		return false;
 	}
+
 	ctx->retired_swapchains = swapchains;
 	ctx->retired_swapchain_capacity = capacity;
+
 	return true;
 }
 
@@ -1758,19 +1926,25 @@ typedef struct {
 
 HL_PRIM int HL_NAME(vk_init_swapchain)(VkContext ctx, VkSwapchainInfo* info, varray* outImages) {
 	vk_clear_error();
+
 	if (info->width <= 0 || info->height <= 0)
 		return VK_WSI_DEFERRED;
 
 	VkSurfaceCapabilitiesKHR capabilities;
 	VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(ctx->pdevice, ctx->surface, &capabilities);
+
 	if (result != VK_SUCCESS) {
 		vk_set_error("vkGetPhysicalDeviceSurfaceCapabilitiesKHR failed: %s (%d)", vk_result_name(result), result);
+
 		return wsi_status(result);
 	}
+
 	VkExtent2D extent = capabilities.currentExtent;
+
 	if (extent.width == UINT32_MAX) {
 		extent.width = (uint32_t)info->width;
 		extent.height = (uint32_t)info->height;
+
 		if (extent.width < capabilities.minImageExtent.width)
 			extent.width = capabilities.minImageExtent.width;
 		if (extent.width > capabilities.maxImageExtent.width)
@@ -1780,51 +1954,69 @@ HL_PRIM int HL_NAME(vk_init_swapchain)(VkContext ctx, VkSwapchainInfo* info, var
 		if (extent.height > capabilities.maxImageExtent.height)
 			extent.height = capabilities.maxImageExtent.height;
 	}
+
 	if (extent.width == 0 || extent.height == 0)
 		return VK_WSI_DEFERRED;
 	if (!(capabilities.supportedUsageFlags & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)) {
 		vk_set_error("Surface swapchain images do not support VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT");
+
 		return VK_WSI_ERROR;
 	}
 
 	uint32_t format_count = 0;
 	result = vkGetPhysicalDeviceSurfaceFormatsKHR(ctx->pdevice, ctx->surface, &format_count, nullptr);
+
 	if (result != VK_SUCCESS || format_count == 0) {
 		vk_set_error("Surface format query failed: %s (%d), count=%u", vk_result_name(result), result, format_count);
+
 		return result == VK_SUCCESS ? VK_WSI_ERROR : wsi_status(result);
 	}
+
 	VkSurfaceFormatKHR* formats = malloc(sizeof(VkSurfaceFormatKHR) * format_count);
 	result = vkGetPhysicalDeviceSurfaceFormatsKHR(ctx->pdevice, ctx->surface, &format_count, formats);
+
 	if (result != VK_SUCCESS) {
 		free(formats);
 		vk_set_error("Surface format read failed: %s (%d)", vk_result_name(result), result);
+
 		return wsi_status(result);
 	}
+
 	VkSurfaceFormatKHR format = formats[0];
+
 	for (uint32_t i = 0; i < format_count; i++) {
 		if (formats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR && formats[i].format == VK_FORMAT_B8G8R8A8_UNORM) {
 			format = formats[i];
 			break;
 		}
+
 		if (formats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR && formats[i].format == VK_FORMAT_B8G8R8A8_SRGB)
 			format = formats[i];
 	}
+
 	free(formats);
 
 	uint32_t present_mode_count = 0;
 	result = vkGetPhysicalDeviceSurfacePresentModesKHR(ctx->pdevice, ctx->surface, &present_mode_count, nullptr);
+
 	if (result != VK_SUCCESS || present_mode_count == 0) {
 		vk_set_error("Present mode query failed: %s (%d), count=%u", vk_result_name(result), result, present_mode_count);
+
 		return result == VK_SUCCESS ? VK_WSI_ERROR : wsi_status(result);
 	}
+
 	VkPresentModeKHR* present_modes = malloc(sizeof(VkPresentModeKHR) * present_mode_count);
 	result = vkGetPhysicalDeviceSurfacePresentModesKHR(ctx->pdevice, ctx->surface, &present_mode_count, present_modes);
+
 	if (result != VK_SUCCESS) {
 		free(present_modes);
 		vk_set_error("Present mode read failed: %s (%d)", vk_result_name(result), result);
+
 		return wsi_status(result);
 	}
+
 	VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
+
 	if (info->present_mode == -1) {
 		for (uint32_t i = 0; i < present_mode_count; i++) {
 			if (present_modes[i] == VK_PRESENT_MODE_FIFO_RELAXED_KHR) {
@@ -1838,28 +2030,36 @@ HL_PRIM int HL_NAME(vk_init_swapchain)(VkContext ctx, VkSwapchainInfo* info, var
 				present_mode = VK_PRESENT_MODE_IMMEDIATE_KHR;
 				break;
 			}
+
 			if (present_modes[i] == VK_PRESENT_MODE_MAILBOX_KHR)
 				present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
 		}
 	}
+
 	free(present_modes);
 
 	uint32_t image_count = capabilities.minImageCount + 1;
+
 	if (capabilities.maxImageCount > 0 && image_count > capabilities.maxImageCount)
 		image_count = capabilities.maxImageCount;
+
 	uint32_t image_capacity = (uint32_t)outImages->size;
+
 	if (image_count > image_capacity) {
 		vk_set_error("Swapchain requires %u images, but the output array capacity is %u", image_count, image_capacity);
+
 		return VK_WSI_ERROR;
 	}
 
 	VkCompositeAlphaFlagBitsKHR composite_alpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+
 	if (!(capabilities.supportedCompositeAlpha & composite_alpha)) {
 		const VkCompositeAlphaFlagBitsKHR choices[] = {
 			VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR,
 			VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR,
 			VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR,
 		};
+
 		for (uint32_t i = 0; i < 3; i++) {
 			if (capabilities.supportedCompositeAlpha & choices[i]) {
 				composite_alpha = choices[i];
@@ -1867,15 +2067,15 @@ HL_PRIM int HL_NAME(vk_init_swapchain)(VkContext ctx, VkSwapchainInfo* info, var
 			}
 		}
 	}
-	VkSurfaceTransformFlagBitsKHR transform =
-		(capabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
-			? VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR
-			: capabilities.currentTransform;
+
+	VkSurfaceTransformFlagBitsKHR transform = (capabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) ? VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR : capabilities.currentTransform;
 	VkImageUsageFlags image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
 	if (capabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_DST_BIT)
 		image_usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 	if (capabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_SRC_BIT)
 		image_usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+
 	info->transfer_source = (image_usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) != 0;
 
 	uint32_t queue_families[] = { ctx->graphics_queue_family, ctx->present_queue_family };
@@ -1884,6 +2084,7 @@ HL_PRIM int HL_NAME(vk_init_swapchain)(VkContext ctx, VkSwapchainInfo* info, var
 		.presentModeCount = 1,
 		.pPresentModes = &present_mode,
 	};
+
 	VkSwapchainCreateInfoKHR swapchain_info = {
 		.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
 		.pNext = (ctx->capability_flags & VK_CAP_SWAPCHAIN_MAINTENANCE_1) ? &present_modes_info : nullptr,
@@ -1903,88 +2104,101 @@ HL_PRIM int HL_NAME(vk_init_swapchain)(VkContext ctx, VkSwapchainInfo* info, var
 		.clipped = VK_TRUE,
 		.oldSwapchain = ctx->swapchain,
 	};
+
 	if (!reserve_retired_swapchain(ctx))
 		return VK_WSI_ERROR;
+
 	VkSwapchainKHR new_swapchain = nullptr;
 	result = vkCreateSwapchainKHR(ctx->device, &swapchain_info, nullptr, &new_swapchain);
+
 	if (result != VK_SUCCESS) {
 		vk_set_error("vkCreateSwapchainKHR failed: %s (%d)", vk_result_name(result), result);
+
 		return wsi_status(result);
 	}
+
 	uint32_t actual_image_count = 0;
 	result = vkGetSwapchainImagesKHR(ctx->device, new_swapchain, &actual_image_count, nullptr);
+
 	if (result != VK_SUCCESS) {
 		vkDestroySwapchainKHR(ctx->device, new_swapchain, nullptr);
 		vk_set_error("Swapchain image count query failed: %s (%d)", vk_result_name(result), result);
+
 		return wsi_status(result);
 	}
+
 	if (actual_image_count > image_capacity) {
 		vkDestroySwapchainKHR(ctx->device, new_swapchain, nullptr);
 		vk_set_error("Swapchain created %u images, but the output array capacity is %u", actual_image_count, image_capacity);
+
 		return VK_WSI_ERROR;
 	}
+
 	result = vkGetSwapchainImagesKHR(ctx->device, new_swapchain, &actual_image_count, hl_aptr(outImages, VkImage));
+
 	if (result != VK_SUCCESS) {
 		vkDestroySwapchainKHR(ctx->device, new_swapchain, nullptr);
 		vk_set_error("vkGetSwapchainImagesKHR failed: %s (%d)", vk_result_name(result), result);
+
 		return wsi_status(result);
 	}
+
 	if (ctx->swapchain)
 		ctx->retired_swapchains[ctx->retired_swapchain_count++] = ctx->swapchain;
+
 	ctx->swapchain = new_swapchain;
 	outImages->size = (int)actual_image_count;
 	info->format = format.format;
 	info->actual_width = (int)extent.width;
 	info->actual_height = (int)extent.height;
 	info->actual_present_mode = (int)present_mode;
-	snprintf(
-		ctx->wsi_report,
-		sizeof(ctx->wsi_report),
-		"swapchainFormat=%d;colorSpace=%d;presentMode=%d;imageCount=%u;extent=%ux%u;usage=0x%x;transform=0x%x;compositeAlpha=0x%x",
-		format.format,
-		format.colorSpace,
-		present_mode,
-		actual_image_count,
-		extent.width,
-		extent.height,
-		image_usage,
-		transform,
-		composite_alpha
-	);
+	snprintf(ctx->wsi_report, sizeof(ctx->wsi_report), "swapchainFormat=%d;colorSpace=%d;presentMode=%d;imageCount=%u;extent=%ux%u;usage=0x%x;transform=0x%x;compositeAlpha=0x%x", format.format, format.colorSpace, present_mode, actual_image_count,
+	         extent.width, extent.height, image_usage, transform, composite_alpha);
+
 	return VK_WSI_SUCCESS;
 }
 
 HL_PRIM VkShaderModule HL_NAME(vk_create_shader_module)(VkContext ctx, vbyte* data, int len) {
 	vk_clear_error();
+
 	if (data == nullptr || len <= 0 || (len & 3) != 0 || ((const uint32_t*)data)[0] != 0x07230203) {
 		vk_set_error("vkCreateShaderModule requires valid 32-bit aligned SPIR-V bytecode");
+
 		return nullptr;
 	}
+
 	VkShaderModule module = nullptr;
 	VkShaderModuleCreateInfo inf = {
 		.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
 		.codeSize = len,
 		.pCode = (const uint32_t*)data,
 	};
+
 	VkResult result = vkCreateShaderModule(ctx->device, &inf, nullptr, &module);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkCreateShaderModule failed: %s (%d)", vk_result_name(result), result);
+
 	return module;
 }
 
 HL_PRIM VkPipelineLayout HL_NAME(vk_create_pipeline_layout)(VkContext ctx, VkPipelineLayoutCreateInfo* info) {
 	VkPipelineLayout p = nullptr;
 	VkResult result = vkCreatePipelineLayout(ctx->device, info, nullptr, &p);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkCreatePipelineLayout failed: %s (%d)", vk_result_name(result), result);
+
 	return p;
 }
 
 HL_PRIM VkPipeline HL_NAME(vk_create_graphics_pipeline)(VkContext ctx, VkGraphicsPipelineCreateInfo* info) {
 	VkPipeline p = nullptr;
 	VkResult result = vkCreateGraphicsPipelines(ctx->device, nullptr, 1, info, nullptr, &p);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkCreateGraphicsPipelines failed: %s (%d)", vk_result_name(result), result);
+
 	return p;
 }
 
@@ -2000,10 +2214,13 @@ typedef struct {
 
 HL_PRIM VkPipeline HL_NAME(vk_create_compute_pipeline)(VkContext ctx, HLVkComputePipelineCreateInfo* info) {
 	VkPipeline pipeline = nullptr;
+
 	if (!info || !info->stage) {
 		vk_set_error("vkCreateComputePipelines requires a compute shader stage");
+
 		return nullptr;
 	}
+
 	VkComputePipelineCreateInfo native_info = {
 		.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
 		.pNext = info->next,
@@ -2013,64 +2230,81 @@ HL_PRIM VkPipeline HL_NAME(vk_create_compute_pipeline)(VkContext ctx, HLVkComput
 		.basePipelineHandle = info->base_pipeline_handle,
 		.basePipelineIndex = info->base_pipeline_index,
 	};
+
 	VkResult result = vkCreateComputePipelines(ctx->device, nullptr, 1, &native_info, nullptr, &pipeline);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkCreateComputePipelines failed: %s (%d)", vk_result_name(result), result);
+
 	return pipeline;
 }
 
 HL_PRIM VkRenderPass HL_NAME(vk_create_render_pass)(VkContext ctx, VkRenderPassCreateInfo* info) {
 	VkRenderPass p = nullptr;
 	vkCreateRenderPass(ctx->device, info, nullptr, &p);
+
 	return p;
 }
 
 HL_PRIM VkImageView HL_NAME(vk_create_image_view)(VkContext ctx, VkImageViewCreateInfo* info) {
 	VkImageView i = nullptr;
 	VkResult result = vkCreateImageView(ctx->device, info, nullptr, &i);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkCreateImageView failed: %s (%d)", vk_result_name(result), result);
+
 	return i;
 }
 
 HL_PRIM VkFramebuffer HL_NAME(vk_create_framebuffer)(VkContext ctx, VkFramebufferCreateInfo* info) {
 	VkFramebuffer b = nullptr;
 	vkCreateFramebuffer(ctx->device, info, nullptr, &b);
+
 	return b;
 }
 
 HL_PRIM VkDescriptorSetLayout HL_NAME(vk_create_descriptor_set_layout)(VkContext ctx, VkDescriptorSetLayoutCreateInfo* info) {
 	VkDescriptorSetLayout p = nullptr;
 	VkResult result = vkCreateDescriptorSetLayout(ctx->device, info, nullptr, &p);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkCreateDescriptorSetLayout failed: %s (%d)", vk_result_name(result), result);
+
 	return p;
 }
 
 HL_PRIM VkBuffer HL_NAME(vk_create_buffer)(VkContext ctx, VkBufferCreateInfo* info) {
 	VkBuffer b = nullptr;
 	VkResult result = vkCreateBuffer(ctx->device, info, nullptr, &b);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkCreateBuffer failed: %s (%d)", vk_result_name(result), result);
+
 	return b;
 }
 
 HL_PRIM VkBuffer HL_NAME(vk_create_buffer64)(VkContext ctx, int64_t size, int usage) {
 	vk_clear_error();
+
 	if (size <= 0) {
 		vk_set_error("vkCreateBuffer requires a positive size, got %lld", (long long)size);
+
 		return nullptr;
 	}
+
 	VkBufferCreateInfo info = {
 		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
 		.size = (VkDeviceSize)size,
 		.usage = (VkBufferUsageFlags)usage,
 		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
 	};
+
 	VkBuffer buffer = nullptr;
 	VkResult result = vkCreateBuffer(ctx->device, &info, nullptr, &buffer);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkCreateBuffer failed for %llu bytes: %s (%d)", (unsigned long long)info.size, vk_result_name(result), result);
+
 	return buffer;
 }
 
@@ -2098,10 +2332,12 @@ HL_PRIM void HL_NAME(vk_get_buffer_memory_requirements2)(VkContext ctx, VkBuffer
 	VkMemoryDedicatedRequirements dedicated = {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS,
 	};
+
 	VkMemoryRequirements2 requirements = {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2,
 		.pNext = &dedicated,
 	};
+
 	VkBufferMemoryRequirementsInfo2 info = {
 		.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2,
 		.buffer = buffer,
@@ -2113,66 +2349,80 @@ HL_PRIM void HL_NAME(vk_get_buffer_memory_requirements2)(VkContext ctx, VkBuffer
 HL_PRIM VkDeviceMemory HL_NAME(vk_allocate_memory)(VkContext ctx, VkMemoryAllocateInfo* inf) {
 	VkDeviceMemory m = nullptr;
 	VkResult result = vkAllocateMemory(ctx->device, inf, nullptr, &m);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkAllocateMemory failed: %s (%d)", vk_result_name(result), result);
+
 	return m;
 }
 
 HL_PRIM VkDeviceMemory HL_NAME(vk_allocate_memory64)(VkContext ctx, int64_t size, int memory_type_index, VkBuffer dedicated_buffer, VkImage dedicated_image) {
 	vk_clear_error();
+
 	if (size <= 0) {
 		vk_set_error("vkAllocateMemory requires a positive size, got %lld", (long long)size);
+
 		return nullptr;
 	}
+
 	if (memory_type_index < 0 || (uint32_t)memory_type_index >= ctx->memProps.memoryTypeCount) {
 		vk_set_error("vkAllocateMemory received invalid memory type index %d", memory_type_index);
+
 		return nullptr;
 	}
+
 	if (dedicated_buffer && dedicated_image) {
 		vk_set_error("A Vulkan memory allocation cannot be dedicated to both a buffer and an image");
+
 		return nullptr;
 	}
+
 	VkMemoryDedicatedAllocateInfo dedicated = {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO,
 		.buffer = dedicated_buffer,
 		.image = dedicated_image,
 	};
+
 	VkMemoryAllocateInfo info = {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
 		.pNext = dedicated_buffer || dedicated_image ? &dedicated : nullptr,
 		.allocationSize = (VkDeviceSize)size,
 		.memoryTypeIndex = (uint32_t)memory_type_index,
 	};
+
 	VkDeviceMemory memory = nullptr;
 	VkResult result = vkAllocateMemory(ctx->device, &info, nullptr, &memory);
+
 	if (result != VK_SUCCESS)
-		vk_set_error(
-			"vkAllocateMemory failed for %llu bytes using memory type %d: %s (%d)",
-			(unsigned long long)info.allocationSize,
-			memory_type_index,
-			vk_result_name(result),
-			result
-		);
+		vk_set_error("vkAllocateMemory failed for %llu bytes using memory type %d: %s (%d)", (unsigned long long)info.allocationSize, memory_type_index, vk_result_name(result), result);
+
 	return memory;
 }
 
 HL_PRIM vbyte* HL_NAME(vk_map_memory)(VkContext ctx, VkDeviceMemory mem, int offset, int size, int flags) {
 	if (mem == nullptr || size <= 0)
 		return nullptr;
+
 	void* ptr = nullptr;
+
 	if (vkMapMemory(ctx->device, mem, offset, size, flags, &ptr) != VK_SUCCESS)
 		return nullptr;
+
 	return ptr;
 }
 
 HL_PRIM vbyte* HL_NAME(vk_map_memory64)(VkContext ctx, VkDeviceMemory memory, int64_t offset, int64_t size, int flags) {
 	vk_clear_error();
+
 	if (!memory || offset < 0 || size <= 0)
 		return nullptr;
+
 	void* pointer = nullptr;
 	VkResult result = vkMapMemory(ctx->device, memory, (VkDeviceSize)offset, (VkDeviceSize)size, (VkMemoryMapFlags)flags, &pointer);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkMapMemory failed for offset %llu and size %llu: %s (%d)", (unsigned long long)offset, (unsigned long long)size, vk_result_name(result), result);
+
 	return result == VK_SUCCESS ? pointer : nullptr;
 }
 
@@ -2183,18 +2433,12 @@ static int mapped_memory_operation(VkContext ctx, VkDeviceMemory memory, int64_t
 		.offset = (VkDeviceSize)offset,
 		.size = (VkDeviceSize)size,
 	};
-	VkResult result = invalidate
-		? vkInvalidateMappedMemoryRanges(ctx->device, 1, &range)
-		: vkFlushMappedMemoryRanges(ctx->device, 1, &range);
+
+	VkResult result = invalidate ? vkInvalidateMappedMemoryRanges(ctx->device, 1, &range) : vkFlushMappedMemoryRanges(ctx->device, 1, &range);
+
 	if (result != VK_SUCCESS)
-		vk_set_error(
-			"%s failed for offset %llu and size %llu: %s (%d)",
-			invalidate ? "vkInvalidateMappedMemoryRanges" : "vkFlushMappedMemoryRanges",
-			(unsigned long long)range.offset,
-			(unsigned long long)range.size,
-			vk_result_name(result),
-			result
-		);
+		vk_set_error("%s failed for offset %llu and size %llu: %s (%d)", invalidate ? "vkInvalidateMappedMemoryRanges" : "vkFlushMappedMemoryRanges", (unsigned long long)range.offset, (unsigned long long)range.size, vk_result_name(result), result);
+
 	return result;
 }
 
@@ -2216,16 +2460,20 @@ HL_PRIM bool HL_NAME(vk_bind_buffer_memory)(VkContext ctx, VkBuffer buf, VkDevic
 
 HL_PRIM bool HL_NAME(vk_bind_buffer_memory64)(VkContext ctx, VkBuffer buffer, VkDeviceMemory memory, int64_t offset) {
 	VkResult result = vkBindBufferMemory(ctx->device, buffer, memory, (VkDeviceSize)offset);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkBindBufferMemory failed at offset %llu: %s (%d)", (unsigned long long)offset, vk_result_name(result), result);
+
 	return result == VK_SUCCESS;
 }
 
 HL_PRIM VkImage HL_NAME(vk_create_image)(VkContext ctx, VkImageCreateInfo* info) {
 	VkImage i = nullptr;
 	VkResult result = vkCreateImage(ctx->device, info, nullptr, &i);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkCreateImage failed: %s (%d)", vk_result_name(result), result);
+
 	return i;
 }
 
@@ -2237,10 +2485,12 @@ HL_PRIM void HL_NAME(vk_get_image_memory_requirements2)(VkContext ctx, VkImage i
 	VkMemoryDedicatedRequirements dedicated = {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS,
 	};
+
 	VkMemoryRequirements2 requirements = {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2,
 		.pNext = &dedicated,
 	};
+
 	VkImageMemoryRequirementsInfo2 info = {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
 		.image = image,
@@ -2251,89 +2501,112 @@ HL_PRIM void HL_NAME(vk_get_image_memory_requirements2)(VkContext ctx, VkImage i
 
 HL_PRIM bool HL_NAME(vk_bind_image_memory)(VkContext ctx, VkImage img, VkDeviceMemory mem, int offset) {
 	VkResult result = vkBindImageMemory(ctx->device, img, mem, offset);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkBindImageMemory failed: %s (%d)", vk_result_name(result), result);
+
 	return result == VK_SUCCESS;
 }
 
 HL_PRIM bool HL_NAME(vk_bind_image_memory64)(VkContext ctx, VkImage image, VkDeviceMemory memory, int64_t offset) {
 	VkResult result = vkBindImageMemory(ctx->device, image, memory, (VkDeviceSize)offset);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkBindImageMemory failed at offset %llu: %s (%d)", (unsigned long long)offset, vk_result_name(result), result);
+
 	return result == VK_SUCCESS;
 }
 
 HL_PRIM VkCommandPool HL_NAME(vk_create_command_pool)(VkContext ctx, VkCommandPoolCreateInfo* inf) {
 	VkCommandPool pool = nullptr;
 	VkResult result = vkCreateCommandPool(ctx->device, inf, nullptr, &pool);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkCreateCommandPool failed: %s (%d)", vk_result_name(result), result);
+
 	return pool;
 }
 
 HL_PRIM VkQueryPool HL_NAME(vk_create_query_pool)(VkContext ctx, VkQueryPoolCreateInfo* inf) {
 	VkQueryPool pool = nullptr;
 	VkResult result = vkCreateQueryPool(ctx->device, inf, nullptr, &pool);
+
 	if (result != VK_SUCCESS) {
 		vk_set_error("vkCreateQueryPool failed: %s (%d)", vk_result_name(result), result);
+
 		return nullptr;
 	}
+
 	return pool;
 }
 
-HL_PRIM int HL_NAME(vk_get_query_pool_results)(VkContext ctx, VkQueryPool pool, int first_query, int query_count,
-	int data_size, vbyte* data, int64_t stride, int flags) {
+HL_PRIM int HL_NAME(vk_get_query_pool_results)(VkContext ctx, VkQueryPool pool, int first_query, int query_count, int data_size, vbyte* data, int64_t stride, int flags) {
 	if (first_query < 0 || query_count <= 0 || data_size <= 0 || stride < 0) {
-		vk_set_error("Invalid Vulkan query result range: first=%d count=%d dataSize=%d stride=%lld",
-			first_query, query_count, data_size, (long long)stride);
+		vk_set_error("Invalid Vulkan query result range: first=%d count=%d dataSize=%d stride=%lld", first_query, query_count, data_size, (long long)stride);
+
 		return VK_ERROR_UNKNOWN;
 	}
-	VkResult result = vkGetQueryPoolResults(ctx->device, pool, (uint32_t)first_query, (uint32_t)query_count,
-		(size_t)data_size, data, (VkDeviceSize)stride, (VkQueryResultFlags)flags);
+
+	VkResult result = vkGetQueryPoolResults(ctx->device, pool, (uint32_t)first_query, (uint32_t)query_count, (size_t)data_size, data, (VkDeviceSize)stride, (VkQueryResultFlags)flags);
+
 	if (result != VK_SUCCESS && result != VK_NOT_READY)
 		vk_set_error("vkGetQueryPoolResults failed: %s (%d)", vk_result_name(result), result);
+
 	return result;
 }
 
 HL_PRIM int HL_NAME(vk_allocate_command_buffers)(VkContext ctx, VkCommandBufferAllocateInfo* inf, varray* buffers) {
 	VkResult result = vkAllocateCommandBuffers(ctx->device, inf, hl_aptr(buffers, VkCommandBuffer));
+
 	if (result == VK_SUCCESS && ctx->compat.vkCmdBeginRendering) {
 		for (uint32_t i = 0; i < inf->commandBufferCount; i++) {
 			VkCommandBuffer command = hl_aptr(buffers, VkCommandBuffer)[i];
 			uint32_t bucket = compat_bucket(command);
 			VkCompatCommand* entry = malloc(sizeof(*entry));
-			if (!entry) hl_error("Failed to allocate Vulkan command dispatch state");
-			*entry = (VkCompatCommand) { command, inf->commandPool, ctx, compat_commands[bucket] };
+
+			if (!entry)
+				hl_error("Failed to allocate Vulkan command dispatch state");
+			*entry = (VkCompatCommand){ command, inf->commandPool, ctx, compat_commands[bucket] };
 			compat_commands[bucket] = entry;
 			compat_command_count++;
 		}
 	}
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkAllocateCommandBuffers failed: %s (%d)", vk_result_name(result), result);
+
 	return result;
 }
 
 HL_PRIM VkDescriptorPool HL_NAME(vk_create_descriptor_pool)(VkContext ctx, VkDescriptorPoolCreateInfo* inf) {
 	vk_clear_error();
+
 	VkDescriptorPool pool = nullptr;
 	VkResult result = vkCreateDescriptorPool(ctx->device, inf, nullptr, &pool);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkCreateDescriptorPool failed: %s (%d)", vk_result_name(result), result);
+
 	return pool;
 }
 
 HL_PRIM int HL_NAME(vk_allocate_descriptor_sets)(VkContext ctx, VkDescriptorSetAllocateInfo* inf, varray* sets) {
 	vk_clear_error();
+
 	VkResult result = vkAllocateDescriptorSets(ctx->device, inf, hl_aptr(sets, VkDescriptorSet));
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkAllocateDescriptorSets failed for %u sets: %s (%d)", inf->descriptorSetCount, vk_result_name(result), result);
+
 	return result;
 }
 
 HL_PRIM int HL_NAME(vk_reset_descriptor_pool)(VkContext ctx, VkDescriptorPool pool) {
 	VkResult result = vkResetDescriptorPool(ctx->device, pool, 0);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkResetDescriptorPool failed: %s (%d)", vk_result_name(result), result);
+
 	return result;
 }
 
@@ -2347,6 +2620,7 @@ HL_PRIM void HL_NAME(vk_update_descriptor_image_sampler)(VkContext ctx, VkDescri
 		.imageView = view,
 		.imageLayout = layout,
 	};
+
 	VkWriteDescriptorSet write = {
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 		.dstSet = set,
@@ -2364,6 +2638,7 @@ HL_PRIM void HL_NAME(vk_update_descriptor_sampled_image)(VkContext ctx, VkDescri
 		.imageView = view,
 		.imageLayout = layout,
 	};
+
 	VkWriteDescriptorSet write = {
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 		.dstSet = set,
@@ -2380,6 +2655,7 @@ HL_PRIM void HL_NAME(vk_update_descriptor_sampler)(VkContext ctx, VkDescriptorSe
 	VkDescriptorImageInfo image_info = {
 		.sampler = sampler,
 	};
+
 	VkWriteDescriptorSet write = {
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 		.dstSet = set,
@@ -2394,12 +2670,14 @@ HL_PRIM void HL_NAME(vk_update_descriptor_sampler)(VkContext ctx, VkDescriptorSe
 
 HL_PRIM void HL_NAME(vk_update_descriptor_sampled_image_range)(VkContext ctx, VkDescriptorSet set, int binding, int first_element, varray* views, int layout) {
 	VkDescriptorImageInfo* image_infos = malloc(sizeof(VkDescriptorImageInfo) * views->size);
+
 	for (int i = 0; i < views->size; i++) {
-		image_infos[i] = (VkDescriptorImageInfo) {
+		image_infos[i] = (VkDescriptorImageInfo){
 			.imageView = hl_aptr(views, VkImageView)[i],
 			.imageLayout = (VkImageLayout)layout,
 		};
 	}
+
 	VkWriteDescriptorSet write = {
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 		.dstSet = set,
@@ -2415,8 +2693,10 @@ HL_PRIM void HL_NAME(vk_update_descriptor_sampled_image_range)(VkContext ctx, Vk
 
 HL_PRIM void HL_NAME(vk_update_descriptor_sampler_range)(VkContext ctx, VkDescriptorSet set, int binding, int first_element, varray* samplers) {
 	VkDescriptorImageInfo* image_infos = malloc(sizeof(VkDescriptorImageInfo) * samplers->size);
+
 	for (int i = 0; i < samplers->size; i++)
-		image_infos[i] = (VkDescriptorImageInfo) {.sampler = hl_aptr(samplers, VkSampler)[i]};
+		image_infos[i] = (VkDescriptorImageInfo){ .sampler = hl_aptr(samplers, VkSampler)[i] };
+
 	VkWriteDescriptorSet write = {
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 		.dstSet = set,
@@ -2436,6 +2716,7 @@ HL_PRIM void HL_NAME(vk_update_descriptor_storage_image)(VkContext ctx, VkDescri
 		.imageView = view,
 		.imageLayout = layout,
 	};
+
 	VkWriteDescriptorSet write = {
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 		.dstSet = set,
@@ -2454,6 +2735,7 @@ HL_PRIM void HL_NAME(vk_update_descriptor_buffer)(VkContext ctx, VkDescriptorSet
 		.offset = (VkDeviceSize)offset,
 		.range = (VkDeviceSize)range,
 	};
+
 	VkWriteDescriptorSet write = {
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 		.dstSet = set,
@@ -2471,6 +2753,7 @@ HL_PRIM void HL_NAME(vk_update_descriptor_buffer_element)(VkContext ctx, VkDescr
 		.offset = (VkDeviceSize)offset,
 		.range = (VkDeviceSize)range,
 	};
+
 	VkWriteDescriptorSet write = {
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 		.dstSet = set,
@@ -2486,14 +2769,17 @@ HL_PRIM void HL_NAME(vk_update_descriptor_buffer_element)(VkContext ctx, VkDescr
 HL_PRIM void HL_NAME(vk_update_descriptor_buffer_range)(VkContext ctx, VkDescriptorSet set, int binding, int first_element, int descriptor_type, varray* buffers, varray* ranges) {
 	if (buffers->size != ranges->size)
 		hl_error("Vulkan descriptor buffer/range batch sizes differ");
+
 	VkDescriptorBufferInfo* buffer_infos = malloc(sizeof(VkDescriptorBufferInfo) * buffers->size);
+
 	for (int i = 0; i < buffers->size; i++) {
-		buffer_infos[i] = (VkDescriptorBufferInfo) {
+		buffer_infos[i] = (VkDescriptorBufferInfo){
 			.buffer = hl_aptr(buffers, VkBuffer)[i],
 			.offset = 0,
 			.range = (VkDeviceSize)hl_aptr(ranges, int64_t)[i],
 		};
 	}
+
 	VkWriteDescriptorSet write = {
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 		.dstSet = set,
@@ -2510,64 +2796,81 @@ HL_PRIM void HL_NAME(vk_update_descriptor_buffer_range)(VkContext ctx, VkDescrip
 HL_PRIM VkSampler HL_NAME(vk_create_sampler)(VkContext ctx, VkSamplerCreateInfo* inf) {
 	VkSampler sampler = nullptr;
 	VkResult result = vkCreateSampler(ctx->device, inf, nullptr, &sampler);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkCreateSampler failed: %s (%d)", vk_result_name(result), result);
+
 	return sampler;
 }
 
 HL_PRIM VkFence HL_NAME(vk_create_fence)(VkContext ctx, VkFenceCreateInfo* inf) {
 	VkFence fence = nullptr;
 	VkResult result = vkCreateFence(ctx->device, inf, nullptr, &fence);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkCreateFence failed: %s (%d)", vk_result_name(result), result);
+
 	return fence;
 }
 
 HL_PRIM VkSemaphore HL_NAME(vk_create_semaphore)(VkContext ctx, VkSemaphoreCreateInfo* inf) {
 	VkSemaphore s = nullptr;
 	VkResult result = vkCreateSemaphore(ctx->device, inf, nullptr, &s);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkCreateSemaphore failed: %s (%d)", vk_result_name(result), result);
+
 	return s;
 }
 
 HL_PRIM int HL_NAME(vk_reset_fence)(VkContext ctx, VkFence f) {
 	VkResult result = vkResetFences(ctx->device, 1, &f);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkResetFences failed: %s (%d)", vk_result_name(result), result);
+
 	return result;
 }
 
 HL_PRIM int HL_NAME(vk_wait_for_fence)(VkContext ctx, VkFence f, double timeout) {
 	uint64_t t = timeout < 0 ? UINT64_MAX : (uint64_t)timeout;
 	VkResult result = vkWaitForFences(ctx->device, 1, &f, VK_TRUE, t);
+
 	if (result != VK_SUCCESS && result != VK_TIMEOUT)
 		vk_set_error("vkWaitForFences failed: %s (%d)", vk_result_name(result), result);
+
 	return result;
 }
 
 HL_PRIM int HL_NAME(vk_get_fence_status)(VkContext ctx, VkFence fence) {
 	VkResult result = vkGetFenceStatus(ctx->device, fence);
+
 	if (result != VK_SUCCESS && result != VK_NOT_READY)
 		vk_set_error("vkGetFenceStatus failed: %s (%d)", vk_result_name(result), result);
+
 	return result;
 }
 
 HL_PRIM int HL_NAME(vk_acquire_next_image)(VkContext ctx, VkSemaphore lock, int* out_image) {
 	vk_clear_error();
+
 	uint32_t image = 0;
 	VkResult result = vkAcquireNextImageKHR(ctx->device, ctx->swapchain, UINT64_MAX, lock, VK_NULL_HANDLE, &image);
+
 	if (result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR)
 		*out_image = (int)image;
 	else
 		vk_set_error("vkAcquireNextImageKHR failed: %s (%d)", vk_result_name(result), result);
+
 	return wsi_status(result);
 }
 
 HL_PRIM int HL_NAME(vk_queue_submit)(VkContext ctx, VkSubmitInfo* inf, VkFence fence) {
 	VkResult result = vkQueueSubmit(ctx->graphics_queue, 1, inf, fence);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkQueueSubmit failed: %s (%d)", vk_result_name(result), result);
+
 	return result;
 }
 
@@ -2576,33 +2879,42 @@ HL_PRIM int HL_NAME(vk_submit_command)(VkContext ctx, VkCommandBuffer command, V
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
 		.commandBuffer = command,
 	};
+
 	VkSubmitInfo2 submit = {
 		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
 		.commandBufferInfoCount = 1,
 		.pCommandBufferInfos = &command_info,
 	};
+
 	VkResult result = (ctx->compat.vkQueueSubmit2 ? ctx->compat.vkQueueSubmit2 : vkQueueSubmit2)(ctx->graphics_queue, 1, &submit, fence);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkQueueSubmit2 failed: %s (%d)", vk_result_name(result), result);
+
 	return result;
 }
 
 HL_PRIM int HL_NAME(vk_queue_wait_idle)(VkContext ctx) {
 	VkResult result = vkQueueWaitIdle(ctx->graphics_queue);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkQueueWaitIdle failed: %s (%d)", vk_result_name(result), result);
+
 	return result;
 }
 
 HL_PRIM int HL_NAME(vk_wait_idle)(VkContext ctx) {
 	VkResult result = vkDeviceWaitIdle(ctx->device);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkDeviceWaitIdle failed during shutdown: %s (%d)", vk_result_name(result), result);
+
 	return result;
 }
 
 HL_PRIM int HL_NAME(vk_present)(VkContext ctx, VkSemaphore sem, int image) {
 	vk_clear_error();
+
 	VkPresentInfoKHR presentInfo = {
 		.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
 		.waitSemaphoreCount = 1,
@@ -2611,9 +2923,12 @@ HL_PRIM int HL_NAME(vk_present)(VkContext ctx, VkSemaphore sem, int image) {
 		.pSwapchains = &ctx->swapchain,
 		.pImageIndices = &image,
 	};
+
 	VkResult result = vkQueuePresentKHR(ctx->present_queue, &presentInfo);
+
 	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
 		vk_set_error("vkQueuePresentKHR failed: %s (%d)", vk_result_name(result), result);
+
 	return wsi_status(result);
 }
 
@@ -2653,6 +2968,7 @@ HL_PRIM void HL_NAME(vk_destroy_query_pool)(VkContext ctx, VkQueryPool pool) {
 HL_PRIM void HL_NAME(vk_free_command_buffers)(VkContext ctx, VkCommandPool pool, varray* cmd) {
 	for (int i = 0; i < cmd->size; i++)
 		remove_compat_commands(ctx, pool, hl_aptr(cmd, VkCommandBuffer)[i]);
+
 	vkFreeCommandBuffers(ctx->device, pool, cmd->size, hl_aptr(cmd, VkCommandBuffer));
 }
 
@@ -2844,22 +3160,28 @@ DEFINE_PRIM(_BOOL, vk_set_shader_module_name, _VCTX _SHADER_MODULE _BYTES);
 
 HL_PRIM int HL_NAME(vk_command_reset)(VkCommandBuffer out) {
 	VkResult result = vkResetCommandBuffer(out, 0);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkResetCommandBuffer failed: %s (%d)", vk_result_name(result), result);
+
 	return result;
 }
 
 HL_PRIM int HL_NAME(vk_command_begin)(VkCommandBuffer out, VkCommandBufferBeginInfo* inf) {
 	VkResult result = vkBeginCommandBuffer(out, inf);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkBeginCommandBuffer failed: %s (%d)", vk_result_name(result), result);
+
 	return result;
 }
 
 HL_PRIM int HL_NAME(vk_command_end)(VkCommandBuffer out) {
 	VkResult result = vkEndCommandBuffer(out);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkEndCommandBuffer failed: %s (%d)", vk_result_name(result), result);
+
 	return result;
 }
 
@@ -2938,6 +3260,7 @@ HL_PRIM void HL_NAME(vk_begin_dynamic_rendering_clear)(VkCommandBuffer command, 
 			},
 		},
 	};
+
 	VkDependencyInfo dependency = {
 		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 		.imageMemoryBarrierCount = info->depth_image ? 2 : 1,
@@ -2953,6 +3276,7 @@ HL_PRIM void HL_NAME(vk_begin_dynamic_rendering_clear)(VkCommandBuffer command, 
 		.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
 		.clearValue.color = { .float32 = { info->red, info->green, info->blue, info->alpha } },
 	};
+
 	VkRenderingAttachmentInfo depth_attachment = {
 		.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
 		.imageView = info->depth_view,
@@ -2961,6 +3285,7 @@ HL_PRIM void HL_NAME(vk_begin_dynamic_rendering_clear)(VkCommandBuffer command, 
 		.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
 		.clearValue.depthStencil = { info->depth, (uint32_t)info->stencil },
 	};
+
 	VkRenderingInfo rendering = {
 		.sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
 		.renderArea = { .offset = { 0, 0 }, .extent = { (uint32_t)info->width, (uint32_t)info->height } },
@@ -2970,22 +3295,24 @@ HL_PRIM void HL_NAME(vk_begin_dynamic_rendering_clear)(VkCommandBuffer command, 
 		.pDepthAttachment = info->depth_view ? &depth_attachment : nullptr,
 	};
 	compat_vkCmdBeginRendering(command, &rendering);
+
 	VkViewport viewport = { 0.0f, 0.0f, (float)info->width, (float)info->height, 0.0f, 1.0f };
 	VkRect2D scissor = { .offset = { 0, 0 }, .extent = { (uint32_t)info->width, (uint32_t)info->height } };
 	vkCmdSetViewport(command, 0, 1, &viewport);
 	vkCmdSetScissor(command, 0, 1, &scissor);
 }
 
-HL_PRIM void HL_NAME(vk_begin_dynamic_rendering)(VkCommandBuffer command, int width, int height, int color_count,
-	VkImageView* color_views, VkImageLayout color_layout, VkImageView depth_view, VkImageLayout depth_layout,
-	VkImageView stencil_view, VkImageLayout stencil_layout) {
+HL_PRIM void HL_NAME(vk_begin_dynamic_rendering)(VkCommandBuffer command, int width, int height, int color_count, VkImageView* color_views, VkImageLayout color_layout, VkImageView depth_view, VkImageLayout depth_layout, VkImageView stencil_view,
+                                                 VkImageLayout stencil_layout) {
 	VkRenderingAttachmentInfo color_attachments[32];
+
 	if (color_count < 0 || color_count > 32) {
 		vk_set_error("vkCmdBeginRendering color attachment count %d is outside the supported range 0...32", color_count);
 		return;
 	}
+
 	for (int i = 0; i < color_count; i++) {
-		color_attachments[i] = (VkRenderingAttachmentInfo) {
+		color_attachments[i] = (VkRenderingAttachmentInfo){
 			.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
 			.imageView = color_views[i],
 			.imageLayout = color_layout,
@@ -2993,22 +3320,23 @@ HL_PRIM void HL_NAME(vk_begin_dynamic_rendering)(VkCommandBuffer command, int wi
 			.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
 		};
 	}
+
 	VkRenderingAttachmentInfo depth_attachment = {
 		.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
 		.imageView = depth_view,
 		.imageLayout = depth_layout,
 		.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
-		.storeOp = depth_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
-			? (VkAttachmentStoreOp)1000301000 : VK_ATTACHMENT_STORE_OP_STORE,
+		.storeOp = depth_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL ? (VkAttachmentStoreOp)1000301000 : VK_ATTACHMENT_STORE_OP_STORE,
 	};
+
 	VkRenderingAttachmentInfo stencil_attachment = {
 		.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
 		.imageView = stencil_view,
 		.imageLayout = stencil_layout,
 		.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
-		.storeOp = stencil_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
-			? (VkAttachmentStoreOp)1000301000 : VK_ATTACHMENT_STORE_OP_STORE,
+		.storeOp = stencil_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL ? (VkAttachmentStoreOp)1000301000 : VK_ATTACHMENT_STORE_OP_STORE,
 	};
+
 	VkRenderingInfo rendering = {
 		.sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
 		.renderArea = { .offset = { 0, 0 }, .extent = { (uint32_t)width, (uint32_t)height } },
@@ -3021,15 +3349,14 @@ HL_PRIM void HL_NAME(vk_begin_dynamic_rendering)(VkCommandBuffer command, int wi
 	compat_vkCmdBeginRendering(command, &rendering);
 }
 
-HL_PRIM void HL_NAME(vk_begin_dynamic_rendering_native)(VkCommandBuffer command, int width, int height, int color_count,
-	varray* color_views, VkImageLayout color_layout, VkImageView depth_view, VkImageLayout depth_layout,
-	VkImageView stencil_view, VkImageLayout stencil_layout) {
-	HL_NAME(vk_begin_dynamic_rendering)(command, width, height, color_count, hl_aptr(color_views, VkImageView), color_layout,
-		depth_view, depth_layout, stencil_view, stencil_layout);
+HL_PRIM void HL_NAME(vk_begin_dynamic_rendering_native)(VkCommandBuffer command, int width, int height, int color_count, varray* color_views, VkImageLayout color_layout, VkImageView depth_view, VkImageLayout depth_layout, VkImageView stencil_view,
+                                                        VkImageLayout stencil_layout) {
+	HL_NAME(vk_begin_dynamic_rendering)(command, width, height, color_count, hl_aptr(color_views, VkImageView), color_layout, depth_view, depth_layout, stencil_view, stencil_layout);
 }
 
 HL_PRIM void HL_NAME(vk_end_dynamic_rendering_present)(VkCommandBuffer command, VkImage color_image) {
 	compat_vkCmdEndRendering(command);
+
 	VkImageMemoryBarrier2 barrier = {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
 		.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -3049,6 +3376,7 @@ HL_PRIM void HL_NAME(vk_end_dynamic_rendering_present)(VkCommandBuffer command, 
 			.layerCount = 1,
 		},
 	};
+
 	VkDependencyInfo dependency = {
 		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 		.imageMemoryBarrierCount = 1,
@@ -3068,17 +3396,20 @@ HL_PRIM int HL_NAME(vk_submit_frame)(VkContext ctx, VkCommandBuffer command, VkS
 		.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
 		.deviceIndex = 0,
 	};
+
 	VkCommandBufferSubmitInfo command_info = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
 		.commandBuffer = command,
 		.deviceMask = 0,
 	};
+
 	VkSemaphoreSubmitInfo signal = {
 		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
 		.semaphore = finished,
 		.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
 		.deviceIndex = 0,
 	};
+
 	VkSubmitInfo2 submit = {
 		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
 		.waitSemaphoreInfoCount = acquired ? 1 : 0,
@@ -3088,9 +3419,12 @@ HL_PRIM int HL_NAME(vk_submit_frame)(VkContext ctx, VkCommandBuffer command, VkS
 		.signalSemaphoreInfoCount = finished ? 1 : 0,
 		.pSignalSemaphoreInfos = finished ? &signal : nullptr,
 	};
+
 	VkResult result = (ctx->compat.vkQueueSubmit2 ? ctx->compat.vkQueueSubmit2 : vkQueueSubmit2)(ctx->graphics_queue, 1, &submit, fence);
+
 	if (result != VK_SUCCESS)
 		vk_set_error("vkQueueSubmit2 failed: %s (%d)", vk_result_name(result), result);
+
 	return result;
 }
 
@@ -3236,11 +3570,13 @@ HL_PRIM void HL_NAME(vk_copy_buffer_to_image)(VkCommandBuffer out, VkBuffer buf,
 static VkBufferImageCopy2* copy_buffer_image_regions(int count, const VkBufferImageCopy* regions) {
 	if (count <= 0 || !regions)
 		return nullptr;
+
 	VkBufferImageCopy2* copies = malloc(sizeof(VkBufferImageCopy2) * count);
+
 	if (!copies)
 		return nullptr;
 	for (int index = 0; index < count; index++) {
-		copies[index] = (VkBufferImageCopy2) {
+		copies[index] = (VkBufferImageCopy2){
 			.sType = VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2,
 			.bufferOffset = regions[index].bufferOffset,
 			.bufferRowLength = regions[index].bufferRowLength,
@@ -3250,13 +3586,16 @@ static VkBufferImageCopy2* copy_buffer_image_regions(int count, const VkBufferIm
 			.imageExtent = regions[index].imageExtent,
 		};
 	}
+
 	return copies;
 }
 
 HL_PRIM void HL_NAME(vk_copy_buffer_to_image2)(VkCommandBuffer command, VkBuffer buffer, VkImage image, int layout, int count, VkBufferImageCopy* regions) {
 	VkBufferImageCopy2* copies = copy_buffer_image_regions(count, regions);
+
 	if (!copies)
 		return;
+
 	VkCopyBufferToImageInfo2 info = {
 		.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2,
 		.srcBuffer = buffer,
@@ -3271,8 +3610,10 @@ HL_PRIM void HL_NAME(vk_copy_buffer_to_image2)(VkCommandBuffer command, VkBuffer
 
 HL_PRIM void HL_NAME(vk_copy_image_to_buffer2)(VkCommandBuffer command, VkImage image, int layout, VkBuffer buffer, int count, VkBufferImageCopy* regions) {
 	VkBufferImageCopy2* copies = copy_buffer_image_regions(count, regions);
+
 	if (!copies)
 		return;
+
 	VkCopyImageToBufferInfo2 info = {
 		.sType = VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2,
 		.srcImage = image,
@@ -3307,11 +3648,12 @@ typedef struct {
 	int dst_z1;
 } LimenImageBlitRegion;
 
-HL_PRIM void HL_NAME(vk_blit_image2)(VkCommandBuffer command, VkImage source, int source_layout, VkImage destination, int destination_layout,
-	int filter, int count, const LimenImageBlitRegion* regions) {
+HL_PRIM void HL_NAME(vk_blit_image2)(VkCommandBuffer command, VkImage source, int source_layout, VkImage destination, int destination_layout, int filter, int count, const LimenImageBlitRegion* regions) {
 	if (count <= 0 || !regions)
 		return;
+
 	VkImageBlit2* blits = malloc(sizeof(VkImageBlit2) * count);
+
 	if (!blits)
 		return;
 	for (int index = 0; index < count; index++) {
@@ -3340,6 +3682,7 @@ HL_PRIM void HL_NAME(vk_blit_image2)(VkCommandBuffer command, VkImage source, in
 			},
 		};
 	}
+
 	VkBlitImageInfo2 info = {
 		.sType = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2,
 		.srcImage = source,
@@ -3361,6 +3704,7 @@ HL_PRIM void HL_NAME(vk_copy_buffer2)(VkCommandBuffer command, VkBuffer source, 
 		.dstOffset = (VkDeviceSize)destination_offset,
 		.size = (VkDeviceSize)size,
 	};
+
 	VkCopyBufferInfo2 info = {
 		.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2,
 		.srcBuffer = source,
@@ -3384,6 +3728,7 @@ HL_PRIM void HL_NAME(vk_buffer_barrier2)(VkCommandBuffer command, VkBuffer buffe
 		.offset = (VkDeviceSize)offset,
 		.size = (VkDeviceSize)size,
 	};
+
 	VkDependencyInfo dependency = {
 		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 		.bufferMemoryBarrierCount = 1,
@@ -3392,8 +3737,8 @@ HL_PRIM void HL_NAME(vk_buffer_barrier2)(VkCommandBuffer command, VkBuffer buffe
 	compat_vkCmdPipelineBarrier2(command, &dependency);
 }
 
-HL_PRIM void HL_NAME(vk_image_barrier2)(VkCommandBuffer command, VkImage image, int aspect_mask, int base_mip_level, int level_count, int base_array_layer, int layer_count, int old_layout, int new_layout,
-	int64_t source_stage, int64_t source_access, int64_t destination_stage, int64_t destination_access) {
+HL_PRIM void HL_NAME(vk_image_barrier2)(VkCommandBuffer command, VkImage image, int aspect_mask, int base_mip_level, int level_count, int base_array_layer, int layer_count, int old_layout, int new_layout, int64_t source_stage, int64_t source_access,
+                                        int64_t destination_stage, int64_t destination_access) {
 	VkImageMemoryBarrier2 barrier = {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
 		.srcStageMask = (VkPipelineStageFlags2)source_stage,
@@ -3413,6 +3758,7 @@ HL_PRIM void HL_NAME(vk_image_barrier2)(VkCommandBuffer command, VkImage image, 
 			.layerCount = (uint32_t)layer_count,
 		},
 	};
+
 	VkDependencyInfo dependency = {
 		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 		.imageMemoryBarrierCount = 1,
@@ -3429,6 +3775,7 @@ HL_PRIM void HL_NAME(vk_memory_barrier2)(VkCommandBuffer command, int64_t source
 		.dstStageMask = (VkPipelineStageFlags2)destination_stage,
 		.dstAccessMask = (VkAccessFlags2)destination_access,
 	};
+
 	VkDependencyInfo dependency = {
 		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 		.memoryBarrierCount = 1,
@@ -3438,7 +3785,7 @@ HL_PRIM void HL_NAME(vk_memory_barrier2)(VkCommandBuffer command, int64_t source
 }
 
 HL_PRIM void HL_NAME(vk_pipeline_barrier)(VkCommandBuffer out, VkPipelineStageFlags srcMask, VkPipelineStageFlags dstMask, VkDependencyFlags flags, int memCount, VkMemoryBarrier* memBarriers, int bufferCount, VkBufferMemoryBarrier* bufBarriers,
-																																										int imageCount, VkImageMemoryBarrier* imgBarriers) {
+                                          int imageCount, VkImageMemoryBarrier* imgBarriers) {
 	vkCmdPipelineBarrier(out, srcMask, dstMask, flags, memCount, memBarriers, bufferCount, bufBarriers, imageCount, imgBarriers);
 }
 
