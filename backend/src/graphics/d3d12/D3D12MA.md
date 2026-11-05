@@ -1,7 +1,7 @@
 # D3D12MA binding
 
 Enable `LIMEN_BUILD_D3D12MA=ON` on Windows x64 with D3D12 enabled; default OFF.
-D3D12MA 3.1.0 is archive-hash pinned and statically linked. Its MIT license is
+D3D12MA 3.2.1 is archive-hash pinned and statically linked. Its MIT license is
 installed beside the modules. Calls and device lifecycle operations are serialized
 on the rendering thread.
 
@@ -24,4 +24,4 @@ With LIMEN_BUILD_TESTS, run `limen_d3d12ma_test`: WARP allocation/mapping/statis
 alias clear/readback, original-owner-first release and final COM reference checks.
 The alias test requires the D3D12 debug layer.
 
-[Pinned ownership contract](https://github.com/GPUOpen-LibrariesAndSDKs/D3D12MemoryAllocator/blob/v3.1.0/include/D3D12MemAlloc.h).
+[Pinned ownership contract](https://github.com/GPUOpen-LibrariesAndSDKs/D3D12MemoryAllocator/blob/v3.2.1/include/D3D12MemAlloc.h).

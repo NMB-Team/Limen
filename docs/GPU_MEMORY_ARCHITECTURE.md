@@ -1,6 +1,6 @@
 # GPU memory
 
-Vulkan uses VMA 3.3.0. D3D12MA 3.1.0 remains optional; D3D12 keeps its legacy default.
+Vulkan uses VMA 3.5.0. D3D12MA 3.2.1 remains optional; D3D12 keeps its legacy default.
 Dependencies are pinned in CMake. Aliasing is separately controlled; defragmentation
 is not implemented. Resources must remain immovable because the renderer has no
 relocation transaction for copies, descriptors, mappings and queue lifetimes.
