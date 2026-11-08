@@ -2,6 +2,14 @@ package limen.graphics.renderer.opengl.device;
 
 @:hlNative("limen", "opengl_gl_")
 class Capabilities {
+	public static inline final SUPPORTS_MULTI_DRAW_INDIRECT = 0;
+	public static inline final SUPPORTS_INDIRECT_COUNT = 1;
+	public static inline final SUPPORTS_COMPUTE = 2;
+	public static inline final SUPPORTS_DEPTH_CLAMP = 3;
+	public static inline final SUPPORTS_TIMER_QUERIES = 4;
+	public static inline final SUPPORTS_DEBUG_OUTPUT = 5;
+	public static inline final SUPPORTS_INSTANCING = 6;
+
 	@:hlNative("limen", "opengl_gl_set_debug")
 	public static function setDebug(enable:Bool):Bool {
 		return false;

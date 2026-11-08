@@ -69,8 +69,73 @@
 #define glCopyImageSubData(...) hl_error("function not resolved");
 #endif
 
+#ifdef HL_GL_DYNAMIC_IMPORTS
+#define GL_REQUIRE_PROC(fun) if (!fun) hl_error("OpenGL function unavailable: %s", #fun)
+#else
+#define GL_REQUIRE_PROC(fun)
+#endif
+
+static bool gl_version_at_least(int desktop, int es) {
+	const char* version = (const char*)glGetString(GL_VERSION);
+	if (!version) return false;
+	bool is_es = strncmp(version, "OpenGL ES", 9) == 0;
+	const char* number = version;
+	while (*number && (*number < '0' || *number > '9')) number++;
+	int major = 0, minor = 0;
+	sscanf(number, "%d.%d", &major, &minor);
+	int required = is_es ? es : desktop;
+	return required > 0 && major * 100 + minor >= required;
+}
+
+static bool gl_extension(const char* name) {
+	if (!*name || strchr(name, ' ')) return false;
+	if (gl_version_at_least(300, 300)) {
+#ifdef HL_GL_DYNAMIC_IMPORTS
+		if (!glGetStringi) return false;
+#endif
+		GLint count = 0;
+		glGetIntegerv(GL_NUM_EXTENSIONS, &count);
+		for (int i = 0; i < count; i++) {
+			const char* ext = (const char*)glGetStringi(GL_EXTENSIONS, i);
+			if (ext && strcmp(ext, name) == 0) return true;
+		}
+		return false;
+	}
+	const char* extensions = (const char*)glGetString(GL_EXTENSIONS);
+	if (!extensions) return false;
+	size_t length = strlen(name);
+	for (const char* ext = strstr(extensions, name); ext; ext = strstr(ext + length, name))
+		if ((ext == extensions || ext[-1] == ' ') && (ext[length] == 0 || ext[length] == ' ')) return true;
+	return false;
+}
+
+static bool gl_capability(int feature) {
+	switch (feature) {
+	case 3: return gl_version_at_least(302, 0) || gl_extension("GL_ARB_depth_clamp") || gl_extension("GL_EXT_depth_clamp") || gl_extension("GL_NV_depth_clamp");
+#ifdef HL_GL_DYNAMIC_IMPORTS
+	case 0: return glMultiDrawElementsIndirect && (gl_version_at_least(403, 0) || gl_extension("GL_ARB_multi_draw_indirect"));
+	case 1: return gl_capability(0) && (gl_version_at_least(406, 0) || gl_extension("GL_ARB_indirect_parameters")) && (limen_gl_get_proc_address("glMultiDrawElementsIndirectCount") || limen_gl_get_proc_address("glMultiDrawElementsIndirectCountARB"));
+	case 2: return glDispatchCompute && glMemoryBarrier && glBindImageTexture && glBindBufferBase && glGetProgramResourceIndex && glShaderStorageBlockBinding && (gl_version_at_least(403, 0) || (gl_extension("GL_ARB_compute_shader") && gl_extension("GL_ARB_shader_storage_buffer_object") && gl_extension("GL_ARB_shader_image_load_store") && gl_extension("GL_ARB_program_interface_query")));
+	case 4: return glGenQueries && glDeleteQueries && glBeginQuery && glEndQuery && glGetQueryObjectiv && glGetQueryObjectui64v && glQueryCounter && (gl_version_at_least(303, 0) || gl_extension("GL_ARB_timer_query"));
+	case 5: return glDebugMessageCallback && glDebugMessageControl && (gl_version_at_least(403, 0) || gl_extension("GL_KHR_debug"));
+	case 6: return glVertexAttribDivisor && glDrawArraysInstanced && glDrawElementsInstanced && (gl_version_at_least(303, 300) || (gl_extension("GL_ARB_instanced_arrays") && gl_extension("GL_ARB_draw_instanced")));
+#else
+#if defined(HL_MAC)
+	case 4: return gl_version_at_least(303, 0);
+#endif
+	case 6: return gl_version_at_least(303, 300);
+#endif
+	default: return false;
+	}
+}
+
+static void gl_require(int feature, const char* message) {
+	if (!gl_capability(feature)) hl_error("%s", message);
+}
+
 static int GLLoadAPI() {
 #include "GLImports.h"
+	if (!glGetString || !glGetIntegerv || !glGetString(GL_VERSION)) return 1;
 #ifdef HL_GL_DYNAMIC_IMPORTS
 	if (glGenFramebuffers == nullptr) {
 		glGenFramebuffers = (PFNGLGENFRAMEBUFFERSPROC)limen_gl_get_proc_address("glGenFramebuffersEXT");
@@ -124,14 +189,13 @@ static int GLLoadAPI() {
 		glDrawElementsInstanced = (PFNGLDRAWELEMENTSINSTANCEDPROC)limen_gl_get_proc_address("glDrawElementsInstancedARB");
 	}
 
-	if (glCreateProgram == nullptr || glDeleteProgram == nullptr || glLinkProgram == nullptr || glAttachShader == nullptr || glGetProgramInfoLog == nullptr || glGetUniformLocation == nullptr || glGetAttribLocation == nullptr ||
-	    glCreateShader == nullptr || glDeleteShader == nullptr || glShaderSource == nullptr || glCompileShader == nullptr || glGetShaderInfoLog == nullptr || glGetShaderiv == nullptr || glGetProgramiv == nullptr || glUseProgram == nullptr ||
-	    glGenBuffers == nullptr || glBindBuffer == nullptr || glBufferData == nullptr || glBufferSubData == nullptr || glDeleteBuffers == nullptr || glEnableVertexAttribArray == nullptr || glDisableVertexAttribArray == nullptr ||
-	    glVertexAttribPointer == nullptr || glDrawBuffers == nullptr || glGenFramebuffers == nullptr || glBindFramebuffer == nullptr || glFramebufferTexture2D == nullptr || glDeleteFramebuffers == nullptr || glGenRenderbuffers == nullptr ||
-	    glBindRenderbuffer == nullptr || glRenderbufferStorage == nullptr || glFramebufferRenderbuffer == nullptr || glDeleteRenderbuffers == nullptr || glGenerateMipmap == nullptr || glUniform1i == nullptr || glUniform3fv == nullptr ||
-	    glUniform4fv == nullptr || glUniformMatrix3fv == nullptr || glUniformMatrix4fv == nullptr || glUniform1f == nullptr || glUniform2f == nullptr || glUniform3f == nullptr || glUniform4f == nullptr) {
-		return 1;
-	}
+#undef GL_IMPORT
+#define GL_IMPORT(fun, t) if (fun == nullptr) { fprintf(stderr, "Required OpenGL function missing: %s\n", #fun); return 1; }
+#define GL_IMPORT_OPTIONAL(fun, t)
+#include "GLImports.h"
+#undef GL_IMPORT_OPTIONAL
+#undef GL_IMPORT
+
 #endif
 	return 0;
 }
@@ -151,10 +215,14 @@ HL_PRIM bool HL_NAME(gl_init)() {
 
 HL_PRIM bool HL_NAME(gl_set_debug)(bool enable) {
 #ifdef GL_VERSION_4_3
+	if (!gl_capability(5)) return false;
 	if (enable) {
 		glEnable(GL_DEBUG_OUTPUT);
+
 		glDebugMessageControl(GL_DONT_CARE, GL_DEBUG_TYPE_PERFORMANCE, GL_DONT_CARE, 0, nullptr, GL_FALSE);
+
 		glDebugMessageControl(GL_DONT_CARE, GL_DEBUG_TYPE_OTHER, GL_DONT_CARE, 0, nullptr, GL_FALSE);
+
 		glDebugMessageCallback(debug_message_callback, 0);
 	} else {
 		glDisable(GL_DEBUG_OUTPUT);
@@ -227,10 +295,12 @@ HL_PRIM void HL_NAME(gl_polygon_offset)(float factor, float units) {
 }
 
 HL_PRIM void HL_NAME(gl_enable)(int feature) {
+	if (feature == 0x864F) gl_require(3, "Depth clamp is not supported by this OpenGL context");
 	glEnable(feature);
 }
 
 HL_PRIM void HL_NAME(gl_disable)(int feature) {
+	if (feature == 0x864F && !gl_capability(3)) return;
 	glDisable(feature);
 }
 
@@ -271,6 +341,8 @@ HL_PRIM void HL_NAME(gl_color_mask)(bool r, bool g, bool b, bool a) {
 }
 
 HL_PRIM void HL_NAME(gl_color_maski)(int i, bool r, bool g, bool b, bool a) {
+	GL_REQUIRE_PROC(glColorMaski);
+
 	glColorMaski(i, r, g, b, a);
 }
 
@@ -434,6 +506,9 @@ HL_PRIM void HL_NAME(gl_bind_texture)(int t, vdynamic* texture) {
 }
 
 HL_PRIM void HL_NAME(gl_bind_image_texture)(int unit, int texture, int level, bool layered, int layer, int access, int format) {
+	GL_REQUIRE_PROC(glBindImageTexture);
+
+	gl_require(2, "Image load/store is not supported by this OpenGL context");
 	glBindImageTexture(unit, texture, level, layered, layer, access, format);
 }
 
@@ -460,7 +535,9 @@ HL_PRIM void HL_NAME(gl_copy_image_sub_data)(vdynamic* src, int srcTarget, int s
 }
 
 HL_PRIM void HL_NAME(gl_tex_storage2d)(int target, int levels, int internalFormat, int width, int height) {
+	GL_REQUIRE_PROC(glTexStorage2D);
 #ifndef __APPLE__
+
 	glTexStorage2D(target, levels, internalFormat, width, height);
 #else
 	hl_error("glTexStorage2d is not supported on Apple platforms");
@@ -468,7 +545,9 @@ HL_PRIM void HL_NAME(gl_tex_storage2d)(int target, int levels, int internalForma
 }
 
 HL_PRIM void HL_NAME(gl_tex_storage3d)(int target, int levels, int internalFormat, int width, int height, int depth) {
+	GL_REQUIRE_PROC(glTexStorage3D);
 #ifndef __APPLE__
+
 	glTexStorage3D(target, levels, internalFormat, width, height, depth);
 #else
 	hl_error("glTexStorage3d is not supported on Apple platforms");
@@ -476,6 +555,8 @@ HL_PRIM void HL_NAME(gl_tex_storage3d)(int target, int levels, int internalForma
 }
 
 HL_PRIM void HL_NAME(gl_tex_image2d_multisample)(int target, int samples, int internalFormat, int width, int height, bool fixedsamplelocations) {
+	GL_REQUIRE_PROC(glTexImage2DMultisample);
+
 	glTexImage2DMultisample(target, samples, internalFormat, width, height, fixedsamplelocations);
 }
 
@@ -515,6 +596,8 @@ HL_PRIM void HL_NAME(gl_delete_texture)(vdynamic* t) {
 // framebuffer
 
 HL_PRIM void HL_NAME(gl_blit_framebuffer)(int src_x0, int src_y0, int src_x1, int src_y1, int dst_x0, int dst_y0, int dst_x1, int dst_y1, int mask, int filter) {
+	GL_REQUIRE_PROC(glBlitFramebuffer);
+
 	glBlitFramebuffer(src_x0, src_y0, src_x1, src_y1, dst_x0, dst_y0, dst_x1, dst_y1, mask, filter);
 }
 
@@ -531,6 +614,8 @@ HL_PRIM void HL_NAME(gl_bind_framebuffer)(int target, vdynamic* f) {
 }
 
 HL_PRIM void HL_NAME(gl_framebuffer_texture)(int target, int attach, vdynamic* t, int level) {
+	GL_REQUIRE_PROC(glFramebufferTexture);
+
 	glFramebufferTexture(target, attach, ZIDX(t), level);
 }
 
@@ -539,6 +624,8 @@ HL_PRIM void HL_NAME(gl_framebuffer_texture2d)(int target, int attach, int texTa
 }
 
 HL_PRIM void HL_NAME(gl_framebuffer_texture_layer)(int target, int attach, vdynamic* t, int level, int layer) {
+	GL_REQUIRE_PROC(glFramebufferTextureLayer);
+
 	glFramebufferTextureLayer(target, attach, ZIDX(t), level, layer);
 }
 
@@ -578,6 +665,8 @@ HL_PRIM void HL_NAME(gl_renderbuffer_storage)(int target, int format, int width,
 }
 
 HL_PRIM void HL_NAME(gl_renderbuffer_storage_multisample)(int target, int samples, int format, int width, int height) {
+	GL_REQUIRE_PROC(glRenderbufferStorageMultisample);
+
 	glRenderbufferStorageMultisample(target, samples, format, width, height);
 }
 
@@ -604,6 +693,8 @@ HL_PRIM void HL_NAME(gl_bind_buffer)(int target, vdynamic* b) {
 }
 
 HL_PRIM void HL_NAME(gl_bind_buffer_base)(int target, int index, vdynamic* b) {
+	GL_REQUIRE_PROC(glBindBufferBase);
+
 	glBindBufferBase(target, index, ZIDX(b));
 }
 
@@ -636,10 +727,15 @@ HL_PRIM void HL_NAME(gl_vertex_attrib_pointer)(int index, int size, int type, bo
 }
 
 HL_PRIM void HL_NAME(gl_vertex_attrib_ipointer)(int index, int size, int type, int stride, int position) {
+	GL_REQUIRE_PROC(glVertexAttribIPointer);
+
 	glVertexAttribIPointer(index, size, type, stride, (void*)(int_val)position);
 }
 
 HL_PRIM void HL_NAME(gl_vertex_attrib_divisor)(int index, int divisor) {
+	GL_REQUIRE_PROC(glVertexAttribDivisor);
+
+	gl_require(6, "Instanced rendering is not supported by this OpenGL context");
 	glVertexAttribDivisor(index, divisor);
 }
 
@@ -688,10 +784,16 @@ HL_PRIM void HL_NAME(gl_uniform_matrix4fv)(vdynamic* u, bool transpose, vbyte* b
 
 // compute
 HL_PRIM void HL_NAME(gl_dispatch_compute)(int num_groups_x, int num_groups_y, int num_groups_z) {
+	GL_REQUIRE_PROC(glDispatchCompute);
+	gl_require(2, "Compute shaders are not supported by this OpenGL context");
+
 	glDispatchCompute(num_groups_x, num_groups_y, num_groups_z);
 }
 
 HL_PRIM void HL_NAME(gl_memory_barrier)(int barriers) {
+	GL_REQUIRE_PROC(glMemoryBarrier);
+	gl_require(2, "Compute memory barriers are not supported by this OpenGL context");
+
 	glMemoryBarrier(barriers);
 }
 
@@ -706,32 +808,43 @@ HL_PRIM void HL_NAME(gl_draw_arrays)(int mode, int first, int count) {
 }
 
 HL_PRIM void HL_NAME(gl_draw_elements_instanced)(int mode, int count, int type, int start, int primcount) {
+	GL_REQUIRE_PROC(glDrawElementsInstanced);
+
+	gl_require(6, "Instanced rendering is not supported by this OpenGL context");
 	glDrawElementsInstanced(mode, count, type, (void*)(int_val)start, primcount);
 }
 
 HL_PRIM void HL_NAME(gl_draw_arrays_instanced)(int mode, int first, int count, int primcount) {
+	GL_REQUIRE_PROC(glDrawArraysInstanced);
+
+	gl_require(6, "Instanced rendering is not supported by this OpenGL context");
 	glDrawArraysInstanced(mode, first, count, primcount);
 }
 
 HL_PRIM void HL_NAME(gl_multi_draw_elements_indirect)(int mode, int type, vbyte* data, int count, int stride) {
-#ifdef GL_VERSION_4_3
+	GL_REQUIRE_PROC(glMultiDrawElementsIndirect);
+#ifdef HL_GL_DYNAMIC_IMPORTS
+	gl_require(0, "Multi-draw indirect is not supported by this OpenGL context");
+
 	glMultiDrawElementsIndirect(mode, type, data, count, stride);
+#else
+	hl_error("Multi-draw indirect is not supported by this OpenGL backend");
 #endif
 }
 
 HL_PRIM void HL_NAME(gl_multi_draw_elements_indirect_count)(int mode, int type, vbyte* data, vbyte* drawcount, int maxdrawcount, int stride) {
-	GL_IMPORT_OPT(glMultiDrawElementsIndirectCountARB, MULTIDRAWELEMENTSINDIRECTCOUNTARB)
+	gl_require(1, "Indirect-count drawing is not supported by this OpenGL context");
+#ifdef HL_GL_DYNAMIC_IMPORTS
+	PFNGLMULTIDRAWELEMENTSINDIRECTCOUNTARBPROC glMultiDrawElementsIndirectCountARB = (PFNGLMULTIDRAWELEMENTSINDIRECTCOUNTARBPROC)limen_gl_get_proc_address("glMultiDrawElementsIndirectCount");
+	if (!glMultiDrawElementsIndirectCountARB) glMultiDrawElementsIndirectCountARB = (PFNGLMULTIDRAWELEMENTSINDIRECTCOUNTARBPROC)limen_gl_get_proc_address("glMultiDrawElementsIndirectCountARB");
+#endif
 	glMultiDrawElementsIndirectCountARB(mode, type, data, (GLintptr)drawcount, maxdrawcount, stride);
 }
 
 HL_PRIM int HL_NAME(gl_get_config_parameter)(int feature) {
 	switch (feature) {
-		case 0:
-#ifdef GL_VERSION_4_3
-			return 1;
-#else
-			return 0;
-#endif
+		case 0: case 1: case 2: case 3: case 4: case 5: case 6:
+			return gl_capability(feature);
 		default:
 			{
 				int r = -1;
@@ -747,45 +860,7 @@ HL_PRIM int HL_NAME(gl_get_config_parameter)(int feature) {
 }
 
 HL_PRIM bool HL_NAME(gl_has_extension)(vstring* name) {
-	const char* cname = hl_to_utf8(name->bytes);
-	const char* version = (const char*)glGetString(GL_VERSION);
-	int major = 0;
-
-	if (version != nullptr) {
-		const char* number = strstr(version, "OpenGL ES ");
-		number = number == nullptr ? version : number + 10;
-		major = atoi(number);
-	}
-#ifdef HL_GL_DYNAMIC_IMPORTS
-	if (major >= 3 && glGetStringi != nullptr) {
-#else
-	if (major >= 3) {
-#endif
-		GLint numExtensions = 0;
-		glGetIntegerv(GL_NUM_EXTENSIONS, &numExtensions);
-
-		for (int i = 0; i < numExtensions; i++) {
-			const char* ext = (const char*)glGetStringi(GL_EXTENSIONS, i);
-
-			if (ext && strcmp(cname, ext) == 0)
-				return true;
-		}
-	}
-
-	const char* extensions = (const char*)glGetString(GL_EXTENSIONS);
-
-	if (extensions == nullptr)
-		return false;
-
-	size_t nameLength = strlen(cname);
-
-	for (const char* ext = strstr(extensions, cname); ext != nullptr; ext = strstr(ext + nameLength, cname)) {
-		if ((ext == extensions || ext[-1] == ' ') && (ext[nameLength] == 0 || ext[nameLength] == ' ')) {
-			return true;
-		}
-	}
-
-	return false;
+	return gl_extension(hl_to_utf8(name->bytes));
 }
 
 // queries
@@ -802,10 +877,12 @@ HL_PRIM void HL_NAME(gl_delete_query)(vdynamic* q) {
 }
 
 HL_PRIM void HL_NAME(gl_begin_query)(int target, vdynamic* q) {
+	if (target == 0x88BF) gl_require(4, "Timer queries are not supported by this OpenGL context");
 	glBeginQuery(target, q->v.i);
 }
 
 HL_PRIM void HL_NAME(gl_end_query)(int target) {
+	if (target == 0x88BF) gl_require(4, "Timer queries are not supported by this OpenGL context");
 	glEndQuery(target);
 }
 
@@ -817,50 +894,81 @@ HL_PRIM bool HL_NAME(gl_query_result_available)(vdynamic* q) {
 }
 
 HL_PRIM double HL_NAME(gl_query_result)(vdynamic* q) {
-	GLuint64 v = -1;
+#ifdef HL_GLES
+	GLuint v = 0;
+	glGetQueryObjectuiv(q->v.i, GL_QUERY_RESULT, &v);
+#else
+	GLuint64 v = 0;
+
+#ifdef HL_GL_DYNAMIC_IMPORTS
+	if (!glGetQueryObjectui64v) {
+		GLuint result = 0;
+		GL_REQUIRE_PROC(glGetQueryObjectuiv);
+		glGetQueryObjectuiv(q->v.i, GL_QUERY_RESULT, &result);
+		return (double)result;
+	}
+#endif
 	glGetQueryObjectui64v(q->v.i, GL_QUERY_RESULT, &v);
 
+#endif
 	return (double)v;
 }
 
 HL_PRIM void HL_NAME(gl_query_counter)(vdynamic* q, int target) {
+	GL_REQUIRE_PROC(glQueryCounter);
+
+#if defined(HL_GL_DYNAMIC_IMPORTS) || defined(HL_MAC)
+	gl_require(4, "Timestamp queries are not supported by this OpenGL context");
 	glQueryCounter(q->v.i, target);
+#else
+	hl_error("Timestamp queries are not supported by this OpenGL backend");
+#endif
 }
 
 // vertex array
 
 HL_PRIM vdynamic* HL_NAME(gl_create_vertex_array)() {
+	GL_REQUIRE_PROC(glGenVertexArrays);
 	unsigned int f = 0;
+
 	glGenVertexArrays(1, &f);
 
 	return alloc_i32(f);
 }
 
 HL_PRIM void HL_NAME(gl_bind_vertex_array)(vdynamic* b) {
+	GL_REQUIRE_PROC(glBindVertexArray);
 	unsigned int bb = (unsigned)b->v.i;
+
 	glBindVertexArray(bb);
 }
 
 HL_PRIM void HL_NAME(gl_delete_vertex_array)(vdynamic* b) {
+	GL_REQUIRE_PROC(glDeleteVertexArrays);
 	unsigned int bb = (unsigned)b->v.i;
+
 	glDeleteVertexArrays(1, &bb);
 }
 
 // uniform buffer
 
 HL_PRIM int HL_NAME(gl_get_uniform_block_index)(vdynamic* p, vstring* name) {
+	GL_REQUIRE_PROC(glGetUniformBlockIndex);
 	char* cname = hl_to_utf8(name->bytes);
 
 	return (int)glGetUniformBlockIndex(p->v.i, cname);
 }
 
 HL_PRIM void HL_NAME(gl_uniform_block_binding)(vdynamic* p, int index, int binding) {
+	GL_REQUIRE_PROC(glUniformBlockBinding);
+
 	glUniformBlockBinding(p->v.i, index, binding);
 }
 
 // SSBOs
 
 HL_PRIM int HL_NAME(gl_get_program_resource_index)(vdynamic* p, int type, vstring* name) {
+	GL_REQUIRE_PROC(glGetProgramResourceIndex);
 #ifndef __APPLE__
 	char* cname = hl_to_utf8(name->bytes);
 
@@ -871,7 +979,9 @@ HL_PRIM int HL_NAME(gl_get_program_resource_index)(vdynamic* p, int type, vstrin
 }
 
 HL_PRIM void HL_NAME(gl_shader_storage_block_binding)(vdynamic* p, int index, int binding) {
+	GL_REQUIRE_PROC(glShaderStorageBlockBinding);
 #ifndef __APPLE__
+
 	glShaderStorageBlockBinding(p->v.i, index, binding);
 #else
 	hl_error("glShaderStorageBlockBinding is not supported on Apple platforms");

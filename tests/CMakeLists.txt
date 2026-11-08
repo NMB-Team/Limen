@@ -171,3 +171,17 @@ if(LIMEN_BUILD_VMA)
 		)
 	endif()
 endif()
+
+if(LIMEN_BUILD_OPENGL AND WIN32 AND NOT MINGW)
+	add_executable(limen_opengl_capabilities_test opengl_capabilities.c)
+	limen_enable_c23_nullptr(limen_opengl_capabilities_test)
+	target_include_directories(limen_opengl_capabilities_test PRIVATE
+		"${CMAKE_CURRENT_SOURCE_DIR}/../backend/src/platform"
+		"${CMAKE_CURRENT_SOURCE_DIR}/../backend/include/gl"
+	)
+	target_link_libraries(limen_opengl_capabilities_test PRIVATE libhl opengl32)
+	add_test(NAME limen_opengl_capabilities COMMAND limen_opengl_capabilities_test)
+	set_tests_properties(limen_opengl_capabilities PROPERTIES
+		ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:$<TARGET_FILE_DIR:limen>"
+	)
+endif()
