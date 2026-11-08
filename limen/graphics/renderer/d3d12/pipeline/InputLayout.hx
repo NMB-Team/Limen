@@ -7,7 +7,7 @@ enum abstract InputClassification(Int) {
 	final PER_INSTANCE_DATA = 1;
 }
 
-@:struct class InputElementDesc {
+@:keep @:struct class InputElementDesc {
 	public var semanticName:hl.Bytes;
 	public var semanticIndex:Int;
 	public var format:DxgiFormat;
@@ -19,7 +19,7 @@ enum abstract InputClassification(Int) {
 	public function new() {}
 }
 
-@:struct class InputLayoutDesc {
+@:keep @:struct class InputLayoutDesc {
 	public var inputElementDescs:hl.CArray<InputElementDesc>;
 	public var numElements:Int;
 	public var __padding:Int; // largest element

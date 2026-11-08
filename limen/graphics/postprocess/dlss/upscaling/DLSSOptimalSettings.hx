@@ -1,6 +1,6 @@
 package limen.graphics.postprocess.dlss.upscaling;
 
-@:struct
+@:keep @:struct
 class DLSSOptimalSettings {
 	public var optimalRenderWidth:Int;
 	public var optimalRenderHeight:Int;

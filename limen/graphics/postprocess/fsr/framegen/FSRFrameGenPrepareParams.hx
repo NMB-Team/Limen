@@ -4,7 +4,7 @@ import limen.graphics.renderer.d3d12.resource.Resources.Dx12Resource;
 import limen.graphics.renderer.d3d12.resource.Resources.ResourceState;
 import limen.graphics.renderer.d3d12.internal.D3D12Bindings.SwapChain;
 
-@:struct
+@:keep @:struct
 class FSRFrameGenPrepareParams {
 	public var depth:Dx12Resource;
 	public var motionVectors:Dx12Resource;

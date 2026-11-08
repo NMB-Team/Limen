@@ -4,7 +4,7 @@ import limen.graphics.renderer.d3d12.resource.Resources.Dx12Resource;
 import limen.graphics.renderer.d3d12.resource.Resources.ResourceState;
 import limen.graphics.renderer.d3d12.internal.D3D12Bindings.SwapChain;
 
-@:struct
+@:keep @:struct
 class FSRFrameGenConfig {
 	public var swapChain:SwapChain;
 	public var hudless:Dx12Resource;

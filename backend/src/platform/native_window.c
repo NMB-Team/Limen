@@ -51,3 +51,13 @@ bool limen_get_native_window(void* handle, limen_native_window* out) {
 
 	return false;
 }
+
+bool limen_get_cache_directory(char* path, int capacity) {
+	char* directory = SDL_GetPrefPath("NMB-Team", "Limen");
+	if (!directory)
+		return false;
+
+	int length = SDL_snprintf(path, capacity, "%s", directory);
+	SDL_free(directory);
+	return length >= 0 && length < capacity;
+}

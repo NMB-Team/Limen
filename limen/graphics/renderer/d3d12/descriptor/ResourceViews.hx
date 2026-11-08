@@ -6,7 +6,7 @@ import limen.graphics.renderer.d3d12.resource.Resources.Dx12Resource;
 
 import haxe.Int64;
 
-@:struct class BufferSRV extends Dx12ShaderResourceViewDesc {
+@:keep @:struct class BufferSRV extends Dx12ShaderResourceViewDesc {
 	public var firstElement:Int64;
 	public var numElements:Int;
 	public var structureByteStride:Int;
@@ -24,14 +24,14 @@ enum abstract BufferSRVFlags(Int) {
 	final RAW = 1;
 }
 
-@:struct class ConstantBufferViewDesc {
+@:keep @:struct class ConstantBufferViewDesc {
 	public var bufferLocation:Address;
 	public var sizeInBytes:Int;
 
 	public function new() {}
 }
 
-@:struct class DepthStencilViewDesc {
+@:keep @:struct class DepthStencilViewDesc {
 	public var format:DxgiFormat;
 	public var viewDimension:DsvDimension;
 	public var flags:haxe.EnumFlags<DsvFlags>;
@@ -57,7 +57,7 @@ enum DsvFlags {
 	READ_ONLY_STENCIL;
 }
 
-@:struct class Dx12ShaderResourceViewDesc {
+@:keep @:struct class Dx12ShaderResourceViewDesc {
 	public var format:DxgiFormat;
 	public var dimension:SrvDimension;
 	public var shader4ComponentMapping:ShaderComponentMapping;
@@ -65,7 +65,7 @@ enum DsvFlags {
 	var __unionPadding:Int;
 }
 
-@:struct class RenderTargetViewDesc {
+@:keep @:struct class RenderTargetViewDesc {
 	public var format:DxgiFormat;
 	public var viewDimension:RtvDimension;
 
@@ -255,7 +255,7 @@ enum abstract SrvDimension(Int) {
 	final RAYTRACING_ACCELERATION_STRUCTURE = 11;
 }
 
-@:struct class Tex1DArraySRV extends Dx12ShaderResourceViewDesc {
+@:keep @:struct class Tex1DArraySRV extends Dx12ShaderResourceViewDesc {
 	public var mostDetailedMip:Int;
 	public var mipLevels:Int;
 	public var firstArraySlice:Int;
@@ -269,7 +269,7 @@ enum abstract SrvDimension(Int) {
 	}
 }
 
-@:struct class Tex1DSRV extends Dx12ShaderResourceViewDesc {
+@:keep @:struct class Tex1DSRV extends Dx12ShaderResourceViewDesc {
 	public var mostDetailedMip:Int;
 	public var mipLevels:Int;
 	public var resourceMinLODClamp:Single;
@@ -283,7 +283,7 @@ enum abstract SrvDimension(Int) {
 	}
 }
 
-@:struct class Tex2DArraySRV extends Dx12ShaderResourceViewDesc {
+@:keep @:struct class Tex2DArraySRV extends Dx12ShaderResourceViewDesc {
 	public var mostDetailedMip:Int;
 	public var mipLevels:Int;
 	public var firstArraySlice:Int;
@@ -296,7 +296,7 @@ enum abstract SrvDimension(Int) {
 	}
 }
 
-@:struct class Tex2DSRV extends Dx12ShaderResourceViewDesc {
+@:keep @:struct class Tex2DSRV extends Dx12ShaderResourceViewDesc {
 	public var mostDetailedMip:Int;
 	public var mipLevels:Int;
 	public var planeSlice:Int;
@@ -310,7 +310,7 @@ enum abstract SrvDimension(Int) {
 	}
 }
 
-@:struct class Tex3DSRV extends Dx12ShaderResourceViewDesc {
+@:keep @:struct class Tex3DSRV extends Dx12ShaderResourceViewDesc {
 	public var mostDetailedMip:Int;
 	public var mipLevels:Int;
 	public var resourceMinLODClamp:Single;
@@ -324,7 +324,7 @@ enum abstract SrvDimension(Int) {
 	}
 }
 
-@:struct class TexCubeArraySRV extends Dx12ShaderResourceViewDesc {
+@:keep @:struct class TexCubeArraySRV extends Dx12ShaderResourceViewDesc {
 	public var mostDetailedMip:Int;
 	public var mipLevels:Int;
 	public var first2DArrayFace:Int;
@@ -338,7 +338,7 @@ enum abstract SrvDimension(Int) {
 	}
 }
 
-@:struct class TexCubeSRV extends Dx12ShaderResourceViewDesc {
+@:keep @:struct class TexCubeSRV extends Dx12ShaderResourceViewDesc {
 	public var mostDetailedMip:Int;
 	public var mipLevels:Int;
 	public var resourceMinLODClamp:Single;
@@ -356,7 +356,7 @@ enum UAVBufferFlags {
 	RAW;
 }
 
-@:struct class UAVBufferViewDesc extends UnorderedAccessViewDesc {
+@:keep @:struct class UAVBufferViewDesc extends UnorderedAccessViewDesc {
 	public var firstElement:hl.I64;
 	public var numElements:Int;
 	public var structureSizeInBytes:Int;
@@ -378,7 +378,7 @@ enum abstract UAVDimension(Int) {
 	public final TEXTURE3D = 8;
 }
 
-@:struct class UAVTextureViewDesc extends UnorderedAccessViewDesc {
+@:keep @:struct class UAVTextureViewDesc extends UnorderedAccessViewDesc {
 	var int0:Int;
 	var int1:Int;
 	var int2:Int;
@@ -464,7 +464,7 @@ enum abstract UAVDimension(Int) {
 	}
 }
 
-@:struct class UnorderedAccessViewDesc {
+@:keep @:struct class UnorderedAccessViewDesc {
 	public var format:DxgiFormat;
 	public var viewDimension:UAVDimension;
 }

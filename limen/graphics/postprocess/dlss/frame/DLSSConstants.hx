@@ -1,6 +1,6 @@
 package limen.graphics.postprocess.dlss.frame;
 
-@:struct
+@:keep @:struct
 class DLSSConstants {
 	public var cameraViewToClip:DLSSMatrix;
 	public var clipToCameraView:DLSSMatrix;

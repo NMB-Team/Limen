@@ -1,6 +1,6 @@
 package limen.graphics.postprocess.dlss.frame;
 
-@:struct
+@:keep @:struct
 class DLSSVector {
 	public var x:Single;
 	public var y:Single;

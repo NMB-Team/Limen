@@ -1,6 +1,6 @@
 package limen.graphics.postprocess.dlss.reflex;
 
-@:struct
+@:keep @:struct
 class ReflexStateInfo {
 	public var lowLatencyAvailable:Int;
 	public var latencyReportAvailable:Int;

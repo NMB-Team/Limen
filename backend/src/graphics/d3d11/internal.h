@@ -2,7 +2,10 @@
 #ifndef DIRECTX_H
 #define DIRECTX_H
 
+struct IDXGIAdapter3;
+
 typedef struct dx_driver_ {
+	IDXGIAdapter3* memory_adapter;
 	ID3D11Device* device;
 	ID3D11DeviceContext* context;
 	IDXGISwapChain* swapchain;

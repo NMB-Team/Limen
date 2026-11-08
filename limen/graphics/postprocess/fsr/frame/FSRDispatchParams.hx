@@ -2,7 +2,7 @@ package limen.graphics.postprocess.fsr.frame;
 
 import limen.graphics.postprocess.TextureResource;
 
-@:struct
+@:keep @:struct
 class FSRDispatchParams {
 	public var color:TextureResource;
 	public var depth:TextureResource;

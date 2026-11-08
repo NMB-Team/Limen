@@ -273,7 +273,7 @@ enum abstract Dx12Feature(Int) {
 	final SHADER_CACHE_ABI_SUPPORT;
 }
 
-@:struct class InfoQueueFilter {
+@:keep @:struct class InfoQueueFilter {
 	@:packed
 	public var allowList(default, null):InfoQueueFilterDesc;
 	@:packed
@@ -282,7 +282,7 @@ enum abstract Dx12Feature(Int) {
 	public function new() {}
 }
 
-@:struct class InfoQueueFilterDesc {
+@:keep @:struct class InfoQueueFilterDesc {
 	public var numCategories:Int;
 	public var categoryList:hl.Bytes;
 	public var numSeverities:Int;
@@ -293,7 +293,7 @@ enum abstract Dx12Feature(Int) {
 	public function new() {}
 }
 
-@:struct class QueryVideoMemoryInfo {
+@:keep @:struct class QueryVideoMemoryInfo {
 	public var budget:Int64;
 	public var currentUsage:Int64;
 	public var availableForReservation:Int64;

@@ -1,6 +1,6 @@
 package limen.graphics.postprocess.dlss.framegen;
 
-@:struct
+@:keep @:struct
 class DLSSGOptions {
 	public var mode:DLSSGModeNative;
 	public var numFramesToGenerate:Int;

@@ -1,6 +1,6 @@
 package limen.graphics.postprocess.dlss.reflex;
 
-@:struct
+@:keep @:struct
 class ReflexFrameReport {
 	public var frameID:Float;
 	public var inputSampleTime:Float;

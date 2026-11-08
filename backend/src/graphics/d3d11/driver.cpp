@@ -279,6 +279,18 @@ static dx_driver* create_driver(HWND window, int format, int flags, int minimumF
 	DXERR(result);
 #endif
 
+#ifdef HL_WIN_DESKTOP
+	IDXGIDevice* dxgiDevice = nullptr;
+	if (SUCCEEDED(d->device->QueryInterface(__uuidof(IDXGIDevice), (void**)&dxgiDevice))) {
+		IDXGIAdapter* adapter = nullptr;
+		if (SUCCEEDED(dxgiDevice->GetAdapter(&adapter))) {
+			adapter->QueryInterface(__uuidof(IDXGIAdapter3), (void**)&d->memory_adapter);
+			adapter->Release();
+		}
+		dxgiDevice->Release();
+	}
+#endif
+
 	driver = d;
 
 	return d;
@@ -297,6 +309,10 @@ HL_PRIM dx_driver* HL_NAME(create_sdl)(void* window, int format, int flags, int 
 }
 
 HL_PRIM void HL_NAME(dispose_driver)(dx_driver* d) {
+#ifdef HL_WIN_DESKTOP
+	if (d->memory_adapter)
+		d->memory_adapter->Release();
+#endif
 	d->swapchain->Release();
 	d->device->Release();
 	d->context->Release();
@@ -652,6 +668,15 @@ HL_PRIM void HL_NAME(debug_print)(vbyte* b) {
 	OutputDebugStringW((LPCWSTR)b);
 }
 
+HL_PRIM bool HL_NAME(query_video_memory_info)(void* output) {
+#ifdef HL_WIN_DESKTOP
+	if (driver && driver->memory_adapter)
+		return SUCCEEDED(driver->memory_adapter->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL,
+			(DXGI_QUERY_VIDEO_MEMORY_INFO*)output));
+#endif
+	return false;
+}
+
 #define _DRIVER _ABSTRACT(dx_driver)
 #define _POINTER _ABSTRACT(dx_pointer)
 #define _RESOURCE _ABSTRACT(dx_resource)
@@ -709,6 +734,7 @@ DEFINE_PRIM(_VOID, ps_set_shader_resources, _I32 _I32 _REF(_POINTER));
 DEFINE_PRIM(_VOID, vs_set_shader_resources, _I32 _I32 _REF(_POINTER));
 DEFINE_PRIM(_VOID, generate_mips, _POINTER);
 DEFINE_PRIM(_VOID, debug_print, _BYTES);
+DEFINE_PRIM(_BOOL, query_video_memory_info, _STRUCT);
 DEFINE_PRIM(_VOID, copy_subresource_region, _RESOURCE _I32 _I32 _I32 _I32 _RESOURCE _I32 _DYN);
 
 HL_PRIM void HL_NAME(fill_post_process_device)(PostProcessDevice* out) {

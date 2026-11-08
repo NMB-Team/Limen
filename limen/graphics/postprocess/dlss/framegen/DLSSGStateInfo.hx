@@ -1,6 +1,6 @@
 package limen.graphics.postprocess.dlss.framegen;
 
-@:struct
+@:keep @:struct
 class DLSSGStateInfo {
 	public var status:Int;
 	public var minWidthOrHeight:Int;

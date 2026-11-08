@@ -70,6 +70,10 @@ class D3D11Bindings {
 		return null;
 	}
 
+	public static function queryVideoMemoryInfo(info:QueryVideoMemoryInfo):Bool {
+		return false;
+	}
+
 	public static function getSupportedVersion():Float {
 		return 0.;
 	}
@@ -80,4 +84,13 @@ class D3D11Bindings {
 
 	@:hlNative("limen", "d3d11_debug_print")
 	static function dxDebugPrint(str:hl.Bytes) {}
+}
+
+@:keep @:struct class QueryVideoMemoryInfo {
+	public var budget:hl.I64;
+	public var currentUsage:hl.I64;
+	public var availableForReservation:hl.I64;
+	public var currentReservation:hl.I64;
+
+	public function new() {}
 }

@@ -3,7 +3,7 @@ package limen.graphics.renderer.d3d12.shader;
 import limen.graphics.renderer.d3d12.internal.D3D12Bindings;
 import limen.graphics.renderer.d3d12.internal.D3D12Bindings.CompilerHandle;
 
-@:struct class ShaderBytecode {
+@:keep @:struct class ShaderBytecode {
 	public var shaderBytecode:hl.Bytes;
 	public var bytecodeLength:hl.I64;
 }

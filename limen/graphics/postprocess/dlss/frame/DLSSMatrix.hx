@@ -1,6 +1,6 @@
 package limen.graphics.postprocess.dlss.frame;
 
-@:struct
+@:keep @:struct
 class DLSSMatrix {
 	public var _11:Single;
 	public var _12:Single;

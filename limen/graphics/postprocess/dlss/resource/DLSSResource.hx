@@ -2,7 +2,7 @@ package limen.graphics.postprocess.dlss.resource;
 
 import limen.graphics.postprocess.TextureResource;
 
-@:struct
+@:keep @:struct
 class DLSSResource {
 	public var res:TextureResource;
 	public var width:Int;

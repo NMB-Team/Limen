@@ -22,7 +22,8 @@ access before CPU reads or release. Destroy VkBuffer/VkImage before unmapping an
 releasing allocation memory. Never pass VMA memory to vkFreeMemory. Destroy all
 allocations before allocator/context teardown; GC does not perform GPU cleanup.
 
-Transient image backing uses CAN_ALIAS and isolated memory. The caller must create
+Transient image backing uses CAN_ALIAS and VMA's normal block allocation policy.
+Dedicated memory is not forced; VMA may still choose an isolated block. The caller must create
 alias-compatible images and provide barriers/lifetimes. Binding validates memory
 type, size, alignment and required-dedicated restrictions. No relocation is exposed.
 

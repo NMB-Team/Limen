@@ -20,12 +20,15 @@
 #include <string.h>
 #if defined(_WIN32)
 #include <windows.h>
+#else
+#include <unistd.h>
 #endif
 
 #define HL_NAME(n) limen_vulkan_##n
 #include <hl.h>
 #include "../postprocess/types.h"
 #include "requirements.h"
+#include "native_window.h"
 #include <stddef.h>
 
 static VkInstance instance = nullptr;
@@ -37,6 +40,7 @@ static uint32_t loader_api_version = VK_API_VERSION_1_0;
 static uint32_t instance_api_version = 0;
 static bool validation_enabled = false;
 static bool surface_maintenance1_enabled = false;
+static bool surface_maintenance1_ext = false;
 static char last_error[2048];
 static char instance_report[2048];
 
@@ -248,7 +252,7 @@ HL_PRIM bool HL_NAME(vk_init)(bool enable_validation, VulkanRequirements* requir
 	}
 
 	uint32_t extra_extension_count = requirements && requirements->instanceExtensions ? requirements->instanceExtensions->size : 0;
-	const char** enabled_extensions = (const char**)hl_gc_alloc_noptr((6 + extra_extension_count) * sizeof(char*));
+	const char** enabled_extensions = (const char**)hl_gc_alloc_noptr((7 + extra_extension_count) * sizeof(char*));
 	uint32_t enabled_extension_count = 0;
 	const char* required_extensions[] = { VK_KHR_SURFACE_EXTENSION_NAME, HL_VK_PLATFORM_EXTENSION };
 
@@ -265,6 +269,12 @@ HL_PRIM bool HL_NAME(vk_init)(bool enable_validation, VulkanRequirements* requir
 
 	surface_maintenance1_enabled = has_extension(extension_properties, extension_count, VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME) && has_extension(extension_properties, extension_count, VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
 
+	surface_maintenance1_ext = has_extension(extension_properties, extension_count, VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME) && has_extension(extension_properties, extension_count, VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+	if (surface_maintenance1_ext) {
+		if (!surface_maintenance1_enabled)
+			enabled_extensions[enabled_extension_count++] = VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME;
+		enabled_extensions[enabled_extension_count++] = VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME;
+	}
 	if (surface_maintenance1_enabled) {
 		enabled_extensions[enabled_extension_count++] = VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME;
 		enabled_extensions[enabled_extension_count++] = VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME;
@@ -512,8 +522,6 @@ HL_PRIM vbyte* HL_NAME(vk_make_array)(varray* a) {
 	return ptr;
 }
 
-// ------------------------------------------ CONTEXT INIT
-// --------------------------------------------
 
 typedef struct VkCompatDispatch {
 	PFN_vkCmdBeginRendering vkCmdBeginRendering;
@@ -542,6 +550,8 @@ typedef struct _VkContext {
 	VkPhysicalDeviceProperties properties;
 	VkPhysicalDeviceMemoryProperties memProps;
 	VkDevice device;
+	VkPipelineCache pipeline_cache;
+	char pipeline_cache_path[4096];
 	uint32_t postprocess_graphics_queue_index;
 	uint32_t postprocess_compute_queue_index;
 	VkQueue graphics_queue;
@@ -556,6 +566,8 @@ typedef struct _VkContext {
 	uint32_t capability_flags;
 	VkPhysicalDeviceVulkan12Properties properties12;
 	bool memory_budget;
+	VkFence present_fences[8];
+	bool present_pending[8];
 	VkSwapchainKHR swapchain;
 	VkSwapchainKHR* retired_swapchains;
 	uint32_t retired_swapchain_count;
@@ -564,11 +576,120 @@ typedef struct _VkContext {
 	char wsi_report[1024];
 }* VkContext;
 
+#define PIPELINE_CACHE_MAX_SIZE (64 * 1024 * 1024)
+
+static uint32_t pipeline_cache_checksum(const unsigned char* data, size_t size) {
+	uint32_t hash = 2166136261u;
+	for (size_t i = 0; i < size; i++)
+		hash = (hash ^ data[i]) * 16777619u;
+	return hash;
+}
+
+static FILE* pipeline_cache_open(const char* path, bool write) {
+#if defined(_WIN32)
+	wchar_t wide[4096];
+	if (!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, -1, wide, 4096))
+		return nullptr;
+	return _wfopen(wide, write ? L"wb" : L"rb");
+#else
+	return fopen(path, write ? "wb" : "rb");
+#endif
+}
+
+static void pipeline_cache_init(VkContext ctx) {
+	char directory[4096];
+	unsigned char* data = nullptr;
+	uint32_t metadata[4];
+	size_t size = 0;
+	if (limen_get_cache_directory(directory, sizeof(directory))) {
+		int length = snprintf(ctx->pipeline_cache_path, sizeof(ctx->pipeline_cache_path),
+		                      "%svulkan-%08x-%08x-%08x.cache", directory, ctx->properties.vendorID,
+		                      ctx->properties.deviceID, ctx->properties.driverVersion);
+		if (length < 0 || length >= sizeof(ctx->pipeline_cache_path))
+			ctx->pipeline_cache_path[0] = 0;
+	}
+
+	FILE* file = ctx->pipeline_cache_path[0] ? pipeline_cache_open(ctx->pipeline_cache_path, false) : nullptr;
+	if (file) {
+		if (fread(metadata, sizeof(metadata), 1, file) == 1 && metadata[0] == 0x4c564b31 &&
+		    metadata[1] == ctx->properties.driverVersion && metadata[2] >= 32 && metadata[2] <= PIPELINE_CACHE_MAX_SIZE) {
+			data = malloc(metadata[2]);
+			if (data && fread(data, 1, metadata[2], file) == metadata[2] && fgetc(file) == EOF && !ferror(file) &&
+			    pipeline_cache_checksum(data, metadata[2]) == metadata[3]) {
+				uint32_t header[4];
+				memcpy(header, data, sizeof(header));
+				if (header[0] == 32 && header[1] == VK_PIPELINE_CACHE_HEADER_VERSION_ONE &&
+				    header[2] == ctx->properties.vendorID && header[3] == ctx->properties.deviceID &&
+				    memcmp(data + 16, ctx->properties.pipelineCacheUUID, VK_UUID_SIZE) == 0)
+					size = metadata[2];
+			}
+		}
+		fclose(file);
+	}
+
+	VkPipelineCacheCreateInfo info = {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO,
+		.initialDataSize = size,
+		.pInitialData = size ? data : nullptr,
+	};
+	VkResult result = vkCreatePipelineCache(ctx->device, &info, nullptr, &ctx->pipeline_cache);
+	free(data);
+	if (result != VK_SUCCESS && size) {
+		info.initialDataSize = 0;
+		info.pInitialData = nullptr;
+		result = vkCreatePipelineCache(ctx->device, &info, nullptr, &ctx->pipeline_cache);
+	}
+	if (result != VK_SUCCESS) {
+		ctx->pipeline_cache = VK_NULL_HANDLE;
+		fprintf(stderr, "Vulkan pipeline cache unavailable: %s (%d)\n", vk_result_name(result), result);
+	}
+}
+
+static void pipeline_cache_save(VkContext ctx) {
+	size_t size = 0;
+	if (!ctx->pipeline_cache || !ctx->pipeline_cache_path[0] ||
+	    vkGetPipelineCacheData(ctx->device, ctx->pipeline_cache, &size, nullptr) != VK_SUCCESS ||
+	    size < 32 || size > PIPELINE_CACHE_MAX_SIZE)
+		return;
+
+	unsigned char* data = malloc(size);
+	if (!data)
+		return;
+	if (vkGetPipelineCacheData(ctx->device, ctx->pipeline_cache, &size, data) == VK_SUCCESS) {
+		uint32_t metadata[] = { 0x4c564b31, ctx->properties.driverVersion, (uint32_t)size, pipeline_cache_checksum(data, size) };
+		char temporary[4160];
+		#if defined(_WIN32)
+		unsigned long process_id = GetCurrentProcessId();
+#else
+		unsigned long process_id = (unsigned long)getpid();
+#endif
+		snprintf(temporary, sizeof(temporary), "%s.%lu.%p.tmp", ctx->pipeline_cache_path, process_id, (void*)ctx);
+		FILE* file = pipeline_cache_open(temporary, true);
+		if (file) {
+			bool complete = fwrite(metadata, sizeof(metadata), 1, file) == 1 && fwrite(data, 1, size, file) == size;
+			if (fclose(file) != 0)
+				complete = false;
+#if defined(_WIN32)
+			wchar_t source[4160], destination[4096];
+			MultiByteToWideChar(CP_UTF8, 0, temporary, -1, source, 4160);
+			MultiByteToWideChar(CP_UTF8, 0, ctx->pipeline_cache_path, -1, destination, 4096);
+			if (complete)
+				MoveFileExW(source, destination, MOVEFILE_REPLACE_EXISTING);
+			DeleteFileW(source);
+#else
+			if (complete)
+				rename(temporary, ctx->pipeline_cache_path);
+			remove(temporary);
+#endif
+		}
+	}
+	free(data);
+}
+
 static const char* compat_extensions[] = {
 	VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME, VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME,
 };
 
-// Only 1.2 command buffers need a registry entry; 1.3 keeps the direct dispatch path.
 typedef struct VkCompatCommand {
 	VkCommandBuffer command;
 	VkCommandPool pool;
@@ -727,6 +848,7 @@ typedef struct {
 	bool synchronization2;
 	bool timeline_semaphore;
 	bool swapchain_maintenance1;
+	bool swapchain_maintenance1_ext;
 	bool portability_subset;
 	bool memory_budget;
 	bool maintenance4;
@@ -877,7 +999,8 @@ static bool evaluate_device(VkPhysicalDevice device, VkSurfaceKHR surface, uint3
 	if (!has_extension(extensions, extension_count, VK_KHR_SWAPCHAIN_EXTENSION_NAME))
 		reject_device(rejection, rejection_capacity, "missing %s", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
-	candidate->swapchain_maintenance1 = surface_maintenance1_enabled && has_extension(extensions, extension_count, VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+	candidate->swapchain_maintenance1_ext = surface_maintenance1_ext && has_extension(extensions, extension_count, VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+	candidate->swapchain_maintenance1 = candidate->swapchain_maintenance1_ext || (surface_maintenance1_enabled && has_extension(extensions, extension_count, VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME));
 	candidate->portability_subset = has_extension(extensions, extension_count, "VK_KHR_portability_subset");
 	candidate->memory_budget = has_extension(extensions, extension_count, VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
 	candidate->maintenance4 = has_extension(extensions, extension_count, VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
@@ -1247,7 +1370,7 @@ HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, 
 	uint32_t enabled_extension_count = 1;
 
 	if (selected.swapchain_maintenance1)
-		enabled_extensions[enabled_extension_count++] = VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME;
+		enabled_extensions[enabled_extension_count++] = selected.swapchain_maintenance1_ext ? VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME : VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME;
 	if (selected.portability_subset)
 		enabled_extensions[enabled_extension_count++] = "VK_KHR_portability_subset";
 	if (selected.memory_budget)
@@ -1583,6 +1706,7 @@ HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, 
 	         selected.variable_descriptor_count ? "true" : "false", selected.update_unused_while_pending ? "true" : "false", selected.properties12.maxUpdateAfterBindDescriptorsInAllPools, selected.properties12.maxPerStageUpdateAfterBindResources,
 	         selected.properties12.maxPerStageDescriptorUpdateAfterBindSamplers, selected.properties12.maxPerStageDescriptorUpdateAfterBindSampledImages, selected.properties12.maxPerStageDescriptorUpdateAfterBindStorageBuffers,
 	         selected.properties12.maxDescriptorSetUpdateAfterBindSamplers, selected.properties12.maxDescriptorSetUpdateAfterBindSampledImages, selected.properties12.maxDescriptorSetUpdateAfterBindStorageBuffers, selection_report);
+	pipeline_cache_init(ctx);
 	*outQueue = (int)ctx->graphics_queue_family;
 	return ctx;
 
@@ -1605,6 +1729,8 @@ HL_PRIM void* HL_NAME(memory_create)(VkContext ctx, int* result) {
 }
 #endif
 
+HL_PRIM int HL_NAME(vk_wait_presentation)(VkContext ctx);
+
 HL_PRIM bool HL_NAME(vk_destroy_context)(VkContext ctx) {
 	if (!ctx)
 		return true;
@@ -1618,11 +1744,20 @@ HL_PRIM bool HL_NAME(vk_destroy_context)(VkContext ctx) {
 	}
 #endif
 	VkResult result = vkDeviceWaitIdle(ctx->device);
+	HL_NAME(vk_wait_presentation)(ctx);
+	for (uint32_t i = 0; i < 8; i++)
+		if (ctx->present_fences[i])
+			vkDestroyFence(ctx->device, ctx->present_fences[i], nullptr);
 
 	if (ctx->swapchain)
 		vkDestroySwapchainKHR(ctx->device, ctx->swapchain, nullptr);
 	for (uint32_t i = 0; i < ctx->retired_swapchain_count; i++)
 		vkDestroySwapchainKHR(ctx->device, ctx->retired_swapchains[i], nullptr);
+
+	if (result == VK_SUCCESS)
+		pipeline_cache_save(ctx);
+	if (ctx->pipeline_cache)
+		vkDestroyPipelineCache(ctx->device, ctx->pipeline_cache, nullptr);
 
 	free(ctx->retired_swapchains);
 	remove_compat_commands(ctx, nullptr, nullptr);
@@ -1894,6 +2029,37 @@ static int wsi_status(VkResult result) {
 	}
 }
 
+HL_PRIM int HL_NAME(vk_wait_presentation)(VkContext ctx) {
+	VkResult result = VK_SUCCESS;
+	if (ctx->capability_flags & VK_CAP_SWAPCHAIN_MAINTENANCE_1) {
+		for (uint32_t i = 0; i < 8; i++) {
+			if (!ctx->present_pending[i])
+				continue;
+			result = vkWaitForFences(ctx->device, 1, &ctx->present_fences[i], VK_TRUE, UINT64_MAX);
+			if (result != VK_SUCCESS)
+				break;
+			ctx->present_pending[i] = false;
+		}
+	} else {
+		result = vkQueueWaitIdle(ctx->present_queue);
+	}
+	if (result != VK_SUCCESS)
+		vk_set_error("Waiting for presentation failed: %s (%d)", vk_result_name(result), result);
+	return result;
+}
+
+HL_PRIM void HL_NAME(vk_abort_swapchain_initialization)(VkContext ctx) {
+	if (ctx->swapchain)
+		vkDestroySwapchainKHR(ctx->device, ctx->swapchain, nullptr);
+	ctx->swapchain = VK_NULL_HANDLE;
+}
+
+HL_PRIM void HL_NAME(vk_collect_swapchains)(VkContext ctx) {
+	for (uint32_t i = 0; i < ctx->retired_swapchain_count; i++)
+		vkDestroySwapchainKHR(ctx->device, ctx->retired_swapchains[i], nullptr);
+	ctx->retired_swapchain_count = 0;
+}
+
 static bool reserve_retired_swapchain(VkContext ctx) {
 	if (!ctx->swapchain || ctx->retired_swapchain_count < ctx->retired_swapchain_capacity)
 		return true;
@@ -2110,6 +2276,10 @@ HL_PRIM int HL_NAME(vk_init_swapchain)(VkContext ctx, VkSwapchainInfo* info, var
 
 	VkSwapchainKHR new_swapchain = nullptr;
 	result = vkCreateSwapchainKHR(ctx->device, &swapchain_info, nullptr, &new_swapchain);
+	if (ctx->swapchain) {
+		ctx->retired_swapchains[ctx->retired_swapchain_count++] = ctx->swapchain;
+		ctx->swapchain = VK_NULL_HANDLE;
+	}
 
 	if (result != VK_SUCCESS) {
 		vk_set_error("vkCreateSwapchainKHR failed: %s (%d)", vk_result_name(result), result);
@@ -2127,7 +2297,7 @@ HL_PRIM int HL_NAME(vk_init_swapchain)(VkContext ctx, VkSwapchainInfo* info, var
 		return wsi_status(result);
 	}
 
-	if (actual_image_count > image_capacity) {
+	if (actual_image_count > image_capacity || actual_image_count > 8) {
 		vkDestroySwapchainKHR(ctx->device, new_swapchain, nullptr);
 		vk_set_error("Swapchain created %u images, but the output array capacity is %u", actual_image_count, image_capacity);
 
@@ -2142,9 +2312,6 @@ HL_PRIM int HL_NAME(vk_init_swapchain)(VkContext ctx, VkSwapchainInfo* info, var
 
 		return wsi_status(result);
 	}
-
-	if (ctx->swapchain)
-		ctx->retired_swapchains[ctx->retired_swapchain_count++] = ctx->swapchain;
 
 	ctx->swapchain = new_swapchain;
 	outImages->size = (int)actual_image_count;
@@ -2194,10 +2361,11 @@ HL_PRIM VkPipelineLayout HL_NAME(vk_create_pipeline_layout)(VkContext ctx, VkPip
 
 HL_PRIM VkPipeline HL_NAME(vk_create_graphics_pipeline)(VkContext ctx, VkGraphicsPipelineCreateInfo* info) {
 	VkPipeline p = nullptr;
-	VkResult result = vkCreateGraphicsPipelines(ctx->device, nullptr, 1, info, nullptr, &p);
+	VkResult result = vkCreateGraphicsPipelines(ctx->device, ctx->pipeline_cache, 1, info, nullptr, &p);
 
 	if (result != VK_SUCCESS)
 		vk_set_error("vkCreateGraphicsPipelines failed: %s (%d)", vk_result_name(result), result);
+
 
 	return p;
 }
@@ -2231,10 +2399,11 @@ HL_PRIM VkPipeline HL_NAME(vk_create_compute_pipeline)(VkContext ctx, HLVkComput
 		.basePipelineIndex = info->base_pipeline_index,
 	};
 
-	VkResult result = vkCreateComputePipelines(ctx->device, nullptr, 1, &native_info, nullptr, &pipeline);
+	VkResult result = vkCreateComputePipelines(ctx->device, ctx->pipeline_cache, 1, &native_info, nullptr, &pipeline);
 
 	if (result != VK_SUCCESS)
 		vk_set_error("vkCreateComputePipelines failed: %s (%d)", vk_result_name(result), result);
+
 
 	return pipeline;
 }
@@ -2280,6 +2449,7 @@ HL_PRIM VkBuffer HL_NAME(vk_create_buffer)(VkContext ctx, VkBufferCreateInfo* in
 	if (result != VK_SUCCESS)
 		vk_set_error("vkCreateBuffer failed: %s (%d)", vk_result_name(result), result);
 
+
 	return b;
 }
 
@@ -2304,6 +2474,7 @@ HL_PRIM VkBuffer HL_NAME(vk_create_buffer64)(VkContext ctx, int64_t size, int us
 
 	if (result != VK_SUCCESS)
 		vk_set_error("vkCreateBuffer failed for %llu bytes: %s (%d)", (unsigned long long)info.size, vk_result_name(result), result);
+
 
 	return buffer;
 }
@@ -2474,6 +2645,7 @@ HL_PRIM VkImage HL_NAME(vk_create_image)(VkContext ctx, VkImageCreateInfo* info)
 	if (result != VK_SUCCESS)
 		vk_set_error("vkCreateImage failed: %s (%d)", vk_result_name(result), result);
 
+
 	return i;
 }
 
@@ -2587,6 +2759,7 @@ HL_PRIM VkDescriptorPool HL_NAME(vk_create_descriptor_pool)(VkContext ctx, VkDes
 	if (result != VK_SUCCESS)
 		vk_set_error("vkCreateDescriptorPool failed: %s (%d)", vk_result_name(result), result);
 
+
 	return pool;
 }
 
@@ -2612,6 +2785,19 @@ HL_PRIM int HL_NAME(vk_reset_descriptor_pool)(VkContext ctx, VkDescriptorPool po
 
 HL_PRIM void HL_NAME(vk_update_descriptor_sets)(VkContext ctx, int writeCount, VkWriteDescriptorSet* write, int copyCount, VkCopyDescriptorSet* copy) {
 	vkUpdateDescriptorSets(ctx->device, writeCount, write, copyCount, copy);
+}
+
+HL_PRIM void HL_NAME(vk_update_descriptor_batch)(VkContext ctx, int count, varray* writes) {
+	if (count < 0 || count > writes->size)
+		hl_error("Invalid Vulkan descriptor write count");
+
+	VkWriteDescriptorSet batch[64];
+	for (int first = 0; first < count; first += 64) {
+		int length = count - first < 64 ? count - first : 64;
+		for (int i = 0; i < length; i++)
+			batch[i] = *hl_aptr(writes, VkWriteDescriptorSet*)[first + i];
+		vkUpdateDescriptorSets(ctx->device, length, batch, 0, nullptr);
+	}
 }
 
 HL_PRIM void HL_NAME(vk_update_descriptor_image_sampler)(VkContext ctx, VkDescriptorSet set, int binding, int array_element, VkImageView view, VkSampler sampler, VkImageLayout layout) {
@@ -2800,6 +2986,7 @@ HL_PRIM VkSampler HL_NAME(vk_create_sampler)(VkContext ctx, VkSamplerCreateInfo*
 	if (result != VK_SUCCESS)
 		vk_set_error("vkCreateSampler failed: %s (%d)", vk_result_name(result), result);
 
+
 	return sampler;
 }
 
@@ -2915,8 +3102,30 @@ HL_PRIM int HL_NAME(vk_wait_idle)(VkContext ctx) {
 HL_PRIM int HL_NAME(vk_present)(VkContext ctx, VkSemaphore sem, int image) {
 	vk_clear_error();
 
+	VkSwapchainPresentFenceInfoEXT fence_info = {
+		.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_FENCE_INFO_EXT,
+		.swapchainCount = 1,
+		.pFences = &ctx->present_fences[image],
+	};
+	if (ctx->capability_flags & VK_CAP_SWAPCHAIN_MAINTENANCE_1) {
+		VkResult result;
+		if (!ctx->present_fences[image]) {
+			VkFenceCreateInfo info = { .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
+			result = vkCreateFence(ctx->device, &info, nullptr, &ctx->present_fences[image]);
+		} else {
+			result = ctx->present_pending[image] ? vkWaitForFences(ctx->device, 1, &ctx->present_fences[image], VK_TRUE, UINT64_MAX) : VK_SUCCESS;
+			if (result == VK_SUCCESS)
+				result = vkResetFences(ctx->device, 1, &ctx->present_fences[image]);
+		}
+		if (result != VK_SUCCESS) {
+			vk_set_error("Preparing presentation fence failed: %s (%d)", vk_result_name(result), result);
+			return wsi_status(result);
+		}
+	}
+
 	VkPresentInfoKHR presentInfo = {
 		.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+		.pNext = (ctx->capability_flags & VK_CAP_SWAPCHAIN_MAINTENANCE_1) ? &fence_info : nullptr,
 		.waitSemaphoreCount = 1,
 		.pWaitSemaphores = &sem,
 		.swapchainCount = 1,
@@ -2925,6 +3134,7 @@ HL_PRIM int HL_NAME(vk_present)(VkContext ctx, VkSemaphore sem, int image) {
 	};
 
 	VkResult result = vkQueuePresentKHR(ctx->present_queue, &presentInfo);
+	ctx->present_pending[image] = (ctx->capability_flags & VK_CAP_SWAPCHAIN_MAINTENANCE_1) && (result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR || result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_ERROR_SURFACE_LOST_KHR);
 
 	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
 		vk_set_error("vkQueuePresentKHR failed: %s (%d)", vk_result_name(result), result);
@@ -3062,6 +3272,9 @@ DEFINE_PRIM(_I32, vk_get_compute_queue_family, _VCTX);
 DEFINE_PRIM(_I32, vk_get_transfer_queue_family, _VCTX);
 DEFINE_PRIM(_I32, vk_get_graphics_timestamp_valid_bits, _VCTX);
 DEFINE_PRIM(_F64, vk_get_timestamp_period, _VCTX);
+DEFINE_PRIM(_I32, vk_wait_presentation, _VCTX);
+DEFINE_PRIM(_VOID, vk_collect_swapchains, _VCTX);
+DEFINE_PRIM(_VOID, vk_abort_swapchain_initialization, _VCTX);
 DEFINE_PRIM(_I32, vk_init_swapchain, _VCTX _STRUCT _ARR);
 DEFINE_PRIM(_BYTES, vk_make_array, _ARR);
 DEFINE_PRIM(_BYTES, vk_make_ref, _DYN);
@@ -3126,6 +3339,7 @@ DEFINE_PRIM(_VOID, vk_get_pdevice_format_props, _VCTX _I32 _STRUCT);
 DEFINE_PRIM(_DPOOL, vk_create_descriptor_pool, _VCTX _STRUCT);
 DEFINE_PRIM(_I32, vk_allocate_descriptor_sets, _VCTX _STRUCT _ARR);
 DEFINE_PRIM(_I32, vk_reset_descriptor_pool, _VCTX _DPOOL);
+DEFINE_PRIM(_VOID, vk_update_descriptor_batch, _VCTX _I32 _ARR);
 DEFINE_PRIM(_VOID, vk_update_descriptor_sets, _VCTX _I32 _BYTES _I32 _BYTES);
 DEFINE_PRIM(_VOID, vk_update_descriptor_image_sampler, _VCTX _DSET _I32 _I32 _IMAGE_VIEW _SAMPLER _I32);
 DEFINE_PRIM(_VOID, vk_update_descriptor_sampled_image, _VCTX _DSET _I32 _I32 _IMAGE_VIEW _I32);
@@ -3156,7 +3370,6 @@ DEFINE_PRIM(_VOID, vk_destroy_compute_pipeline, _VCTX _GPIPELINE);
 DEFINE_PRIM(_VOID, vk_destroy_descriptor_set_layout, _VCTX _DLAYOUT);
 DEFINE_PRIM(_BOOL, vk_set_shader_module_name, _VCTX _SHADER_MODULE _BYTES);
 
-// ------ COMMAND BUFFER OPERATIONS -----------------------
 
 HL_PRIM int HL_NAME(vk_command_reset)(VkCommandBuffer out) {
 	VkResult result = vkResetCommandBuffer(out, 0);

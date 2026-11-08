@@ -60,6 +60,8 @@ LIMEN_PLATFORM_API const char* limen_gl_get_context_info(void);
 LIMEN_PLATFORM_API bool limen_gl_set_swap_interval(int interval);
 LIMEN_PLATFORM_API void* limen_gl_get_proc_address(const char* name);
 
+LIMEN_PLATFORM_API bool limen_get_cache_directory(char* path, int capacity);
+
 LIMEN_PLATFORM_API bool limen_vulkan_create_surface(void* window, void* instance, uint64_t* surface);
 
 #ifdef __cplusplus

@@ -179,7 +179,7 @@ abstract CommandQueue(Dx12Resource) {
 @:forward(release)
 abstract CommandSignature(Dx12Resource) {}
 
-@:struct class CommandSignatureDesc {
+@:keep @:struct class CommandSignatureDesc {
 	public var byteStride:Int;
 	public var numArgumentDescs:Int;
 	public var argumentDescs:hl.CArray<IndirectArgumentDesc>;
@@ -213,7 +213,7 @@ enum abstract FenceFlags(Int) {
 	final NON_MONITORED = 4;
 }
 
-@:struct class IndexBufferView {
+@:keep @:struct class IndexBufferView {
 	public var bufferLocation:Address;
 	public var sizeInBytes:Int;
 	public var format:DxgiFormat;
@@ -221,7 +221,7 @@ enum abstract FenceFlags(Int) {
 	public function new() {}
 }
 
-@:struct class IndirectArgumentDesc {
+@:keep @:struct class IndirectArgumentDesc {
 	public var type:IndirectArgumentType;
 	public var rootParameterIndex:Int;
 	public var destOffsetIn32BitValues:Int;
@@ -260,7 +260,7 @@ enum abstract PredicationOp(Int) {
 	final NOT_EQUAL_ZERO = 1;
 }
 
-@:struct class VertexBufferView {
+@:keep @:struct class VertexBufferView {
 	public var bufferLocation:Address;
 	public var sizeInBytes:Int;
 	public var strideInBytes:Int;

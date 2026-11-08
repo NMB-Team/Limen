@@ -16,7 +16,7 @@ import limen.graphics.renderer.d3d12.pipeline.StreamOutput.StreamOutputDesc;
 
 import haxe.Int64;
 
-@:struct class BlendDesc {
+@:keep @:struct class BlendDesc {
 	public var alphaToCoverage:Bool32;
 	public var independentBlendEnable:Bool32;
 	public var renderTargets(get, never):BlendDescRenderTargets;
@@ -69,7 +69,7 @@ abstract BlendDescRenderTargets(BlendDesc) {
 	}
 }
 
-@:struct class CachedPipelineState {
+@:keep @:struct class CachedPipelineState {
 	public var cachedBlob:hl.Bytes;
 	public var cachedBlobSizeInBytes:hl.I64;
 
@@ -83,7 +83,7 @@ abstract ComputePipelineState(Dx12Resource) {
 	}
 }
 
-@:struct class ComputePipelineStateDesc {
+@:keep @:struct class ComputePipelineStateDesc {
 	public var rootSignature:RootSignature;
 
 	@:packed
@@ -102,7 +102,7 @@ enum abstract ConservativeRasterMode(Int) {
 	final ON = 1;
 }
 
-@:struct class DepthStencilOpDesc {
+@:keep @:struct class DepthStencilOpDesc {
 	public var stencilFailOp:Dx12StencilOp;
 	public var stencilDepthFailOp:Dx12StencilOp;
 	public var stencilPassOp:Dx12StencilOp;
@@ -169,7 +169,7 @@ enum abstract Dx12CullMode(Int) {
 	final BACK = 3;
 }
 
-@:struct class Dx12DepthStencilDesc {
+@:keep @:struct class Dx12DepthStencilDesc {
 	public var depthEnable:Bool32;
 	public var depthWriteMask:DepthWriteMask;
 	public var depthFunc:Dx12ComparisonFunc;
@@ -228,7 +228,7 @@ enum abstract Dx12Filter(Int) {
 	final MAXIMUM_ANISOTROPIC = 0x1d5;
 }
 
-@:struct class Dx12RasterizerDesc {
+@:keep @:struct class Dx12RasterizerDesc {
 	public var fillMode:Dx12FillMode;
 	public var cullMode:Dx12CullMode;
 	public var frontCounterClockwise:Bool32;
@@ -244,7 +244,7 @@ enum abstract Dx12Filter(Int) {
 	public function new() {}
 }
 
-@:struct class Dx12RenderTargetBlendDesc {
+@:keep @:struct class Dx12RenderTargetBlendDesc {
 	public var blendEnable:Bool32;
 	public var logicOpEnable:Bool32;
 	public var srcBlend:Dx12Blend;
@@ -259,7 +259,7 @@ enum abstract Dx12Filter(Int) {
 	public function new() {}
 }
 
-@:struct class Dx12SamplerDesc {
+@:keep @:struct class Dx12SamplerDesc {
 	public var filter:Dx12Filter;
 	public var addressU:Dx12AddressMode;
 	public var addressV:Dx12AddressMode;
@@ -293,7 +293,7 @@ abstract GraphicsPipelineState(Dx12Resource) {
 	}
 }
 
-@:struct class GraphicsPipelineStateDesc {
+@:keep @:struct class GraphicsPipelineStateDesc {
 	public var rootSignature:RootSignature;
 	@:packed
 	public var vs(default, null):ShaderBytecode;

@@ -2,7 +2,7 @@ package limen.graphics.postprocess;
 
 import limen.graphics.GraphicsDriver;
 
-@:struct
+@:keep @:struct
 class PostProcessDevice {
 	public var backend:GraphicsDriver;
 	public var device:NativeHandle;

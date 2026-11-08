@@ -5,13 +5,13 @@ import limen.graphics.renderer.d3d12.resource.Resources.Dx12Resource;
 import limen.graphics.renderer.d3d12.shader.ShaderCompiler.ShaderVisibility;
 import limen.graphics.renderer.d3d12.pipeline.StreamOutput.StaticSamplerDesc;
 
-@:struct class RootParameter {
+@:keep @:struct class RootParameter {
 	public var parameterType:RootParameterType;
 
 	var __paddingBeforeUnion:Int;
 }
 
-@:struct class RootParameterConstants extends RootParameter {
+@:keep @:struct class RootParameterConstants extends RootParameter {
 	public var shaderRegister:Int;
 	public var registerSpace:Int;
 	public var num32BitValues:Int;
@@ -25,7 +25,7 @@ import limen.graphics.renderer.d3d12.pipeline.StreamOutput.StaticSamplerDesc;
 	}
 }
 
-@:struct class RootParameterDescriptor extends RootParameter {
+@:keep @:struct class RootParameterDescriptor extends RootParameter {
 	public var shaderRegister:Int;
 	public var registerSpace:Int;
 
@@ -39,7 +39,7 @@ import limen.graphics.renderer.d3d12.pipeline.StreamOutput.StaticSamplerDesc;
 	}
 }
 
-@:struct class RootParameterDescriptorTable extends RootParameter {
+@:keep @:struct class RootParameterDescriptorTable extends RootParameter {
 	public var numDescriptorRanges:Int;
 	public var __padding:Int;
 	public var descriptorRanges:hl.CArray<DescriptorRange>;
@@ -69,7 +69,7 @@ abstract RootSignature(Dx12Resource) {
 	}
 }
 
-@:struct class RootSignatureDesc {
+@:keep @:struct class RootSignatureDesc {
 	public var numParameters:Int;
 	public var parameters:hl.CArray<RootParameter>;
 	public var numStaticSamplers:Int;

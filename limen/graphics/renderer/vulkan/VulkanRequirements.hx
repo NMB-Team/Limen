@@ -1,6 +1,6 @@
 package limen.graphics.renderer.vulkan;
 
-@:struct
+@:keep @:struct
 class VulkanRequirements {
 	public var instanceExtensions:hl.NativeArray<hl.Bytes>;
 	public var deviceExtensions:hl.NativeArray<hl.Bytes>;

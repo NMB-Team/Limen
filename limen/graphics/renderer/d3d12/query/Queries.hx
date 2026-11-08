@@ -7,7 +7,7 @@ import haxe.Int64;
 @:forward(release)
 abstract QueryHeap(Dx12Resource) {}
 
-@:struct class QueryHeapDesc {
+@:keep @:struct class QueryHeapDesc {
 	public var type:QueryHeapType;
 	public var count:Int;
 	public var nodeMask:Int;

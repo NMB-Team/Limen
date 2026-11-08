@@ -30,7 +30,7 @@ abstract Bool32(Int) {
 	};
 }
 
-@:struct class Box {
+@:keep @:struct class Box {
 	public var left:Int;
 	public var top:Int;
 	public var front:Int;
@@ -43,7 +43,7 @@ abstract Bool32(Int) {
 
 typedef ClearColor = Color;
 
-@:struct class ClearValue {
+@:keep @:struct class ClearValue {
 	public var format:DxgiFormat;
 	@:packed
 	public var color(default, never):Color;
@@ -72,7 +72,7 @@ typedef ClearColor = Color;
 	}
 }
 
-@:struct class Color {
+@:keep @:struct class Color {
 	public var r:Single;
 	public var g:Single;
 	public var b:Single;
@@ -224,7 +224,7 @@ enum abstract DxgiFormat(Int) {
 	}
 }
 
-@:struct class DxgiSampleDesc {
+@:keep @:struct class DxgiSampleDesc {
 	public var count:Int;
 	public var quality:Int;
 
@@ -245,14 +245,14 @@ enum abstract PrimitiveTopologyType(Int) {
 	final PATCH = 4;
 }
 
-@:struct class Range {
+@:keep @:struct class Range {
 	public var begin:Int64;
 	public var end:Int64;
 
 	public function new() {}
 }
 
-@:struct class Rect {
+@:keep @:struct class Rect {
 	public var left:Int;
 	public var top:Int;
 	public var right:Int;
@@ -261,7 +261,7 @@ enum abstract PrimitiveTopologyType(Int) {
 	public function new() {}
 }
 
-@:struct class Viewport {
+@:keep @:struct class Viewport {
 	public var topLeftX:Single;
 	public var topLeftY:Single;
 	public var width:Single;

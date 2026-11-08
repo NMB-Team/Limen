@@ -173,7 +173,7 @@ HL_PRIM Allocation* HL_NAME(memory_allocate_transient_image)(Allocator* a, VkIma
 	VmaAllocationCreateInfo info = {};
 	info.requiredFlags = required;
 	info.preferredFlags = preferred;
-	info.flags = VMA_ALLOCATION_CREATE_CAN_ALIAS_BIT | VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+	info.flags = VMA_ALLOCATION_CREATE_CAN_ALIAS_BIT;
 	*result = vmaAllocateMemoryForImage(a->native, resource, &info, &allocation->native, nullptr);
 	if (*result != VK_SUCCESS)
 		return nullptr;
@@ -295,12 +295,19 @@ HL_PRIM void HL_NAME(memory_set_name)(Allocation* a, vbyte* name) {
 HL_PRIM void HL_NAME(memory_statistics)(Allocator* a, int* blocks, int* allocations, int64* blockBytes, int64* allocationBytes) {
 	require_allocator(a);
 
-	VmaTotalStatistics stats;
-	vmaCalculateStatistics(a->native, &stats);
-	*blocks = stats.total.statistics.blockCount;
-	*allocations = stats.total.statistics.allocationCount;
-	*blockBytes = stats.total.statistics.blockBytes;
-	*allocationBytes = stats.total.statistics.allocationBytes;
+	VmaBudget budgets[VK_MAX_MEMORY_HEAPS];
+	vmaGetHeapBudgets(a->native, budgets);
+	const VkPhysicalDeviceMemoryProperties* properties;
+	vmaGetMemoryProperties(a->native, &properties);
+	*blocks = *allocations = 0;
+	*blockBytes = *allocationBytes = 0;
+	for (uint32_t heap = 0; heap < properties->memoryHeapCount; heap++) {
+		const auto& stats = budgets[heap].statistics;
+		*blocks += stats.blockCount;
+		*allocations += stats.allocationCount;
+		*blockBytes += stats.blockBytes;
+		*allocationBytes += stats.allocationBytes;
+	}
 }
 
 HL_PRIM void HL_NAME(memory_heap_statistics)(Allocator* a, int heap, int* blocks, int* allocations, int64* blockBytes, int64* allocationBytes) {
@@ -312,10 +319,10 @@ HL_PRIM void HL_NAME(memory_heap_statistics)(Allocator* a, int heap, int* blocks
 	if (heap < 0 || (uint32_t)heap >= properties->memoryHeapCount)
 		hl_error("Invalid VMA heap index");
 
-	VmaTotalStatistics stats;
-	vmaCalculateStatistics(a->native, &stats);
+	VmaBudget budgets[VK_MAX_MEMORY_HEAPS];
+	vmaGetHeapBudgets(a->native, budgets);
 
-	const VmaStatistics& statistics = stats.memoryHeap[heap].statistics;
+	const VmaStatistics& statistics = budgets[heap].statistics;
 	*blocks = statistics.blockCount;
 	*allocations = statistics.allocationCount;
 	*blockBytes = statistics.blockBytes;

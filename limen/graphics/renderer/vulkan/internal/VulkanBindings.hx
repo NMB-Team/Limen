@@ -331,6 +331,8 @@ abstract VkContext(hl.Abstract<"vk_context">) {
 		return 0;
 	}
 
+	public function updateDescriptorBatch(count:Int, writes:hl.NativeArray<VkWriteDescriptorSet>) {}
+
 	public function updateDescriptorSets(writeCount:Int, write:ArrayStruct<VkWriteDescriptorSet>, copyCount:Int, copy:ArrayStruct<VkCopyDescriptorSet>) {}
 
 	public function updateDescriptorImageSampler(set:VkDescriptorSet, binding:Int, arrayElement:Int, view:VkImageView, sampler:VkSampler, layout:VkImageLayout) {}
@@ -436,6 +438,14 @@ abstract VkContext(hl.Abstract<"vk_context">) {
 	public function queueWaitIdle():Int {
 		return 0;
 	}
+
+	public function waitPresentation():Int {
+		return 0;
+	}
+
+	public function collectSwapchains() {}
+
+	public function abortSwapchainInitialization() {}
 
 	public function waitIdle():Int {
 		return 0;

@@ -6,6 +6,7 @@ extern "C" void* limen_vulkan_memory_create(void*, int*) {
 
 #include <cstdio>
 #include <cstring>
+#include <chrono>
 
 #define CHECK(x)                                                           \
 	do {                                                                   \
@@ -180,6 +181,69 @@ int main() {
 
 		vkDestroyImage(device, image, nullptr);
 		limen_vulkan_memory_release(i);
+	}
+
+	for (auto samples : { VK_SAMPLE_COUNT_1_BIT, VK_SAMPLE_COUNT_4_BIT }) {
+		VkImageCreateInfo info = {};
+		info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+		info.flags = VK_IMAGE_CREATE_ALIAS_BIT;
+		info.imageType = VK_IMAGE_TYPE_2D;
+		info.format = VK_FORMAT_R8G8B8A8_UNORM;
+		info.extent = { 256, 256, 1 };
+		info.mipLevels = info.arrayLayers = 1;
+		info.samples = samples;
+		info.tiling = VK_IMAGE_TILING_OPTIMAL;
+		info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+		VkImageFormatProperties supported;
+		CHECK(vkGetPhysicalDeviceImageFormatProperties(physical, info.format, info.imageType,
+			info.tiling, info.usage, info.flags, &supported) == VK_SUCCESS);
+		if (!(supported.sampleCounts & samples)) {
+			std::printf("SKIP transient samples=%u unsupported\n", samples);
+			continue;
+		}
+
+		VkImage first, second, oversized;
+		CHECK(vkCreateImage(device, &info, nullptr, &first) == VK_SUCCESS);
+		CHECK(vkCreateImage(device, &info, nullptr, &second) == VK_SUCCESS);
+		info.extent = { 1024, 1024, 1 };
+		CHECK(vkCreateImage(device, &info, nullptr, &oversized) == VK_SUCCESS);
+
+		VkMemoryRequirements requirements;
+		vkGetImageMemoryRequirements(device, first, &requirements);
+		auto neighbor = limen_vulkan_memory_allocate_transient_image(a, first, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, &result);
+		CHECK(neighbor && result == VK_SUCCESS);
+		auto backing = limen_vulkan_memory_allocate_transient_image(a, first, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, &result);
+		CHECK(backing && result == VK_SUCCESS);
+		CHECK(limen_vulkan_memory_bind_transient_image(backing, first) == VK_SUCCESS);
+		CHECK(limen_vulkan_memory_bind_transient_image(backing, second) == VK_SUCCESS);
+		CHECK(limen_vulkan_memory_bind_transient_image(backing, oversized) == VK_ERROR_FEATURE_NOT_PRESENT);
+
+		VmaAllocationInfo allocation;
+		vmaGetAllocationInfo(a->native, backing->native, &allocation);
+		std::printf("Transient samples=%u type=%u offset=%llu size=%llu\n", samples,
+			allocation.memoryType, (unsigned long long)allocation.offset, (unsigned long long)allocation.size);
+
+		vkDestroyImage(device, first, nullptr);
+		vkDestroyImage(device, second, nullptr);
+		vkDestroyImage(device, oversized, nullptr);
+		limen_vulkan_memory_release(backing);
+		limen_vulkan_memory_release(neighbor);
+
+		requirements.memoryTypeBits = 1u << allocation.memoryType;
+		for (bool isolated : { true, false }) {
+			VmaAllocationCreateInfo create = {};
+			create.flags = VMA_ALLOCATION_CREATE_CAN_ALIAS_BIT |
+				(isolated ? VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT : 0);
+			const auto started = std::chrono::steady_clock::now();
+			for (int n = 0; n < 1000; n++) {
+				VmaAllocation memory;
+				CHECK(vmaAllocateMemory(a->native, &requirements, &create, &memory, nullptr) == VK_SUCCESS);
+				vmaFreeMemory(a->native, memory);
+			}
+			const auto elapsed = std::chrono::duration<double, std::micro>(std::chrono::steady_clock::now() - started).count();
+			std::printf("Allocation/free samples=%u isolated=%d us/op=%.3f\n", samples, isolated, elapsed / 1000);
+		}
 	}
 
 	int blocks, allocations;

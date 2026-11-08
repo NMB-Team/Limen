@@ -1,6 +1,6 @@
 package limen.graphics.postprocess.dlss.upscaling;
 
-@:struct
+@:keep @:struct
 class DLSSOptions {
 	public var mode:DLSSMode;
 	public var outputWidth:Int;

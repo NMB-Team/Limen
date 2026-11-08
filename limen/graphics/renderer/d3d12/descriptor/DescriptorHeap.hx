@@ -19,7 +19,7 @@ abstract DescriptorHeap(Dx12Resource) to Dx12Resource {
 	}
 }
 
-@:struct class DescriptorHeapDesc {
+@:keep @:struct class DescriptorHeapDesc {
 	public var type:DescriptorHeapType;
 	public var numDescriptors:Int;
 	public var flags:DescriptorHeapFlags;
@@ -40,7 +40,7 @@ enum abstract DescriptorHeapType(Int) {
 	final DSV = 3;
 }
 
-@:struct class DescriptorRange {
+@:keep @:struct class DescriptorRange {
 	public var rangeType:DescriptorRangeType;
 	public var numDescriptors:Int;
 	public var baseShaderRegister:Int;

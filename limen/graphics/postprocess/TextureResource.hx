@@ -1,6 +1,6 @@
 package limen.graphics.postprocess;
 
-@:struct
+@:keep @:struct
 class TextureResource {
 	public var native:NativeHandle;
 	public var memory:NativeHandle;

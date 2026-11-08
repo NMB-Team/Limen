@@ -5,7 +5,7 @@ import limen.graphics.renderer.d3d12.pipeline.Pipeline.Dx12AddressMode;
 import limen.graphics.renderer.d3d12.pipeline.Pipeline.Dx12ComparisonFunc;
 import limen.graphics.renderer.d3d12.pipeline.Pipeline.Dx12Filter;
 
-@:struct class SoDeclarationEntry {
+@:keep @:struct class SoDeclarationEntry {
 	public var stream:Int;
 	public var semanticName:hl.Bytes;
 	public var semanticIndex:Int;
@@ -22,7 +22,7 @@ enum abstract StaticBorderColor(Int) {
 	final OPAQUE_WHITE = 2;
 }
 
-@:struct class StaticSamplerDesc {
+@:keep @:struct class StaticSamplerDesc {
 	public var filter:Dx12Filter;
 	public var addressU:Dx12AddressMode;
 	public var addressV:Dx12AddressMode;
@@ -40,7 +40,7 @@ enum abstract StaticBorderColor(Int) {
 	public function new() {}
 }
 
-@:struct class StreamOutputDesc {
+@:keep @:struct class StreamOutputDesc {
 	public var soDeclaration:hl.CArray<SoDeclarationEntry>;
 	public var numEntries:Int;
 	public var bufferStrides:hl.Bytes;

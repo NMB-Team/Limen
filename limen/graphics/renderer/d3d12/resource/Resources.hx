@@ -80,7 +80,7 @@ abstract Heap(Dx12Resource) {
 	}
 }
 
-@:struct class HeapDesc {
+@:keep @:struct class HeapDesc {
 	public var sizeInBytes:Int64;
 	@:packed public var properties(default, null):HeapProperties;
 	public var alignment:Int64;
@@ -89,14 +89,14 @@ abstract Heap(Dx12Resource) {
 	public function new() {}
 }
 
-@:struct class ResourceAllocationInfo {
+@:keep @:struct class ResourceAllocationInfo {
 	public var sizeInBytes:Int64;
 	public var alignment:Int64;
 
 	public function new() {}
 }
 
-@:struct class HeapProperties {
+@:keep @:struct class HeapProperties {
 	public var type:HeapType;
 	public var cpuPageProperty:CpuPageProperty;
 	public var memoryPoolReference:MemoryPool;
@@ -119,14 +119,14 @@ enum abstract MemoryPool(Int) {
 	final L1 = 2;
 }
 
-@:struct class PlacedSubresourceFootprint {
+@:keep @:struct class PlacedSubresourceFootprint {
 	public var offset:Int64;
 	@:packed public var footprint(default, null):SubresourceFootprint;
 
 	public function new() {}
 }
 
-@:struct class ResourceBarrier {
+@:keep @:struct class ResourceBarrier {
 	var type:ResourceBarrierType;
 
 	public var flags:ResourceBarrierFlags;
@@ -152,7 +152,7 @@ enum abstract ResourceBarrierType(Int) {
 	final UAV = 2;
 }
 
-@:struct class ResourceDesc {
+@:keep @:struct class ResourceDesc {
 	public var dimension:Dx12ResourceDimension;
 	public var alignment:Int64;
 	public var width:Int64;
@@ -213,7 +213,7 @@ enum abstract ResourceState(Int) {
 	@:op(a & b) function and(r:ResourceState):ResourceState;
 }
 
-@:struct class SubResourceData {
+@:keep @:struct class SubResourceData {
 	public var data:hl.Bytes;
 	public var rowPitch:Int64;
 	public var slicePitch:Int64;
@@ -221,7 +221,7 @@ enum abstract ResourceState(Int) {
 	public function new() {}
 }
 
-@:struct class SubresourceFootprint {
+@:keep @:struct class SubresourceFootprint {
 	public var format:DxgiFormat;
 	public var width:Int;
 	public var height:Int;
@@ -231,7 +231,7 @@ enum abstract ResourceState(Int) {
 	public function new() {}
 }
 
-@:struct class TextureCopyLocation {
+@:keep @:struct class TextureCopyLocation {
 	public var res:GpuResource;
 	public var type:TextureCopyType;
 

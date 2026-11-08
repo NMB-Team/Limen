@@ -1159,7 +1159,15 @@ HL_PRIM ID3D12PipelineState* HL_NAME(create_compute_pipeline_state)(D3D12_COMPUT
 
 HL_PRIM ID3D12CommandSignature* HL_NAME(create_command_signature)(D3D12_COMMAND_SIGNATURE_DESC* desc, ID3D12RootSignature* rootSign) {
 	ID3D12CommandSignature* sign = nullptr;
-	DXERR(static_driver->device->CreateCommandSignature(desc, rootSign, IID_PPV_ARGS(&sign)));
+	HRESULT result = static_driver->device->CreateCommandSignature(desc, rootSign, IID_PPV_ARGS(&sign));
+
+	if (result == E_INVALIDARG) {
+		HL_NAME(flush_messages)();
+		hl_error("D3D12 CreateCommandSignature failed: HRESULT %X, stride=%d, arguments=%d, nodeMask=0x%X, firstType=%d",
+			(DWORD)result, (int)desc->ByteStride, (int)desc->NumArgumentDescs, desc->NodeMask,
+			desc->NumArgumentDescs && desc->pArgumentDescs ? (int)desc->pArgumentDescs[0].Type : -1);
+	}
+	DXERR(result);
 
 	return sign;
 }
