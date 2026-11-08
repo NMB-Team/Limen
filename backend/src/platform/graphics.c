@@ -7,7 +7,26 @@
 #include "native_window.h"
 
 void* limen_gl_create_context(void* window) {
-	return SDL_GL_CreateContext(window);
+	int flags;
+	if (!SDL_GL_GetAttribute(SDL_GL_CONTEXT_FLAGS, &flags))
+		return SDL_GL_CreateContext(window);
+
+	SDL_GLContext context = nullptr;
+	if (SDL_GL_SetAttribute(SDL_GL_CONTEXT_RESET_NOTIFICATION, SDL_GL_CONTEXT_RESET_LOSE_CONTEXT)) {
+		if (SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, flags | SDL_GL_CONTEXT_ROBUST_ACCESS_FLAG))
+			context = SDL_GL_CreateContext(window);
+
+		if (!context && SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, flags))
+			context = SDL_GL_CreateContext(window);
+	}
+
+	// keep optional creation attributes from leaking into the next attempt
+	bool flags_restored = SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, flags);
+	bool reset_restored = SDL_GL_SetAttribute(SDL_GL_CONTEXT_RESET_NOTIFICATION, SDL_GL_CONTEXT_RESET_NO_NOTIFICATION);
+	if (!context && flags_restored && reset_restored)
+		context = SDL_GL_CreateContext(window);
+
+	return context;
 }
 
 bool limen_gl_swap_window(void* window) {
@@ -16,6 +35,14 @@ bool limen_gl_swap_window(void* window) {
 
 bool limen_gl_make_current(void* window, void* context) {
 	return SDL_GL_MakeCurrent(window, context);
+}
+
+bool limen_gl_context_error(const char* message) {
+	return SDL_SetError("%s", message);
+}
+
+void* limen_gl_current_context(void) {
+	return SDL_GL_GetCurrentContext();
 }
 
 void limen_gl_destroy_context(void* context) {

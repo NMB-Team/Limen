@@ -187,6 +187,34 @@ if(LIMEN_BUILD_OPENGL AND WIN32 AND NOT MINGW)
 endif()
 
 if(LIMEN_BUILD_OPENGL)
+	find_program(LIMEN_HAXELIB_EXECUTABLE NAMES haxelib)
+	if(LIMEN_HAXE_EXECUTABLE AND LIMEN_HAXELIB_EXECUTABLE)
+		execute_process(COMMAND "${LIMEN_HAXELIB_EXECUTABLE}" path heaps
+			RESULT_VARIABLE _LIMEN_HEAPS_RESULT OUTPUT_QUIET ERROR_QUIET
+		)
+		if(_LIMEN_HEAPS_RESULT EQUAL 0)
+			add_test(NAME limen_opengl_readback_lifecycle
+				COMMAND "${LIMEN_HAXE_EXECUTABLE}" -lib heaps
+					-cp "${CMAKE_CURRENT_SOURCE_DIR}/.." -cp "${CMAKE_CURRENT_SOURCE_DIR}"
+					--run OpenGLReadbackTest
+			)
+			set_tests_properties(limen_opengl_readback_lifecycle PROPERTIES
+				WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/.." TIMEOUT 45
+			)
+		endif()
+	endif()
+
+	find_program(LIMEN_GLSLANG_VALIDATOR NAMES glslangValidator HINTS "$ENV{VULKAN_SDK}/Bin")
+	if(LIMEN_HAXE_EXECUTABLE AND LIMEN_GLSLANG_VALIDATOR)
+		add_test(NAME limen_opengl_validation_shaders
+			COMMAND "${LIMEN_HAXE_EXECUTABLE}" -cp "${CMAKE_CURRENT_SOURCE_DIR}"
+				--run OpenGLValidationTest
+				"${CMAKE_CURRENT_SOURCE_DIR}/../limen/graphics/renderer/opengl/OpenGL.hx"
+				"${LIMEN_GLSLANG_VALIDATOR}"
+				"${CMAKE_CURRENT_BINARY_DIR}/opengl-validation"
+		)
+	endif()
+
 	add_executable(limen_opengl_sdl_failures_test opengl_sdl_failures.c)
 	limen_enable_c23_nullptr(limen_opengl_sdl_failures_test)
 	target_include_directories(limen_opengl_sdl_failures_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../backend/src/platform")

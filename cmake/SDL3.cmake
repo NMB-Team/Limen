@@ -1,7 +1,9 @@
 include(FetchContent)
+include("${CMAKE_CURRENT_LIST_DIR}/SDLEGL.cmake")
 
 function(limen_resolve_sdl3)
 	if(TARGET SDL3::SDL3-static)
+		limen_patch_sdl_egl()
 		return()
 	endif()
 
@@ -30,4 +32,5 @@ function(limen_resolve_sdl3)
 	if(NOT TARGET SDL3::SDL3-static)
 		message(FATAL_ERROR "SDL3 static target was not created.")
 	endif()
+	limen_patch_sdl_egl()
 endfunction()

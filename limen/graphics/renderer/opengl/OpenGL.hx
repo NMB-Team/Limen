@@ -17,6 +17,11 @@ class OpenGL {
 	public static inline final ES_PROFILE = 1 << 3;
 
 	var failed:Bool = false;
+	var readbackCancels:Array<Void->Void> = [];
+
+	function cancelReadbacks():Void {
+		while (readbackCancels.length > 0) readbackCancels.pop()();
+	}
 
 	public var presentMode(default, null):Null<PresentMode>;
 	public var requestedPresentMode(default, null):PresentMode = VSync;
@@ -134,6 +139,7 @@ class OpenGL {
 		if (failed) throw "OpenGL context previously failed; recovery is not implemented";
 		if (handle == null || !OpenGLBindings.makeCurrent(window.nativeHandle, handle)) {
 			failed = true;
+			cancelReadbacks();
 			throw 'OpenGL make current failed: ${Platform.getError()}';
 		}
 	}
@@ -145,6 +151,7 @@ class OpenGL {
 		if (failed) throw "OpenGL context previously failed; recovery is not implemented";
 		if (!OpenGLBindings.swapWindow(window.nativeHandle)) {
 			failed = true;
+			cancelReadbacks();
 			throw 'OpenGL swap failed: ${Platform.getError()}';
 		}
 	}
@@ -152,6 +159,7 @@ class OpenGL {
 	public function destroy():Void {
 		if (handle == null)
 			return;
+		cancelReadbacks();
 		OpenGLBindings.destroyContext(handle);
 		handle = null;
 	}
@@ -220,6 +228,9 @@ class OpenGL {
 				";
 			} else {
 				"
+					#ifdef GL_ES
+					precision lowp float;
+					#endif
 					out vec4 color;
 					void main() {
 						color = vec4(1.0);

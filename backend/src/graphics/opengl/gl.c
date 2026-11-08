@@ -44,29 +44,96 @@
 #define glColorMaski(...) ES_NOT_SUPPORTED
 #endif
 
-#if !defined(HL_CONSOLE) && !defined(GL_IMPORT)
-#ifndef __APPLE__
+#ifdef _MSC_VER
+#include <intrin.h>
+#else
+#include <stdatomic.h>
+#endif
+
+#if !defined(HL_CONSOLE) && !defined(GL_IMPORT) && !defined(__APPLE__)
 #define HL_GL_DYNAMIC_IMPORTS
 #endif
+
+#ifdef _MSC_VER
+#define GL_THREAD_LOCAL __declspec(thread)
+#else
+#define GL_THREAD_LOCAL _Thread_local
+#endif
+
+typedef GLenum (APIENTRY *ResetStatusProc)(void);
+typedef void (APIENTRY *NamedBufferSubDataProc)(GLuint, GLintptr, GLsizeiptr, const void*);
+typedef void (APIENTRY *ObjectLabelProc)(GLenum, GLuint, GLsizei, const char*);
+
+typedef struct gl_context_state {
+#ifdef HL_GL_DYNAMIC_IMPORTS
 #define GL_IMPORT(fun, t) PFNGL##t##PROC fun
 #include "GLImports.h"
 #undef GL_IMPORT
-#define GL_IMPORT(fun, t) fun = (PFNGL##t##PROC)limen_gl_get_proc_address(#fun)
-#ifndef __APPLE__
-#define GL_IMPORT_OPT(fun, t)                                  \
-	PFNGL##t##PROC fun = nullptr;                              \
-	if (!fun) {                                                \
-		fun = (PFNGL##t##PROC)limen_gl_get_proc_address(#fun); \
-		if (fun == nullptr)                                    \
-			hl_error("function not resolved");                 \
-	}
 #endif
-#endif
+	void* context;
+	void* owner;
+	bool initialized;
+	bool context_lost;
+	bool reset_notifications;
+	bool capabilities[7];
+	bool supports_readback;
+	bool is_es;
+	int version;
+	ResetStatusProc reset_status;
+	NamedBufferSubDataProc named_buffer_sub_data;
+	ObjectLabelProc object_label;
+	GLint max_label_length;
+	struct gl_readback* readbacks;
+	struct gl_context_state* next;
+} gl_context_state;
 
-#if !defined GL_IMPORT_OPT
-#define GL_IMPORT_OPT(fun, t)
-#define glMultiDrawElementsIndirectCountARB(...) hl_error("function not resolved");
-#define glCopyImageSubData(...) hl_error("function not resolved");
+static gl_context_state* gl_contexts;
+#ifdef _MSC_VER
+static volatile long gl_context_lock;
+#else
+static atomic_flag gl_context_lock = ATOMIC_FLAG_INIT;
+#endif
+static GL_THREAD_LOCAL gl_context_state* gl_current;
+static GL_THREAD_LOCAL char gl_thread;
+static GL_THREAD_LOCAL bool gl_cleanup_registered;
+
+static void gl_thread_exit(void);
+#include "thread_cleanup.h"
+
+static void gl_lock_contexts(void) {
+#ifdef _MSC_VER
+	while (_InterlockedExchange(&gl_context_lock, 1)) {}
+#else
+	while (atomic_flag_test_and_set_explicit(&gl_context_lock, memory_order_acquire)) {}
+#endif
+}
+
+static void gl_unlock_contexts(void) {
+#ifdef _MSC_VER
+	_InterlockedExchange(&gl_context_lock, 0);
+#else
+	atomic_flag_clear_explicit(&gl_context_lock, memory_order_release);
+#endif
+}
+
+static gl_context_state* gl_state(void) {
+	if (!gl_current) hl_error("No current Limen OpenGL context");
+	return gl_current;
+}
+
+#include "GLDispatch.h"
+#define gl_reset_status (gl_state()->reset_status)
+#define gl_context_lost (gl_state()->context_lost)
+#define gl_named_buffer_sub_data (gl_state()->named_buffer_sub_data)
+#define gl_label_proc (gl_state()->object_label)
+#define gl_max_label_length (gl_state()->max_label_length)
+
+#ifdef HL_GL_DYNAMIC_IMPORTS
+#define GL_IMPORT(fun, t) fun = (PFNGL##t##PROC)limen_gl_get_proc_address(#fun)
+#else
+#define GL_IMPORT(fun, t)
+#define glMultiDrawElementsIndirectCountARB(...) hl_error("function not resolved")
+#define glCopyImageSubData(...) hl_error("function not resolved")
 #endif
 
 #ifdef HL_GL_DYNAMIC_IMPORTS
@@ -76,18 +143,32 @@
 #endif
 
 static bool gl_version_at_least(int desktop, int es) {
+	if (!gl_current) return false;
+	if (gl_current->initialized) {
+		int required = gl_current->is_es ? es : desktop;
+		return required > 0 && gl_current->version >= required;
+	}
+	if (limen_gl_current_context() != gl_current->context) return false;
+
 	const char* version = (const char*)glGetString(GL_VERSION);
 	if (!version) return false;
+
 	bool is_es = strncmp(version, "OpenGL ES", 9) == 0;
 	const char* number = version;
 	while (*number && (*number < '0' || *number > '9')) number++;
+
 	int major = 0, minor = 0;
 	sscanf(number, "%d.%d", &major, &minor);
+
+	gl_current->version = major * 100 + minor;
+	gl_current->is_es = is_es;
+
 	int required = is_es ? es : desktop;
 	return required > 0 && major * 100 + minor >= required;
 }
 
 static bool gl_extension(const char* name) {
+	if (!gl_current || limen_gl_current_context() != gl_current->context) return false;
 	if (!*name || strchr(name, ' ')) return false;
 	if (gl_version_at_least(300, 300)) {
 #ifdef HL_GL_DYNAMIC_IMPORTS
@@ -110,11 +191,15 @@ static bool gl_extension(const char* name) {
 }
 
 static bool gl_capability(int feature) {
+	if (!gl_current) return false;
+	if (gl_current->initialized)
+		return feature >= 0 && feature < 7 && gl_current->capabilities[feature];
+
 	switch (feature) {
 	case 3: return gl_version_at_least(302, 0) || gl_extension("GL_ARB_depth_clamp") || gl_extension("GL_EXT_depth_clamp") || gl_extension("GL_NV_depth_clamp");
 #ifdef HL_GL_DYNAMIC_IMPORTS
 	case 0: return glMultiDrawElementsIndirect && (gl_version_at_least(403, 0) || gl_extension("GL_ARB_multi_draw_indirect"));
-	case 1: return gl_capability(0) && (gl_version_at_least(406, 0) || gl_extension("GL_ARB_indirect_parameters")) && (limen_gl_get_proc_address("glMultiDrawElementsIndirectCount") || limen_gl_get_proc_address("glMultiDrawElementsIndirectCountARB"));
+	case 1: return gl_capability(0) && (gl_version_at_least(406, 0) || gl_extension("GL_ARB_indirect_parameters")) && glMultiDrawElementsIndirectCountARB;
 	case 2: return glDispatchCompute && glMemoryBarrier && glBindImageTexture && glBindBufferBase && glGetProgramResourceIndex && glShaderStorageBlockBinding && (gl_version_at_least(403, 0) || (gl_extension("GL_ARB_compute_shader") && gl_extension("GL_ARB_shader_storage_buffer_object") && gl_extension("GL_ARB_shader_image_load_store") && gl_extension("GL_ARB_program_interface_query")));
 	case 4: return glGenQueries && glDeleteQueries && glBeginQuery && glEndQuery && glGetQueryObjectiv && glGetQueryObjectui64v && glQueryCounter && (gl_version_at_least(303, 0) || gl_extension("GL_ARB_timer_query"));
 	case 5: return glDebugMessageCallback && glDebugMessageControl && (gl_version_at_least(403, 0) || gl_extension("GL_KHR_debug"));
@@ -133,53 +218,63 @@ static void gl_require(int feature, const char* message) {
 	if (!gl_capability(feature)) hl_error("%s", message);
 }
 
-typedef GLenum (APIENTRY *ResetStatusProc)(void);
-static ResetStatusProc gl_reset_status;
-static bool gl_context_lost;
 
 static void gl_load_reset_status(void) {
 	gl_reset_status = nullptr;
 	gl_context_lost = false;
+	gl_current->reset_notifications = false;
 	if (gl_version_at_least(405, 302))
 		gl_reset_status = (ResetStatusProc)limen_gl_get_proc_address("glGetGraphicsResetStatus");
-	else if (gl_extension("GL_KHR_robustness")) {
+
+	if (!gl_reset_status && gl_extension("GL_KHR_robustness")) {
 		gl_reset_status = (ResetStatusProc)limen_gl_get_proc_address("glGetGraphicsResetStatusKHR");
 		if (!gl_reset_status) gl_reset_status = (ResetStatusProc)limen_gl_get_proc_address("glGetGraphicsResetStatus");
-	} else if (gl_extension("GL_ARB_robustness"))
+	}
+	if (!gl_reset_status && gl_extension("GL_ARB_robustness"))
 		gl_reset_status = (ResetStatusProc)limen_gl_get_proc_address("glGetGraphicsResetStatusARB");
-	else if (gl_extension("GL_EXT_robustness"))
+	if (!gl_reset_status && gl_extension("GL_EXT_robustness"))
 		gl_reset_status = (ResetStatusProc)limen_gl_get_proc_address("glGetGraphicsResetStatusEXT");
+
+	if (gl_reset_status) {
+		GLint strategy = 0;
+		glGetIntegerv(0x8256 /* GL_RESET_NOTIFICATION_STRATEGY */, &strategy);
+		gl_current->reset_notifications = strategy == 0x8252 /* GL_LOSE_CONTEXT_ON_RESET */;
+	}
 }
 
-typedef void (APIENTRY *NamedBufferSubDataProc)(GLuint, GLintptr, GLsizeiptr, const void*);
-typedef void (APIENTRY *ObjectLabelProc)(GLenum, GLuint, GLsizei, const char*);
-static NamedBufferSubDataProc gl_named_buffer_sub_data;
-static ObjectLabelProc gl_object_label;
-static GLint gl_max_label_length;
+static bool gl_supports_readback(void) {
+	bool supported = gl_version_at_least(302, 300) ||
+		(gl_extension("GL_ARB_copy_buffer") && gl_extension("GL_ARB_map_buffer_range") && gl_extension("GL_ARB_sync"));
+#ifdef HL_GL_DYNAMIC_IMPORTS
+	supported = supported && glCopyBufferSubData && glMapBufferRange && glUnmapBuffer && glFenceSync && glClientWaitSync && glDeleteSync;
+#endif
+	return supported;
+}
+
 
 static void gl_load_resource_api(void) {
 	gl_named_buffer_sub_data = nullptr;
-	gl_object_label = nullptr;
+	gl_label_proc = nullptr;
 	gl_max_label_length = 0;
 	if (gl_version_at_least(405, 0) || gl_extension("GL_ARB_direct_state_access"))
 		gl_named_buffer_sub_data = (NamedBufferSubDataProc)limen_gl_get_proc_address("glNamedBufferSubData");
 	if (gl_version_at_least(403, 302) || gl_extension("GL_KHR_debug")) {
-		gl_object_label = (ObjectLabelProc)limen_gl_get_proc_address("glObjectLabel");
-		if (!gl_object_label) gl_object_label = (ObjectLabelProc)limen_gl_get_proc_address("glObjectLabelKHR");
+		gl_label_proc = (ObjectLabelProc)limen_gl_get_proc_address("glObjectLabel");
+		if (!gl_label_proc) gl_label_proc = (ObjectLabelProc)limen_gl_get_proc_address("glObjectLabelKHR");
 	}
-	if (gl_object_label) glGetIntegerv(0x82E8 /* GL_MAX_LABEL_LENGTH */, &gl_max_label_length);
+	if (gl_label_proc) glGetIntegerv(0x82E8 /* GL_MAX_LABEL_LENGTH */, &gl_max_label_length);
 }
 
 static void gl_label(GLenum type, GLuint object, const char* label) {
-	if (gl_object_label && object && gl_max_label_length > 0) {
+	if (gl_label_proc && object && gl_max_label_length > 0) {
 		size_t length = strlen(label);
 		if (length >= (size_t)gl_max_label_length) length = gl_max_label_length - 1;
-		gl_object_label(type, object, (GLsizei)length, label);
+		gl_label_proc(type, object, (GLsizei)length, label);
 	}
 }
 
 HL_PRIM void HL_NAME(gl_object_label)(int type, vdynamic* object, vstring* label) {
-	if (gl_object_label && object) gl_label(type, object->v.i, hl_to_utf8(label->bytes));
+	if (gl_label_proc && object) gl_label(type, object->v.i, hl_to_utf8(label->bytes));
 }
 
 HL_PRIM bool HL_NAME(gl_try_named_buffer_sub_data)(vdynamic* buffer, int offset, vbyte* data, int srcOffset, int length) {
@@ -254,6 +349,8 @@ static int GLLoadAPI() {
 #undef GL_IMPORT_OPTIONAL
 #undef GL_IMPORT
 
+	if (!glMultiDrawElementsIndirectCountARB)
+		glMultiDrawElementsIndirectCountARB = (PFNGLMULTIDRAWELEMENTSINDIRECTCOUNTARBPROC)limen_gl_get_proc_address("glMultiDrawElementsIndirectCount");
 #endif
 	return 0;
 }
@@ -266,11 +363,18 @@ static void APIENTRY debug_message_callback(GLenum source, GLenum type, GLuint i
 
 #define ZIDX(val) ((val) ? (val)->v.i : 0)
 
-// globals
+// context initialization
 HL_PRIM bool HL_NAME(gl_init)() {
+	if (!gl_current || limen_gl_current_context() != gl_current->context) return false;
+	if (gl_current->initialized) return true;
 	if (GLLoadAPI() != 0) return false;
+
 	gl_load_reset_status();
 	gl_load_resource_api();
+	for (int i = 0; i < 7; i++) gl_current->capabilities[i] = gl_capability(i);
+	gl_current->supports_readback = gl_supports_readback();
+	gl_current->initialized = true;
+
 	return true;
 }
 
@@ -296,7 +400,8 @@ HL_PRIM bool HL_NAME(gl_set_debug)(bool enable) {
 }
 
 HL_PRIM bool HL_NAME(gl_is_context_lost)() {
-	if (!gl_context_lost && gl_reset_status)
+	if (!gl_current || limen_gl_current_context() != gl_current->context) return true;
+	if (!gl_context_lost && gl_current->reset_notifications && gl_reset_status)
 		gl_context_lost = gl_reset_status() != GL_NO_ERROR;
 	return gl_context_lost;
 }
@@ -306,6 +411,9 @@ HL_PRIM void HL_NAME(gl_clear)(int bits) {
 }
 
 HL_PRIM int HL_NAME(gl_get_error)() {
+	if (!gl_current || limen_gl_current_context() != gl_current->context)
+		hl_error("No current compatible OpenGL context");
+
 	GLenum error = glGetError();
 	if (error == 0x0507) gl_context_lost = true;
 	return error;
@@ -595,7 +703,7 @@ HL_PRIM void HL_NAME(gl_tex_image3d)(int target, int level, int internalFormat, 
 
 HL_PRIM void HL_NAME(gl_copy_image_sub_data)(vdynamic* src, int srcTarget, int srcLevel, int srcX, int srcY, int srcZ, vdynamic* dst, int dstTarget, int dstLevel, int dstX, int dstY, int dstZ, int width, int height, int depth) {
 	// GL 4.3+ / ARB_copy_image
-	GL_IMPORT_OPT(glCopyImageSubData, COPYIMAGESUBDATA)
+	GL_REQUIRE_PROC(glCopyImageSubData);
 	glCopyImageSubData(ZIDX(src), srcTarget, srcLevel, srcX, srcY, srcZ, ZIDX(dst), dstTarget, dstLevel, dstX, dstY, dstZ, width, height, depth);
 }
 
@@ -791,6 +899,7 @@ HL_PRIM void HL_NAME(gl_get_buffer_sub_data)(int target, int offset, vbyte* data
 }
 
 typedef struct gl_readback {
+	uintptr_t id;
 	GLuint buffer;
 	GLsync fence;
 	int size;
@@ -798,24 +907,218 @@ typedef struct gl_readback {
 	struct gl_readback* next;
 } gl_readback;
 
-static gl_readback* readbacks;
+static uintptr_t readback_id;
 
-void limen_gl_cancel_readbacks(void* context) {
-	for (gl_readback* r = readbacks; r; r = r->next) {
-		if (r->context != context) continue;
-		// context destruction releases its GL objects
-		r->context = nullptr;
+static gl_context_state* gl_find_context(void* context) {
+	for (gl_context_state* state = gl_contexts; state; state = state->next)
+		if (state->context == context) return state;
+	return nullptr;
+}
+
+static bool gl_readback_context_current(void* context) {
+	return gl_current && gl_current->initialized && gl_current->context == context &&
+		limen_gl_current_context() == context && !HL_NAME(gl_is_context_lost)();
+}
+
+static void gl_delete_readback(gl_readback* r) {
+	glDeleteSync(r->fence);
+	glDeleteBuffers(1, &r->buffer);
+}
+
+void limen_gl_release_cancelled_readbacks(void* context) {
+	if (!gl_current || !gl_current->readbacks || !gl_readback_context_current(context)) return;
+
+	gl_lock_contexts();
+	gl_readback** link = &gl_current->readbacks;
+	gl_readback* released = nullptr;
+
+	while (*link) {
+		gl_readback* r = *link;
+		if (r->id) {
+			link = &r->next;
+			continue;
+		}
+
+		*link = r->next;
+		r->next = released;
+		released = r;
+	}
+	gl_unlock_contexts();
+
+	while (released) {
+		gl_readback* r = released;
+		released = r->next;
+		gl_delete_readback(r);
+		free(r);
 	}
 }
 
-HL_PRIM gl_readback* HL_NAME(gl_start_buffer_readback)(void* context, vdynamic* source, int offset, int size) {
-	if (size <= 0 || offset < 0) return nullptr;
-	bool supported = gl_version_at_least(302, 300) ||
-		(gl_extension("GL_ARB_copy_buffer") && gl_extension("GL_ARB_map_buffer_range") && gl_extension("GL_ARB_sync"));
-#ifdef HL_GL_DYNAMIC_IMPORTS
-	supported = supported && glCopyBufferSubData && glMapBufferRange && glUnmapBuffer && glFenceSync && glClientWaitSync && glDeleteSync;
-#endif
-	if (!supported) return nullptr;
+HL_PRIM void HL_NAME(gl_cancel_buffer_readback)(void* request) {
+	if (!request) return;
+
+	void* context = nullptr;
+	gl_lock_contexts();
+
+	for (gl_context_state* state = gl_contexts; state && !context; state = state->next) {
+		for (gl_readback* r = state->readbacks; r; r = r->next) {
+			if (r->id != (uintptr_t)request) continue;
+
+			r->id = 0;
+			context = state->context;
+			break;
+		}
+	}
+	gl_unlock_contexts();
+
+	if (context) limen_gl_release_cancelled_readbacks(context);
+}
+
+void* limen_gl_new_context(void* window) {
+	if (!gl_register_thread_cleanup()) {
+		limen_gl_context_error("Could not register OpenGL thread cleanup");
+		return nullptr;
+	}
+
+	gl_context_state* state = calloc(1, sizeof(*state));
+	if (!state) {
+		if (!gl_current) gl_unregister_thread_cleanup();
+		limen_gl_context_error("Could not allocate OpenGL context state");
+		return nullptr;
+	}
+
+	state->context = limen_gl_create_context(window);
+	if (!state->context) {
+		free(state);
+		if (gl_current && limen_gl_current_context() != gl_current->context) {
+			gl_lock_contexts();
+			gl_current->owner = nullptr;
+			gl_current = nullptr;
+			gl_unlock_contexts();
+		}
+		if (!gl_current) gl_unregister_thread_cleanup();
+		return nullptr;
+	}
+
+	gl_lock_contexts();
+	if (gl_current) gl_current->owner = nullptr;
+	state->owner = &gl_thread;
+	state->next = gl_contexts;
+	gl_contexts = state;
+	gl_current = state;
+	gl_unlock_contexts();
+
+	return state->context;
+}
+
+bool limen_gl_activate_context(void* window, void* context) {
+	if (context && !gl_register_thread_cleanup())
+		return limen_gl_context_error("Could not register OpenGL thread cleanup");
+
+	gl_context_state* previous = gl_current;
+	if (previous && previous->context == context) {
+		if (limen_gl_make_current(window, context)) {
+			limen_gl_release_cancelled_readbacks(context);
+			return true;
+		}
+
+		if (limen_gl_current_context() != context) {
+			gl_lock_contexts();
+			previous->owner = nullptr;
+			gl_current = nullptr;
+			gl_unlock_contexts();
+		}
+		if (!gl_current) gl_unregister_thread_cleanup();
+		return false;
+	}
+
+	gl_lock_contexts();
+	gl_context_state* target = context ? gl_find_context(context) : nullptr;
+	if (context && (!target || (target->owner && target->owner != &gl_thread))) {
+		gl_unlock_contexts();
+		if (!gl_current) gl_unregister_thread_cleanup();
+		return limen_gl_context_error("OpenGL context is unavailable or current on another thread");
+	}
+
+	// reserve the target while the native activation runs without the registry lock
+	if (target) target->owner = &gl_thread;
+	gl_unlock_contexts();
+
+	bool success = limen_gl_make_current(window, context);
+	void* actual = success ? context : limen_gl_current_context();
+	gl_lock_contexts();
+
+	if (success) {
+		gl_current = target;
+		if (previous) previous->owner = nullptr;
+	} else {
+		if (target) target->owner = nullptr;
+		if (previous && actual != previous->context) {
+			gl_current = nullptr;
+			previous->owner = nullptr;
+		}
+	}
+	gl_unlock_contexts();
+
+	if (!gl_current) gl_unregister_thread_cleanup();
+	if (success && target) limen_gl_release_cancelled_readbacks(context);
+	return success;
+}
+
+bool limen_gl_delete_context(void* context) {
+	gl_lock_contexts();
+	gl_context_state** link = &gl_contexts;
+	while (*link && (*link)->context != context) link = &(*link)->next;
+
+	gl_context_state* state = *link;
+	if (!state) {
+		gl_unlock_contexts();
+		return true;
+	}
+	if (state->owner && state->owner != &gl_thread) {
+		gl_unlock_contexts();
+		return limen_gl_context_error("Cannot destroy an OpenGL context current on another thread");
+	}
+
+	*link = state->next;
+	gl_unlock_contexts();
+
+	bool current = gl_readback_context_current(context);
+	while (state->readbacks) {
+		gl_readback* r = state->readbacks;
+		state->readbacks = r->next;
+		if (current) gl_delete_readback(r);
+		// otherwise destruction releases the context's GL objects
+		free(r);
+	}
+
+	limen_gl_destroy_context(context);
+	if (gl_current == state) gl_current = nullptr;
+	free(state);
+	if (!gl_current) gl_unregister_thread_cleanup();
+
+	return true;
+}
+
+static void gl_thread_exit(void) {
+	gl_context_state* state = gl_current;
+	if (!state) return;
+
+	gl_lock_contexts();
+	for (gl_readback* r = state->readbacks; r; r = r->next) r->id = 0;
+	gl_unlock_contexts();
+
+	limen_gl_release_cancelled_readbacks(state->context);
+	limen_gl_make_current(nullptr, nullptr);
+
+	gl_lock_contexts();
+	state->owner = nullptr;
+	gl_current = nullptr;
+	gl_unlock_contexts();
+}
+
+HL_PRIM void* HL_NAME(gl_start_buffer_readback)(void* context, vdynamic* source, int offset, int size) {
+	if (size <= 0 || offset < 0 || !gl_readback_context_current(context)) return nullptr;
+	if (!gl_current->supports_readback) return nullptr;
 	gl_readback* r = (gl_readback*)calloc(1, sizeof(gl_readback));
 	if (!r) return nullptr;
 	GLint read, pack;
@@ -843,15 +1146,49 @@ HL_PRIM gl_readback* HL_NAME(gl_start_buffer_readback)(void* context, vdynamic* 
 	glFlush();
 	r->size = size;
 	r->context = context;
-	r->next = readbacks;
-	readbacks = r;
-	return r;
+	// opaque ids keep stale handles safe after cancellation and allocator reuse
+	gl_lock_contexts();
+	if (readback_id == UINTPTR_MAX) {
+		gl_unlock_contexts();
+		gl_delete_readback(r);
+		free(r);
+		return nullptr;
+	}
+	r->id = ++readback_id;
+	r->next = gl_current->readbacks;
+	gl_current->readbacks = r;
+	gl_unlock_contexts();
+	return (void*)r->id;
 }
 
-HL_PRIM int HL_NAME(gl_poll_buffer_readback)(gl_readback* r, vbyte* data, int offset) {
-	if (r->context) {
+HL_PRIM int HL_NAME(gl_poll_buffer_readback)(void* request, vbyte* data, int offset) {
+	if (!gl_current || !gl_readback_context_current(gl_current->context)) {
+		HL_NAME(gl_cancel_buffer_readback)(request);
+		return -1;
+	}
+	gl_lock_contexts();
+	gl_readback** link = &gl_current->readbacks;
+	while (*link && (!request || (*link)->id != (uintptr_t)request)) link = &(*link)->next;
+	if (!*link) {
+		gl_unlock_contexts();
+		HL_NAME(gl_cancel_buffer_readback)(request);
+		return -1;
+	}
+	gl_readback* r = *link;
+	gl_unlock_contexts();
+	if (!gl_readback_context_current(r->context)) {
+		HL_NAME(gl_cancel_buffer_readback)(request);
+		return -1;
+	}
+	{
 		GLenum status = glClientWaitSync(r->fence, 0, 0);
-		if (status == GL_TIMEOUT_EXPIRED) return 0;
+		if (status == GL_TIMEOUT_EXPIRED) {
+			gl_lock_contexts();
+			bool cancelled = r->id == 0;
+			gl_unlock_contexts();
+			if (cancelled) limen_gl_release_cancelled_readbacks(r->context);
+			return cancelled ? -1 : 0;
+		}
 		GLint previous;
 		glGetIntegerv(GL_PIXEL_PACK_BUFFER_BINDING, &previous);
 		glBindBuffer(GL_PIXEL_PACK_BUFFER, r->buffer);
@@ -862,14 +1199,14 @@ HL_PRIM int HL_NAME(gl_poll_buffer_readback)(gl_readback* r, vbyte* data, int of
 			valid = glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
 		}
 		glBindBuffer(GL_PIXEL_PACK_BUFFER, previous);
-		glDeleteSync(r->fence);
-		glDeleteBuffers(1, &r->buffer);
+		gl_delete_readback(r);
 		r->size = valid ? 1 : -1;
-	} else r->size = -1;
-	gl_readback** link = &readbacks;
-	while (*link != r) link = &(*link)->next;
+	}
+	gl_lock_contexts();
 	*link = r->next;
-	int result = r->size;
+	bool cancelled = r->id == 0;
+	gl_unlock_contexts();
+	int result = cancelled ? -1 : r->size;
 	free(r);
 	return result;
 }
@@ -995,8 +1332,7 @@ HL_PRIM void HL_NAME(gl_multi_draw_elements_indirect)(int mode, int type, vbyte*
 HL_PRIM void HL_NAME(gl_multi_draw_elements_indirect_count)(int mode, int type, vbyte* data, vbyte* drawcount, int maxdrawcount, int stride) {
 	gl_require(1, "Indirect-count drawing is not supported by this OpenGL context");
 #ifdef HL_GL_DYNAMIC_IMPORTS
-	PFNGLMULTIDRAWELEMENTSINDIRECTCOUNTARBPROC glMultiDrawElementsIndirectCountARB = (PFNGLMULTIDRAWELEMENTSINDIRECTCOUNTARBPROC)limen_gl_get_proc_address("glMultiDrawElementsIndirectCount");
-	if (!glMultiDrawElementsIndirectCountARB) glMultiDrawElementsIndirectCountARB = (PFNGLMULTIDRAWELEMENTSINDIRECTCOUNTARBPROC)limen_gl_get_proc_address("glMultiDrawElementsIndirectCountARB");
+	GL_REQUIRE_PROC(glMultiDrawElementsIndirectCountARB);
 #endif
 	glMultiDrawElementsIndirectCountARB(mode, type, data, (GLintptr)drawcount, maxdrawcount, stride);
 }
@@ -1282,8 +1618,9 @@ DEFINE_PRIM(_VOID, gl_shader_storage_block_binding, _NULL(_I32) _I32 _I32);
 DEFINE_PRIM(_I32, gl_get_config_parameter, _I32);
 DEFINE_PRIM(_BOOL, gl_has_extension, _STRING);
 
-DEFINE_PRIM(_ABSTRACT(limen_gl_readback), gl_start_buffer_readback, _ABSTRACT(limen_gl) _DYN _I32 _I32);
+DEFINE_PRIM(_ABSTRACT(limen_gl_readback), gl_start_buffer_readback, _ABSTRACT(limen_gl) _NULL(_I32) _I32 _I32);
 DEFINE_PRIM(_I32, gl_poll_buffer_readback, _ABSTRACT(limen_gl_readback) _BYTES _I32);
+DEFINE_PRIM(_VOID, gl_cancel_buffer_readback, _ABSTRACT(limen_gl_readback));
 
 DEFINE_PRIM(_VOID, gl_object_label, _I32 _NULL(_I32) _STRING);
 DEFINE_PRIM(_BOOL, gl_try_named_buffer_sub_data, _NULL(_I32) _I32 _BYTES _I32 _I32);

@@ -34,6 +34,9 @@ class Buffers {
 	@:noCompletion
 	public static function pollBufferReadback(request:Readback, data:hl.Bytes, offset:Int):Int { return 0; }
 
+	@:noCompletion
+	public static function cancelBufferReadback(request:Readback):Void {}
+
 	public static function deleteBuffer(b:Buffer) {}
 
 	public static inline final ARRAY_BUFFER = 0x8892;
