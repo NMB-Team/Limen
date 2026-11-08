@@ -185,3 +185,11 @@ if(LIMEN_BUILD_OPENGL AND WIN32 AND NOT MINGW)
 		ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:$<TARGET_FILE_DIR:limen>"
 	)
 endif()
+
+if(LIMEN_BUILD_OPENGL)
+	add_executable(limen_opengl_sdl_failures_test opengl_sdl_failures.c)
+	limen_enable_c23_nullptr(limen_opengl_sdl_failures_test)
+	target_include_directories(limen_opengl_sdl_failures_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../backend/src/platform")
+	target_link_libraries(limen_opengl_sdl_failures_test PRIVATE SDL3::SDL3-static)
+	add_test(NAME limen_opengl_sdl_failures COMMAND limen_opengl_sdl_failures_test)
+endif()

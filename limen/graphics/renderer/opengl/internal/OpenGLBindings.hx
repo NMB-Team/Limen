@@ -19,7 +19,7 @@ class OpenGLBindings {
 	public static function destroyContext(context:ContextHandle):Void {}
 
 	@:hlNative("limen", "opengl_win_render_to")
-	public static function makeCurrent(window:WinPtr, context:ContextHandle):Void {}
+	public static function makeCurrent(window:WinPtr, context:ContextHandle):Bool { return false; }
 
 	@:hlNative("limen", "opengl_win_swap_window")
 	public static function swapWindow(window:WinPtr):Bool {

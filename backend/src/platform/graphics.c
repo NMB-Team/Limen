@@ -14,8 +14,8 @@ bool limen_gl_swap_window(void* window) {
 	return SDL_GL_SwapWindow(window);
 }
 
-void limen_gl_make_current(void* window, void* context) {
-	SDL_GL_MakeCurrent(window, context);
+bool limen_gl_make_current(void* window, void* context) {
+	return SDL_GL_MakeCurrent(window, context);
 }
 
 void limen_gl_destroy_context(void* context) {

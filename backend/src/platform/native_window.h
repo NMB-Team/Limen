@@ -53,7 +53,7 @@ LIMEN_PLATFORM_API bool limen_get_native_window(void* window, limen_native_windo
 
 LIMEN_PLATFORM_API void* limen_gl_create_context(void* window);
 LIMEN_PLATFORM_API bool limen_gl_swap_window(void* window);
-LIMEN_PLATFORM_API void limen_gl_make_current(void* window, void* context);
+LIMEN_PLATFORM_API bool limen_gl_make_current(void* window, void* context);
 LIMEN_PLATFORM_API void limen_gl_destroy_context(void* context);
 LIMEN_PLATFORM_API bool limen_gl_configure(int major, int minor, int depth, int stencil, int flags, int samples);
 LIMEN_PLATFORM_API const char* limen_gl_get_context_info(void);

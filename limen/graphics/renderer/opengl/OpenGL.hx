@@ -16,6 +16,8 @@ class OpenGL {
 	public static inline final COMPATIBILITY_PROFILE = 1 << 2;
 	public static inline final ES_PROFILE = 1 << 3;
 
+	var failed:Bool = false;
+
 	public var presentMode(default, null):Null<PresentMode>;
 	public var requestedPresentMode(default, null):PresentMode = VSync;
 
@@ -62,7 +64,11 @@ class OpenGL {
 				continue;
 			}
 
-			OpenGLBindings.makeCurrent(window.nativeHandle, handle);
+			if (!OpenGLBindings.makeCurrent(window.nativeHandle, handle)) {
+				attempts.push('$requested\n  make current failed: ${Platform.getError()}');
+				OpenGLBindings.destroyContext(handle);
+				continue;
+			}
 
 			final info = OpenGLBindings.getContextInfo();
 			final actual = if (info == null) {
@@ -125,14 +131,22 @@ class OpenGL {
 	}
 
 	public function makeCurrent():Void {
-		OpenGLBindings.makeCurrent(window.nativeHandle, handle);
+		if (failed) throw "OpenGL context previously failed; recovery is not implemented";
+		if (handle == null || !OpenGLBindings.makeCurrent(window.nativeHandle, handle)) {
+			failed = true;
+			throw 'OpenGL make current failed: ${Platform.getError()}';
+		}
 	}
 
 	public function present():Void {
 		if (handle == null)
-			return;
+			throw "OpenGL context has been destroyed";
 
-		OpenGLBindings.swapWindow(window.nativeHandle);
+		if (failed) throw "OpenGL context previously failed; recovery is not implemented";
+		if (!OpenGLBindings.swapWindow(window.nativeHandle)) {
+			failed = true;
+			throw 'OpenGL swap failed: ${Platform.getError()}';
+		}
 	}
 
 	public function destroy():Void {

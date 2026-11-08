@@ -20,6 +20,9 @@ static const GLubyte* APIENTRY test_get_string_i(GLenum name, GLuint index) {
 	return (const GLubyte*)test_extensions;
 }
 
+static GLenum reset_result;
+static GLenum APIENTRY test_reset(void) { return reset_result; }
+static GLenum APIENTRY test_framebuffer(GLenum target) { return reset_result; }
 static void APIENTRY test_noop(void) {}
 
 static void* test_resolve(const char* name) {
@@ -85,6 +88,31 @@ int main(void) {
 	test_version = "3.3";
 	test_extensions = "";
 	CHECK(!gl_extension("GL_ARB_timer_query"));
-	puts("OpenGL capability checks passed");
+	test_version = "2.1";
+	test_extensions = "";
+	gl_load_reset_status();
+	CHECK(!gl_reset_status);
+	CHECK(!HL_NAME(gl_is_context_lost)());
+	for (int i = 0; i < 3; i++) {
+		test_extensions = i == 0 ? "GL_ARB_robustness" : i == 1 ? "GL_KHR_robustness" : "GL_EXT_robustness";
+		gl_load_reset_status();
+		CHECK(gl_reset_status != nullptr);
+	}
+	test_extensions = "";
+	test_version = "OpenGL ES 3.2";
+	gl_load_reset_status();
+	CHECK(gl_reset_status != nullptr);
+	gl_reset_status = test_reset;
+	CHECK(!HL_NAME(gl_is_context_lost)());
+	reset_result = 0x8253;
+	CHECK(HL_NAME(gl_is_context_lost)());
+	reset_result = 0;
+	CHECK(HL_NAME(gl_is_context_lost)());
+	glCheckFramebufferStatus = test_framebuffer;
+	reset_result = GL_FRAMEBUFFER_COMPLETE;
+	CHECK(HL_NAME(gl_check_framebuffer_status)(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+	reset_result = GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
+	CHECK(HL_NAME(gl_check_framebuffer_status)(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT);
+	puts("OpenGL capability and failure checks passed");
 	return 0;
 }

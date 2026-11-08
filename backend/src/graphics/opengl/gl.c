@@ -133,6 +133,24 @@ static void gl_require(int feature, const char* message) {
 	if (!gl_capability(feature)) hl_error("%s", message);
 }
 
+typedef GLenum (APIENTRY *ResetStatusProc)(void);
+static ResetStatusProc gl_reset_status;
+static bool gl_context_lost;
+
+static void gl_load_reset_status(void) {
+	gl_reset_status = nullptr;
+	gl_context_lost = false;
+	if (gl_version_at_least(405, 302))
+		gl_reset_status = (ResetStatusProc)limen_gl_get_proc_address("glGetGraphicsResetStatus");
+	else if (gl_extension("GL_KHR_robustness")) {
+		gl_reset_status = (ResetStatusProc)limen_gl_get_proc_address("glGetGraphicsResetStatusKHR");
+		if (!gl_reset_status) gl_reset_status = (ResetStatusProc)limen_gl_get_proc_address("glGetGraphicsResetStatus");
+	} else if (gl_extension("GL_ARB_robustness"))
+		gl_reset_status = (ResetStatusProc)limen_gl_get_proc_address("glGetGraphicsResetStatusARB");
+	else if (gl_extension("GL_EXT_robustness"))
+		gl_reset_status = (ResetStatusProc)limen_gl_get_proc_address("glGetGraphicsResetStatusEXT");
+}
+
 static int GLLoadAPI() {
 #include "GLImports.h"
 	if (!glGetString || !glGetIntegerv || !glGetString(GL_VERSION)) return 1;
@@ -140,6 +158,9 @@ static int GLLoadAPI() {
 	if (glGenFramebuffers == nullptr) {
 		glGenFramebuffers = (PFNGLGENFRAMEBUFFERSPROC)limen_gl_get_proc_address("glGenFramebuffersEXT");
 	}
+
+	if (glCheckFramebufferStatus == nullptr)
+		glCheckFramebufferStatus = (PFNGLCHECKFRAMEBUFFERSTATUSPROC)limen_gl_get_proc_address("glCheckFramebufferStatusEXT");
 
 	if (glBindFramebuffer == nullptr) {
 		glBindFramebuffer = (PFNGLBINDFRAMEBUFFERPROC)limen_gl_get_proc_address("glBindFramebufferEXT");
@@ -210,7 +231,9 @@ static void APIENTRY debug_message_callback(GLenum source, GLenum type, GLuint i
 
 // globals
 HL_PRIM bool HL_NAME(gl_init)() {
-	return GLLoadAPI() == 0;
+	if (GLLoadAPI() != 0) return false;
+	gl_load_reset_status();
+	return true;
 }
 
 HL_PRIM bool HL_NAME(gl_set_debug)(bool enable) {
@@ -235,9 +258,9 @@ HL_PRIM bool HL_NAME(gl_set_debug)(bool enable) {
 }
 
 HL_PRIM bool HL_NAME(gl_is_context_lost)() {
-	// seems like a GL context is rarely lost on desktop
-	// let's look at it again on mobile
-	return false;
+	if (!gl_context_lost && gl_reset_status)
+		gl_context_lost = gl_reset_status() != GL_NO_ERROR;
+	return gl_context_lost;
 }
 
 HL_PRIM void HL_NAME(gl_clear)(int bits) {
@@ -245,7 +268,9 @@ HL_PRIM void HL_NAME(gl_clear)(int bits) {
 }
 
 HL_PRIM int HL_NAME(gl_get_error)() {
-	return glGetError();
+	GLenum error = glGetError();
+	if (error == 0x0507) gl_context_lost = true;
+	return error;
 }
 
 HL_PRIM void HL_NAME(gl_scissor)(int x, int y, int width, int height) {
@@ -606,6 +631,10 @@ HL_PRIM vdynamic* HL_NAME(gl_create_framebuffer)() {
 	glGenFramebuffers(1, &f);
 
 	return alloc_i32(f);
+}
+
+HL_PRIM int HL_NAME(gl_check_framebuffer_status)(int target) {
+	return glCheckFramebufferStatus(target);
 }
 
 HL_PRIM void HL_NAME(gl_bind_framebuffer)(int target, vdynamic* f) {
@@ -1056,6 +1085,7 @@ DEFINE_PRIM(_VOID, gl_generate_mipmap, _I32);
 DEFINE_PRIM(_VOID, gl_delete_texture, _NULL(_I32));
 DEFINE_PRIM(_VOID, gl_blit_framebuffer, _I32 _I32 _I32 _I32 _I32 _I32 _I32 _I32 _I32 _I32);
 DEFINE_PRIM(_NULL(_I32), gl_create_framebuffer, _NO_ARG);
+DEFINE_PRIM(_I32, gl_check_framebuffer_status, _I32);
 DEFINE_PRIM(_VOID, gl_bind_framebuffer, _I32 _NULL(_I32));
 DEFINE_PRIM(_VOID, gl_framebuffer_texture, _I32 _I32 _NULL(_I32) _I32);
 DEFINE_PRIM(_VOID, gl_framebuffer_texture2d, _I32 _I32 _I32 _NULL(_I32) _I32);

@@ -13,6 +13,8 @@ class Framebuffers {
 		return null;
 	}
 
+	public static function checkFramebufferStatus(target:Int):Int { return 0; }
+
 	public static function bindFramebuffer(target:Int, f:Framebuffer) {}
 
 	@:hlNative("limen", "opengl_gl_framebuffer_texture2d")
