@@ -29,7 +29,10 @@ HL_PRIM bool HL_NAME(set_swap_interval)(int interval) {
 	return limen_gl_set_swap_interval(interval);
 }
 
+void limen_gl_cancel_readbacks(void* context);
+
 HL_PRIM void HL_NAME(gl_context_destroy)(void* context) {
+	limen_gl_cancel_readbacks(context);
 	limen_gl_destroy_context(context);
 }
 

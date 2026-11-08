@@ -740,7 +740,98 @@ HL_PRIM void HL_NAME(gl_buffer_sub_data)(int target, int offset, vbyte* data, in
 }
 
 HL_PRIM void HL_NAME(gl_get_buffer_sub_data)(int target, int offset, vbyte* data, int srcOffset, int srcLength) {
+#ifdef HL_GLES
+	void* mapped = glMapBufferRange(target, offset, srcLength, GL_MAP_READ_BIT);
+	if (!mapped) hl_error("Could not map OpenGL buffer for readback");
+	memcpy(data + srcOffset, mapped, srcLength);
+	if (!glUnmapBuffer(target)) hl_error("OpenGL readback buffer became invalid");
+#else
 	glGetBufferSubData(target, offset, srcLength, data + srcOffset);
+#endif
+}
+
+typedef struct gl_readback {
+	GLuint buffer;
+	GLsync fence;
+	int size;
+	void* context;
+	struct gl_readback* next;
+} gl_readback;
+
+static gl_readback* readbacks;
+
+void limen_gl_cancel_readbacks(void* context) {
+	for (gl_readback* r = readbacks; r; r = r->next) {
+		if (r->context != context) continue;
+		// context destruction releases its GL objects
+		r->context = nullptr;
+	}
+}
+
+HL_PRIM gl_readback* HL_NAME(gl_start_buffer_readback)(void* context, vdynamic* source, int offset, int size) {
+	if (size <= 0 || offset < 0) return nullptr;
+	bool supported = gl_version_at_least(302, 300) ||
+		(gl_extension("GL_ARB_copy_buffer") && gl_extension("GL_ARB_map_buffer_range") && gl_extension("GL_ARB_sync"));
+#ifdef HL_GL_DYNAMIC_IMPORTS
+	supported = supported && glCopyBufferSubData && glMapBufferRange && glUnmapBuffer && glFenceSync && glClientWaitSync && glDeleteSync;
+#endif
+	if (!supported) return nullptr;
+	gl_readback* r = (gl_readback*)calloc(1, sizeof(gl_readback));
+	if (!r) return nullptr;
+	GLint read, pack;
+	glGetIntegerv(GL_COPY_READ_BUFFER_BINDING, &read);
+	glGetIntegerv(GL_PIXEL_PACK_BUFFER_BINDING, &pack);
+	glGenBuffers(1, &r->buffer);
+	glBindBuffer(GL_PIXEL_PACK_BUFFER, r->buffer);
+	glBufferData(GL_PIXEL_PACK_BUFFER, size, nullptr, GL_STREAM_READ);
+	GLint allocated = 0;
+	glGetBufferParameteriv(GL_PIXEL_PACK_BUFFER, GL_BUFFER_SIZE, &allocated);
+	glBindBuffer(GL_COPY_READ_BUFFER, ZIDX(source));
+	GLint source_size = 0;
+	glGetBufferParameteriv(GL_COPY_READ_BUFFER, GL_BUFFER_SIZE, &source_size);
+	if (allocated == size && offset <= source_size && size <= source_size - offset) {
+		glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_PIXEL_PACK_BUFFER, offset, 0, size);
+		r->fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+	}
+	glBindBuffer(GL_COPY_READ_BUFFER, read);
+	glBindBuffer(GL_PIXEL_PACK_BUFFER, pack);
+	if (!r->fence) {
+		glDeleteBuffers(1, &r->buffer);
+		free(r);
+		return nullptr;
+	}
+	glFlush();
+	r->size = size;
+	r->context = context;
+	r->next = readbacks;
+	readbacks = r;
+	return r;
+}
+
+HL_PRIM int HL_NAME(gl_poll_buffer_readback)(gl_readback* r, vbyte* data, int offset) {
+	if (r->context) {
+		GLenum status = glClientWaitSync(r->fence, 0, 0);
+		if (status == GL_TIMEOUT_EXPIRED) return 0;
+		GLint previous;
+		glGetIntegerv(GL_PIXEL_PACK_BUFFER_BINDING, &previous);
+		glBindBuffer(GL_PIXEL_PACK_BUFFER, r->buffer);
+		void* mapped = status == GL_WAIT_FAILED ? nullptr : glMapBufferRange(GL_PIXEL_PACK_BUFFER, 0, r->size, GL_MAP_READ_BIT);
+		bool valid = mapped != nullptr;
+		if (mapped) {
+			memcpy(data + offset, mapped, r->size);
+			valid = glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+		}
+		glBindBuffer(GL_PIXEL_PACK_BUFFER, previous);
+		glDeleteSync(r->fence);
+		glDeleteBuffers(1, &r->buffer);
+		r->size = valid ? 1 : -1;
+	} else r->size = -1;
+	gl_readback** link = &readbacks;
+	while (*link != r) link = &(*link)->next;
+	*link = r->next;
+	int result = r->size;
+	free(r);
+	return result;
 }
 
 HL_PRIM void HL_NAME(gl_enable_vertex_attrib_array)(int attrib) {
@@ -1150,3 +1241,6 @@ DEFINE_PRIM(_VOID, gl_shader_storage_block_binding, _NULL(_I32) _I32 _I32);
 
 DEFINE_PRIM(_I32, gl_get_config_parameter, _I32);
 DEFINE_PRIM(_BOOL, gl_has_extension, _STRING);
+
+DEFINE_PRIM(_ABSTRACT(limen_gl_readback), gl_start_buffer_readback, _ABSTRACT(limen_gl) _DYN _I32 _I32);
+DEFINE_PRIM(_I32, gl_poll_buffer_readback, _ABSTRACT(limen_gl_readback) _BYTES _I32);

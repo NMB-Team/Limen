@@ -2,6 +2,9 @@ package limen.graphics.renderer.opengl.resource;
 
 abstract Buffer(Null<Int>) {}
 
+@:noCompletion
+abstract Readback(hl.Abstract<"limen_gl_readback">) {}
+
 @:hlNative("limen", "opengl_gl_")
 class Buffers {
 	public static function createBuffer():Buffer {
@@ -20,6 +23,12 @@ class Buffers {
 
 	@:hlNative("limen", "opengl_gl_get_buffer_sub_data")
 	public static function getBufferSubData(target:Int, offset:Int, data:hl.Bytes, srcOffset:Int, srcLength:Int) {}
+
+	@:noCompletion
+	public static function startBufferReadback(context:limen.graphics.renderer.opengl.internal.OpenGLBindings.ContextHandle, source:Buffer, offset:Int, size:Int):Readback { return null; }
+
+	@:noCompletion
+	public static function pollBufferReadback(request:Readback, data:hl.Bytes, offset:Int):Int { return 0; }
 
 	public static function deleteBuffer(b:Buffer) {}
 
