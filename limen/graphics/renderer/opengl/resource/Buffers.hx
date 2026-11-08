@@ -7,6 +7,10 @@ abstract Readback(hl.Abstract<"limen_gl_readback">) {}
 
 @:hlNative("limen", "opengl_gl_")
 class Buffers {
+	public static function tryNamedBufferSubData(buffer:Buffer, offset:Int, data:hl.Bytes, srcOffset:Int, length:Int):Bool {
+		return false;
+	}
+
 	public static function createBuffer():Buffer {
 		return null;
 	}

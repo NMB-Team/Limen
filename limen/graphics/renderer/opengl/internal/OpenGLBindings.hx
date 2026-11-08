@@ -10,6 +10,8 @@ abstract ContextHandle(hl.Abstract<"limen_gl">) {}
 @:noCompletion
 @:hlNative("limen", "opengl_gl_")
 class OpenGLBindings {
+	public static function objectLabel(type:Int, object:Null<Int>, label:String):Void {}
+
 	@:hlNative("limen", "opengl_win_get_glcontext")
 	public static function createContext(window:WinPtr):ContextHandle {
 		return null;

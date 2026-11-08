@@ -151,6 +151,43 @@ static void gl_load_reset_status(void) {
 		gl_reset_status = (ResetStatusProc)limen_gl_get_proc_address("glGetGraphicsResetStatusEXT");
 }
 
+typedef void (APIENTRY *NamedBufferSubDataProc)(GLuint, GLintptr, GLsizeiptr, const void*);
+typedef void (APIENTRY *ObjectLabelProc)(GLenum, GLuint, GLsizei, const char*);
+static NamedBufferSubDataProc gl_named_buffer_sub_data;
+static ObjectLabelProc gl_object_label;
+static GLint gl_max_label_length;
+
+static void gl_load_resource_api(void) {
+	gl_named_buffer_sub_data = nullptr;
+	gl_object_label = nullptr;
+	gl_max_label_length = 0;
+	if (gl_version_at_least(405, 0) || gl_extension("GL_ARB_direct_state_access"))
+		gl_named_buffer_sub_data = (NamedBufferSubDataProc)limen_gl_get_proc_address("glNamedBufferSubData");
+	if (gl_version_at_least(403, 302) || gl_extension("GL_KHR_debug")) {
+		gl_object_label = (ObjectLabelProc)limen_gl_get_proc_address("glObjectLabel");
+		if (!gl_object_label) gl_object_label = (ObjectLabelProc)limen_gl_get_proc_address("glObjectLabelKHR");
+	}
+	if (gl_object_label) glGetIntegerv(0x82E8 /* GL_MAX_LABEL_LENGTH */, &gl_max_label_length);
+}
+
+static void gl_label(GLenum type, GLuint object, const char* label) {
+	if (gl_object_label && object && gl_max_label_length > 0) {
+		size_t length = strlen(label);
+		if (length >= (size_t)gl_max_label_length) length = gl_max_label_length - 1;
+		gl_object_label(type, object, (GLsizei)length, label);
+	}
+}
+
+HL_PRIM void HL_NAME(gl_object_label)(int type, vdynamic* object, vstring* label) {
+	if (gl_object_label && object) gl_label(type, object->v.i, hl_to_utf8(label->bytes));
+}
+
+HL_PRIM bool HL_NAME(gl_try_named_buffer_sub_data)(vdynamic* buffer, int offset, vbyte* data, int srcOffset, int length) {
+	if (!gl_named_buffer_sub_data) return false;
+	gl_named_buffer_sub_data(buffer ? buffer->v.i : 0, offset, length, data + srcOffset);
+	return true;
+}
+
 static int GLLoadAPI() {
 #include "GLImports.h"
 	if (!glGetString || !glGetIntegerv || !glGetString(GL_VERSION)) return 1;
@@ -233,6 +270,7 @@ static void APIENTRY debug_message_callback(GLenum source, GLenum type, GLuint i
 HL_PRIM bool HL_NAME(gl_init)() {
 	if (GLLoadAPI() != 0) return false;
 	gl_load_reset_status();
+	gl_load_resource_api();
 	return true;
 }
 
@@ -399,6 +437,7 @@ HL_PRIM vdynamic* HL_NAME(gl_create_program)() {
 	if (v == 0)
 		return nullptr;
 
+	gl_label(0x82E2, v, "Limen program");
 	return alloc_i32(v);
 }
 
@@ -471,6 +510,7 @@ HL_PRIM vdynamic* HL_NAME(gl_create_shader)(int type) {
 	if (s == 0)
 		return nullptr;
 
+	gl_label(0x82E1, s, "Limen shader");
 	return alloc_i32(s);
 }
 
@@ -779,7 +819,7 @@ HL_PRIM gl_readback* HL_NAME(gl_start_buffer_readback)(void* context, vdynamic* 
 	gl_readback* r = (gl_readback*)calloc(1, sizeof(gl_readback));
 	if (!r) return nullptr;
 	GLint read, pack;
-	glGetIntegerv(GL_COPY_READ_BUFFER_BINDING, &read);
+	glGetIntegerv(GL_COPY_READ_BUFFER, &read);
 	glGetIntegerv(GL_PIXEL_PACK_BUFFER_BINDING, &pack);
 	glGenBuffers(1, &r->buffer);
 	glBindBuffer(GL_PIXEL_PACK_BUFFER, r->buffer);
@@ -1244,3 +1284,6 @@ DEFINE_PRIM(_BOOL, gl_has_extension, _STRING);
 
 DEFINE_PRIM(_ABSTRACT(limen_gl_readback), gl_start_buffer_readback, _ABSTRACT(limen_gl) _DYN _I32 _I32);
 DEFINE_PRIM(_I32, gl_poll_buffer_readback, _ABSTRACT(limen_gl_readback) _BYTES _I32);
+
+DEFINE_PRIM(_VOID, gl_object_label, _I32 _NULL(_I32) _STRING);
+DEFINE_PRIM(_BOOL, gl_try_named_buffer_sub_data, _NULL(_I32) _I32 _BYTES _I32 _I32);
