@@ -222,7 +222,8 @@ class Window {
 	private function get_windowToPixelRatio():Float {
 		var pixelHeight = 0;
 		SDLBindings.winGetPixelSize(win, null, pixelHeight);
-		return height / pixelHeight;
+		final windowHeight = height;
+		return windowHeight == 0 ? 1.0 : pixelHeight / windowHeight;
 	}
 
 	@:noCompletion
