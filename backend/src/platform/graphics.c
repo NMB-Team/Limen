@@ -37,6 +37,10 @@ bool limen_gl_make_current(void* window, void* context) {
 	return SDL_GL_MakeCurrent(window, context);
 }
 
+bool limen_gl_context_current(void* window, void* context) {
+	return SDL_GL_GetCurrentContext() == context && SDL_GL_GetCurrentWindow() == window;
+}
+
 bool limen_gl_context_error(const char* message) {
 	return SDL_SetError("%s", message);
 }

@@ -55,6 +55,7 @@ LIMEN_PLATFORM_API void* limen_gl_create_context(void* window);
 LIMEN_PLATFORM_API bool limen_gl_swap_window(void* window);
 LIMEN_PLATFORM_API bool limen_gl_make_current(void* window, void* context);
 LIMEN_PLATFORM_API void* limen_gl_current_context(void);
+LIMEN_PLATFORM_API bool limen_gl_context_current(void* window, void* context);
 LIMEN_PLATFORM_API bool limen_gl_context_error(const char* message);
 LIMEN_PLATFORM_API void limen_gl_destroy_context(void* context);
 LIMEN_PLATFORM_API bool limen_gl_configure(int major, int minor, int depth, int stencil, int flags, int samples);

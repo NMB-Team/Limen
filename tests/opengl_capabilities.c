@@ -16,6 +16,8 @@ typedef struct mock_context {
 
 static bool multi_context_mode;
 static __declspec(thread) void* current_context;
+static __declspec(thread) void* current_window;
+static int activation_calls;
 static int binds[2], uploads[2];
 static int version_queries, extension_queries, integer_queries, proc_queries, reset_queries, instanced_calls;
 static bool missing_reset_core;
@@ -55,6 +57,9 @@ static const GLubyte* APIENTRY test_get_string_i(GLenum name, GLuint index) {
 	return (const GLubyte*)test_extensions;
 }
 
+static int framebuffer_binds;
+static void APIENTRY test_bind_framebuffer(GLenum target, GLuint id) { framebuffer_binds++; }
+static void APIENTRY test_delete_framebuffer(GLsizei count, const GLuint* ids) {}
 static GLenum reset_result;
 static GLenum APIENTRY test_reset(void) { reset_queries++; return reset_result; }
 static GLenum APIENTRY test_framebuffer(GLenum target) { return reset_result; }
@@ -64,12 +69,17 @@ static bool activation_succeeds = true;
 static bool activation_drops_current;
 static void* test_current_context(void) { return current_context; }
 static void* test_create_context(void* window) { current_context = next_context; return next_context; }
+static bool test_context_current(void* window, void* context) {
+	return current_context == context && current_window == window;
+}
 static bool test_make_current(void* window, void* context) {
+	activation_calls++;
 	if (!activation_succeeds) {
 		if (activation_drops_current) current_context = nullptr;
 		return false;
 	}
 	current_context = context;
+	current_window = window;
 	return true;
 }
 static void test_destroy_context(void* context) { if (current_context == context) current_context = nullptr; }
@@ -95,6 +105,7 @@ static void* test_resolve(const char* name) {
 #define glGetIntegerv test_get_integer
 #define glGetError test_get_error
 #define limen_gl_get_proc_address test_resolve
+#define limen_gl_context_current test_context_current
 #define limen_gl_current_context test_current_context
 #define limen_gl_create_context test_create_context
 #define limen_gl_make_current test_make_current
@@ -203,6 +214,39 @@ static int test_context_switching(void) {
 	CHECK(version_queries == versions_before && extension_queries == extensions_before);
 
 	CHECK(limen_gl_activate_context(nullptr, &modern));
+	int calls_before = activation_calls;
+	for (int i = 0; i < 1000; i++) CHECK(limen_gl_activate_context(nullptr, &modern));
+	CHECK(activation_calls == calls_before);
+
+	glDeleteBuffers = test_delete_buffers;
+	glDeleteSync = test_delete_sync;
+	add_readback(&modern);
+	gl_current->readbacks->id = 0;
+	int released_before = deleted_buffers;
+	CHECK(limen_gl_activate_context(nullptr, &modern));
+	CHECK(!gl_current->readbacks && deleted_buffers == released_before + 1);
+	CHECK(activation_calls == calls_before);
+
+	void* window = &calls_before;
+	CHECK(limen_gl_activate_context(window, &modern));
+	CHECK(current_window == window && activation_calls == calls_before + 1);
+	CHECK(limen_gl_activate_context(window, &modern));
+	CHECK(activation_calls == calls_before + 1);
+
+	activation_succeeds = false;
+	CHECK(!limen_gl_activate_context(nullptr, &modern));
+	CHECK(gl_current && current_window == window);
+	activation_drops_current = true;
+	CHECK(!limen_gl_activate_context(nullptr, &modern));
+	CHECK(!gl_current);
+	activation_succeeds = true;
+	activation_drops_current = false;
+	CHECK(limen_gl_activate_context(nullptr, &modern));
+
+	current_context = &legacy;
+	calls_before = activation_calls;
+	CHECK(limen_gl_activate_context(nullptr, &modern));
+	CHECK(current_context == &modern && activation_calls == calls_before + 1);
 	CHECK(gl_capability(2) && gl_named_buffer_sub_data);
 	CHECK(HL_NAME(gl_try_named_buffer_sub_data)(nullptr, 0, (vbyte*)"x", 0, 1));
 	CHECK(uploads[0] == 1 && uploads[1] == 0);
@@ -550,6 +594,25 @@ int main(void) {
 	CHECK(HL_NAME(gl_check_framebuffer_status)(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 	reset_result = GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
 	CHECK(HL_NAME(gl_check_framebuffer_status)(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT);
+	glBindFramebuffer = test_bind_framebuffer;
+	glDeleteFramebuffers = test_delete_framebuffer;
+	gl_current->framebuffer_binding_known = false;
+	vdynamic framebuffer = {0};
+	framebuffer.v.i = 7;
+	HL_NAME(gl_bind_framebuffer)(GL_FRAMEBUFFER, &framebuffer);
+	HL_NAME(gl_bind_framebuffer)(GL_FRAMEBUFFER, &framebuffer);
+	CHECK(framebuffer_binds == 1);
+	HL_NAME(gl_bind_framebuffer)(GL_READ_FRAMEBUFFER, nullptr);
+	HL_NAME(gl_bind_framebuffer)(GL_DRAW_FRAMEBUFFER, &framebuffer);
+	CHECK(framebuffer_binds == 2);
+	HL_NAME(gl_bind_framebuffer)(GL_FRAMEBUFFER, &framebuffer);
+	CHECK(framebuffer_binds == 3);
+	HL_NAME(gl_delete_framebuffer)(&framebuffer);
+	HL_NAME(gl_bind_framebuffer)(GL_FRAMEBUFFER, &framebuffer);
+	CHECK(framebuffer_binds == 4);
+	CHECK(limen_gl_activate_context(current_window, current_context));
+	HL_NAME(gl_bind_framebuffer)(GL_FRAMEBUFFER, &framebuffer);
+	CHECK(framebuffer_binds == 5);
 	CHECK(test_readback_lifecycle() == 0);
 	CHECK(test_context_switching() == 0);
 	while (gl_contexts) CHECK(limen_gl_delete_context(gl_contexts->context));

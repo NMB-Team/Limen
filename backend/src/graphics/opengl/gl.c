@@ -74,6 +74,9 @@ typedef struct gl_context_state {
 	void* owner;
 	bool initialized;
 	bool context_lost;
+	bool framebuffer_binding_known;
+	unsigned int read_framebuffer;
+	unsigned int draw_framebuffer;
 	bool reset_notifications;
 	bool capabilities[7];
 	bool supports_readback;
@@ -222,6 +225,7 @@ static void gl_require(int feature, const char* message) {
 static void gl_load_reset_status(void) {
 	gl_reset_status = nullptr;
 	gl_context_lost = false;
+	gl_state()->framebuffer_binding_known = false;
 	gl_current->reset_notifications = false;
 	if (gl_version_at_least(405, 302))
 		gl_reset_status = (ResetStatusProc)limen_gl_get_proc_address("glGetGraphicsResetStatus");
@@ -787,7 +791,23 @@ HL_PRIM int HL_NAME(gl_check_framebuffer_status)(int target) {
 
 HL_PRIM void HL_NAME(gl_bind_framebuffer)(int target, vdynamic* f) {
 	unsigned int id = ZIDX(f);
+	gl_context_state* state = gl_current;
+	if (state && state->framebuffer_binding_known) {
+		if (target == GL_FRAMEBUFFER && state->read_framebuffer == id && state->draw_framebuffer == id) return;
+		if (target == GL_READ_FRAMEBUFFER && state->read_framebuffer == id) return;
+		if (target == GL_DRAW_FRAMEBUFFER && state->draw_framebuffer == id) return;
+	}
+
 	glBindFramebuffer(target, id);
+	if (state) {
+		if (target == GL_FRAMEBUFFER) {
+			state->read_framebuffer = state->draw_framebuffer = id;
+			state->framebuffer_binding_known = true;
+		} else if (state->framebuffer_binding_known) {
+			if (target == GL_READ_FRAMEBUFFER) state->read_framebuffer = id;
+			if (target == GL_DRAW_FRAMEBUFFER) state->draw_framebuffer = id;
+		}
+	}
 }
 
 HL_PRIM void HL_NAME(gl_framebuffer_texture)(int target, int attach, vdynamic* t, int level) {
@@ -809,6 +829,8 @@ HL_PRIM void HL_NAME(gl_framebuffer_texture_layer)(int target, int attach, vdyna
 HL_PRIM void HL_NAME(gl_delete_framebuffer)(vdynamic* f) {
 	unsigned int ff = (unsigned)f->v.i;
 	glDeleteFramebuffers(1, &ff);
+	if (gl_current && (gl_current->read_framebuffer == ff || gl_current->draw_framebuffer == ff))
+		gl_current->framebuffer_binding_known = false;
 }
 
 HL_PRIM void HL_NAME(gl_read_pixels)(int x, int y, int width, int height, int format, int type, vbyte* data) {
@@ -1011,12 +1033,13 @@ void* limen_gl_new_context(void* window) {
 }
 
 bool limen_gl_activate_context(void* window, void* context) {
+	if (gl_current) gl_current->framebuffer_binding_known = false;
 	if (context && !gl_register_thread_cleanup())
 		return limen_gl_context_error("Could not register OpenGL thread cleanup");
 
 	gl_context_state* previous = gl_current;
 	if (previous && previous->context == context) {
-		if (limen_gl_make_current(window, context)) {
+		if (limen_gl_context_current(window, context) || limen_gl_make_current(window, context)) {
 			limen_gl_release_cancelled_readbacks(context);
 			return true;
 		}
