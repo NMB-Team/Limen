@@ -173,7 +173,7 @@ class SDLBindings {
 		return null;
 	}
 
-	public static function getRefreshRate(win:WinPtr):Int {
+	public static function getRefreshRate(win:WinPtr):Float {
 		return 0;
 	}
 
@@ -347,6 +347,10 @@ class SDLBindings {
 	public static function winSetIcon(win:WinPtr, surface:SurfacePtr):Void {}
 
 	public static function winCenter(win:WinPtr, centerPrimary:Bool):Void {}
+
+	public static function winGetCurrentDisplayMode(win:WinPtr, desktop:Bool):Dynamic {
+		return null;
+	}
 
 	public static function winSetDisplayMode(win:WinPtr, width:Int, height:Int, refreshRate:Float):Bool {
 		return false;

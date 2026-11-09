@@ -202,7 +202,7 @@ class Platform {
 		return Keyboard.layout();
 	}
 
-	public static inline function getRefreshRate(window:Window):Int {
+	public static inline function getRefreshRate(window:Window):Float {
 		return SDLBindings.getRefreshRate(window.nativeHandle);
 	}
 

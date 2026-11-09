@@ -110,7 +110,7 @@ HL_PRIM bool HL_NAME(win_set_fullscreen)(SDL_Window* window, int mode) {
 		const SDL_DisplayMode* fullscreen_mode = SDL_GetWindowFullscreenMode(window);
 
 		if (fullscreen_mode == nullptr) {
-			SDL_DisplayID display = SDL_GetDisplayForWindow(window);
+			SDL_DisplayID display = limen_display_for_window(window);
 			fullscreen_mode = SDL_GetDesktopDisplayMode(display);
 
 			if (fullscreen_mode != nullptr)
@@ -145,7 +145,7 @@ DEFINE_PRIM(_BOOL, win_set_fullscreen, TWIN _I32);
 
 HL_PRIM bool HL_NAME(win_set_display_mode)(SDL_Window* window, int width, int height, double refresh_rate) {
 	SDL_DisplayMode mode;
-	SDL_DisplayID display = SDL_GetDisplayForWindow(window);
+	SDL_DisplayID display = limen_display_for_window(window);
 
 	if (!SDL_GetClosestFullscreenDisplayMode(display, width, height, (float)refresh_rate, true, &mode)) {
 		return false;
@@ -161,7 +161,7 @@ HL_PRIM bool HL_NAME(win_set_display_mode)(SDL_Window* window, int width, int he
 DEFINE_PRIM(_BOOL, win_set_display_mode, TWIN _I32 _I32 _F64);
 
 HL_PRIM int HL_NAME(win_display_handle)(SDL_Window* window) {
-	return limen_display_index_from_id(SDL_GetDisplayForWindow(window));
+	return limen_display_index_from_id(limen_display_for_window(window));
 }
 DEFINE_PRIM(_I32, win_display_handle, TWIN);
 
@@ -231,7 +231,7 @@ HL_PRIM void HL_NAME(win_get_position)(SDL_Window* window, int* x, int* y) {
 DEFINE_PRIM(_VOID, win_get_position, TWIN _REF(_I32) _REF(_I32));
 
 HL_PRIM void HL_NAME(win_center)(SDL_Window* window, bool primary) {
-	SDL_DisplayID display = primary ? SDL_GetPrimaryDisplay() : SDL_GetDisplayForWindow(window);
+	SDL_DisplayID display = primary ? SDL_GetPrimaryDisplay() : limen_display_for_window(window);
 	int centered = SDL_WINDOWPOS_CENTERED_DISPLAY(display);
 	SDL_SetWindowPosition(window, centered, centered);
 }

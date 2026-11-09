@@ -117,5 +117,6 @@ extern bool limen_hint_window_grab_keyboard;
 
 bool limen_translate_event(const SDL_Event* source, limen_event* destination);
 SDL_DisplayID limen_display_id_from_index(int index);
+SDL_DisplayID limen_display_for_window(SDL_Window* window);
 int limen_display_index_from_id(SDL_DisplayID display);
 void limen_tray_clear_callbacks(void);

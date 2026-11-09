@@ -1,5 +1,9 @@
 #include "../core/internal.h"
 
+#ifdef HL_WIN_DESKTOP
+#include <windows.h>
+#endif
+
 SDL_DisplayID limen_display_id_from_index(int index) {
 	int count;
 	SDL_DisplayID result = 0;
@@ -58,46 +62,67 @@ int limen_display_index_from_id(SDL_DisplayID display) {
 	return -1;
 }
 
-static const SDL_DisplayMode* current_mode_for_window(SDL_Window* window) {
-	SDL_DisplayID display = window != nullptr ? SDL_GetDisplayForWindow(window) : limen_display_id_from_index(0);
+SDL_DisplayID limen_display_for_window(SDL_Window* window) {
+#ifdef HL_WIN_DESKTOP
+	HWND native = (HWND)SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
+	HMONITOR monitor = native != nullptr ? MonitorFromWindow(native, MONITOR_DEFAULTTONEAREST) : nullptr;
 
+	if (monitor != nullptr) {
+		int count;
+		SDL_DisplayID* displays = SDL_GetDisplays(&count);
+		SDL_DisplayID result = 0;
+
+		for (int i = 0; i < count; i++) {
+			if (SDL_GetPointerProperty(SDL_GetDisplayProperties(displays[i]), SDL_PROP_DISPLAY_WINDOWS_HMONITOR_POINTER, nullptr) == monitor) {
+				result = displays[i];
+				break;
+			}
+		}
+
+		SDL_free(displays);
+
+		if (result != 0)
+			return result;
+	}
+#endif
+
+	return SDL_GetDisplayForWindow(window);
+}
+
+static const SDL_DisplayMode* current_mode_for_window(SDL_Window* window) {
+	SDL_DisplayID display = window != nullptr ? limen_display_for_window(window) : limen_display_id_from_index(0);
 	return display != 0 ? SDL_GetCurrentDisplayMode(display) : nullptr;
 }
 
 HL_PRIM int HL_NAME(get_screen_width)() {
 	const SDL_DisplayMode* mode = current_mode_for_window(nullptr);
-
 	return mode != nullptr ? mode->w : 0;
 }
 DEFINE_PRIM(_I32, get_screen_width, _NO_ARG);
 
 HL_PRIM int HL_NAME(get_screen_height)() {
 	const SDL_DisplayMode* mode = current_mode_for_window(nullptr);
-
 	return mode != nullptr ? mode->h : 0;
 }
 DEFINE_PRIM(_I32, get_screen_height, _NO_ARG);
 
 HL_PRIM int HL_NAME(get_screen_width_of_window)(SDL_Window* window) {
 	const SDL_DisplayMode* mode = current_mode_for_window(window);
-
 	return mode != nullptr ? mode->w : 0;
 }
 DEFINE_PRIM(_I32, get_screen_width_of_window, TWIN);
 
 HL_PRIM int HL_NAME(get_screen_height_of_window)(SDL_Window* window) {
 	const SDL_DisplayMode* mode = current_mode_for_window(window);
-
 	return mode != nullptr ? mode->h : 0;
 }
 DEFINE_PRIM(_I32, get_screen_height_of_window, TWIN);
 
-HL_PRIM int HL_NAME(get_refresh_rate)(SDL_Window* window) {
+HL_PRIM double HL_NAME(get_refresh_rate)(SDL_Window* window) {
 	const SDL_DisplayMode* mode = current_mode_for_window(window);
-
-	return mode != nullptr ? (int)mode->refresh_rate : 0;
+	return mode != nullptr ? mode->refresh_rate : 0;
 }
-DEFINE_PRIM(_I32, get_refresh_rate, TWIN);
+DEFINE_PRIM(_F64, get_refresh_rate, TWIN);
 
 HL_PRIM varray* HL_NAME(get_displays)() {
 	int count;
@@ -158,9 +183,7 @@ HL_PRIM varray* HL_NAME(get_display_modes)(int display_index) {
 }
 DEFINE_PRIM(_ARR, get_display_modes, _I32);
 
-HL_PRIM vdynobj* HL_NAME(get_current_display_mode)(int display_index, bool desktop) {
-	SDL_DisplayID display = limen_display_id_from_index(display_index);
-
+static vdynobj* display_mode_object(SDL_DisplayID display, bool desktop) {
 	if (display == 0)
 		return nullptr;
 
@@ -176,7 +199,16 @@ HL_PRIM vdynobj* HL_NAME(get_current_display_mode)(int display_index, bool deskt
 
 	return (vdynobj*)object;
 }
+
+HL_PRIM vdynobj* HL_NAME(get_current_display_mode)(int display_index, bool desktop) {
+	return display_mode_object(limen_display_id_from_index(display_index), desktop);
+}
 DEFINE_PRIM(_DYN, get_current_display_mode, _I32 _BOOL);
+
+HL_PRIM vdynobj* HL_NAME(win_get_current_display_mode)(SDL_Window* window, bool desktop) {
+	return display_mode_object(limen_display_for_window(window), desktop);
+}
+DEFINE_PRIM(_DYN, win_get_current_display_mode, TWIN _BOOL);
 
 HL_PRIM varray* HL_NAME(get_devices)() {
 	int count;

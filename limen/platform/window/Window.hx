@@ -2,6 +2,7 @@ package limen.platform.window;
 
 import limen.platform.Surface;
 import limen.platform.display.DisplayId;
+import limen.platform.display.DisplayMode;
 import limen.platform.display.DisplaySetting;
 import limen.platform.internal.SDLBindings;
 import limen.platform.window.WindowFlags.*;
@@ -95,6 +96,10 @@ class Window {
 
 	public function setMaximized(maximized:Bool):Void {
 		SDLBindings.winSetMaximized(win, maximized);
+	}
+
+	public inline function getCurrentDisplayMode(desktop:Bool = false):Null<DisplayMode> {
+		return SDLBindings.winGetCurrentDisplayMode(win, desktop);
 	}
 
 	public inline function setDisplayMode(width:Int, height:Int, refreshRate:Float):Bool {
