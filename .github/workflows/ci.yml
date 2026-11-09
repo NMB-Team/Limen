@@ -11,7 +11,9 @@ on:
 
       - 'CMakeLists.txt'
       - 'cmake/**'
-      - 'tools/make_release_manifest.py'
+      - 'tools/**'
+      - 'build.bat'
+      - 'build.sh'
       - 'CMakePresets.json'
 
       - '.github/workflows/**'
@@ -25,7 +27,9 @@ on:
 
       - 'CMakeLists.txt'
       - 'cmake/**'
-      - 'tools/make_release_manifest.py'
+      - 'tools/**'
+      - 'build.bat'
+      - 'build.sh'
       - 'CMakePresets.json'
 
       - '.github/workflows/**'
@@ -45,13 +49,15 @@ jobs:
           - name: Windows x64
             runner: windows-latest
             platform: windows-x64
+            preset: windows-x64-release
             cmake_arch: -A x64
             hashlink_library: bin/libhl.lib
-            build_jobs: 4
+            build_jobs: 1
             graphics_options: -DLIMEN_BUILD_OPENGL=ON -DLIMEN_BUILD_VULKAN=ON -DLIMEN_BUILD_SHADERC=ON -DLIMEN_BUILD_D3D11=ON -DLIMEN_BUILD_D3D12=ON
           - name: Windows x64 MinGW
             runner: windows-latest
             platform: windows-x64-mingw
+            preset: windows-mingw-release
             cmake_arch: -G "MinGW Makefiles"
             hashlink_library: bin/libhl.dll.a
             build_jobs: 2
@@ -59,6 +65,7 @@ jobs:
           - name: Linux x64
             runner: ubuntu-latest
             platform: linux-x64
+            preset: linux-release
             cmake_arch: ""
             hashlink_library: bin/libhl.so
             build_jobs: 2
@@ -66,6 +73,7 @@ jobs:
           - name: Linux ARM64
             runner: ubuntu-24.04-arm
             platform: linux-arm64
+            preset: linux-release
             cmake_arch: ""
             hashlink_library: bin/libhl.so
             build_jobs: 2
@@ -73,6 +81,7 @@ jobs:
           - name: macOS x64
             runner: macos-15-intel
             platform: macos-x64
+            preset: macos-x64-release
             cmake_arch: -DCMAKE_OSX_ARCHITECTURES=x86_64 -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13
             hashlink_library: bin/libhl.dylib
             build_jobs: 4
@@ -80,6 +89,7 @@ jobs:
           - name: macOS ARM64
             runner: macos-latest
             platform: macos-arm64
+            preset: macos-arm64-release
             cmake_arch: -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
             hashlink_library: bin/libhl.dylib
             build_jobs: 4
@@ -182,30 +192,32 @@ jobs:
             -DWITH_VIDEO=OFF
           cmake --build hashlink-build --config Release --target libhl --parallel
 
-      - name: Configure LIMEN
+      - name: Build and package LIMEN
         run: |
-          cmake -S . -B build \
+          launcher=(bash build.sh)
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            launcher=(python tools/build.py)
+          fi
+
+          "${launcher[@]}" \
+            --preset "${{ matrix.preset }}" \
+            --jobs "${{ matrix.build_jobs }}" \
+            --no-open \
+            --hashlink-root "$GITHUB_WORKSPACE/hashlink" \
+            --hashlink-library "$GITHUB_WORKSPACE/hashlink-build/${{ matrix.hashlink_library }}" \
+            -- \
             ${{ matrix.cmake_arch }} \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DLIMEN_HASHLINK_ROOT="$GITHUB_WORKSPACE/hashlink" \
-            -DLIMEN_HASHLINK_LIBRARY="$GITHUB_WORKSPACE/hashlink-build/${{ matrix.hashlink_library }}" \
             -DLIMEN_BUILD_TESTS=ON \
             ${{ matrix.graphics_options }}
 
-      - name: Build LIMEN
-        run: cmake --build build --config Release --parallel ${{ matrix.build_jobs }}
-
       - name: Test LIMEN
-        run: ctest --test-dir build -C Release --output-on-failure
-
-      - name: Install LIMEN
-        run: cmake --install build --config Release --prefix dist
+        run: ctest --test-dir "build/launcher/${{ matrix.preset }}" -C Release --output-on-failure
 
       - name: Upload LIMEN package
         uses: actions/upload-artifact@v7
         with:
           name: limen-${{ matrix.platform }}
-          path: dist/lib
+          path: build/bin/${{ matrix.preset }}
           if-no-files-found: error
 
   publish-latest:

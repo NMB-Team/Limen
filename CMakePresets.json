@@ -125,6 +125,7 @@
 			"generator": "Xcode",
 			"binaryDir": "${sourceDir}/build/macos-${presetName}",
 			"cacheVariables": {
+				"LIMEN_BUILD_VULKAN": false,
 				"LIMEN_BUILD_D3D11": false,
 				"LIMEN_BUILD_D3D12": false
 			}

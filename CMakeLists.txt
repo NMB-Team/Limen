@@ -104,12 +104,12 @@ foreach(_input IN LISTS _LIMEN_MODULE_PROXY_INPUTS)
 		endif()
 	endforeach()
 endforeach()
-file(WRITE "${_LIMEN_MODULE_PROXY_SOURCE}" "${_LIMEN_MODULE_PROXY_CONTENT}")
+file(CONFIGURE OUTPUT "${_LIMEN_MODULE_PROXY_SOURCE}" CONTENT "${_LIMEN_MODULE_PROXY_CONTENT}" @ONLY)
 
 if(MSVC)
 	foreach(_module opengl vulkan d3d11 d3d12 dlss fsr)
 		set(_LIMEN_HLC_DEF_${_module} "${CMAKE_CURRENT_BINARY_DIR}/limen_${_module}_hlc.def")
-		file(WRITE "${_LIMEN_HLC_DEF_${_module}}" "${_LIMEN_HLC_DEF_CONTENT_${_module}}")
+		file(CONFIGURE OUTPUT "${_LIMEN_HLC_DEF_${_module}}" CONTENT "${_LIMEN_HLC_DEF_CONTENT_${_module}}" @ONLY)
 	endforeach()
 endif()
 
@@ -280,7 +280,6 @@ if(LIMEN_WINDOWS_X64 AND LIMEN_BUILD_D3D12)
 		find_library(LIMEN_DXCOMPILER_LIBRARY
 			NAMES dxcompiler
 			HINTS ${_LIMEN_DXC_LIBRARY_HINTS}
-			REQUIRED
 		)
 	endif()
 	if(NOT LIMEN_DXCOMPILER_RUNTIME_DLL)
@@ -288,7 +287,6 @@ if(LIMEN_WINDOWS_X64 AND LIMEN_BUILD_D3D12)
 		find_file(LIMEN_DXCOMPILER_RUNTIME_DLL
 			NAMES dxcompiler.dll
 			HINTS ${_LIMEN_DXC_RUNTIME_HINTS}
-			REQUIRED
 		)
 	endif()
 	if(NOT LIMEN_DXIL_RUNTIME_DLL)
@@ -296,8 +294,27 @@ if(LIMEN_WINDOWS_X64 AND LIMEN_BUILD_D3D12)
 		find_file(LIMEN_DXIL_RUNTIME_DLL
 			NAMES dxil.dll
 			HINTS ${_LIMEN_DXC_RUNTIME_HINTS}
-			REQUIRED
 		)
+	endif()
+
+	if(NOT LIMEN_DXCOMPILER_LIBRARY OR NOT LIMEN_DXCOMPILER_RUNTIME_DLL OR NOT LIMEN_DXIL_RUNTIME_DLL)
+		FetchContent_Declare(limen_dxc
+			URL https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.8.2505.1/dxc_2025_07_14.zip
+			URL_HASH SHA256=9ad895a6b039e3a8f8c22a1009f866800b840a74b50db9218d13319e215ea8a4
+			SOURCE_SUBDIR limen-unused
+		)
+		FetchContent_MakeAvailable(limen_dxc)
+		set(LIMEN_DXC_PACKAGE_DIR "${limen_dxc_SOURCE_DIR}" CACHE INTERNAL "Fetched DXC package directory")
+
+		if(NOT LIMEN_DXCOMPILER_LIBRARY)
+			set(LIMEN_DXCOMPILER_LIBRARY "${limen_dxc_SOURCE_DIR}/lib/${_LIMEN_DXC_ARCH}/dxcompiler.lib" CACHE FILEPATH "DXC import library" FORCE)
+		endif()
+		if(NOT LIMEN_DXCOMPILER_RUNTIME_DLL)
+			set(LIMEN_DXCOMPILER_RUNTIME_DLL "${limen_dxc_SOURCE_DIR}/bin/${_LIMEN_DXC_ARCH}/dxcompiler.dll" CACHE FILEPATH "DXC runtime" FORCE)
+		endif()
+		if(NOT LIMEN_DXIL_RUNTIME_DLL)
+			set(LIMEN_DXIL_RUNTIME_DLL "${limen_dxc_SOURCE_DIR}/bin/${_LIMEN_DXC_ARCH}/dxil.dll" CACHE FILEPATH "DXIL runtime" FORCE)
+		endif()
 	endif()
 
 	if(LIMEN_BUILD_AFTERMATH)
@@ -366,6 +383,14 @@ if(LIMEN_WINDOWS_X64 AND LIMEN_BUILD_D3D12)
 		"${CMAKE_CURRENT_SOURCE_DIR}/backend/include"
 		"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/platform"
 	)
+	if(LIMEN_DXC_PACKAGE_DIR)
+		target_include_directories(limen_d3d12 PRIVATE "${LIMEN_DXC_PACKAGE_DIR}/inc")
+		foreach(_license LLVM MIT MS)
+			install(FILES "${LIMEN_DXC_PACKAGE_DIR}/LICENSE-${_license}.txt"
+				DESTINATION "${LIMEN_HDLL_DESTINATION}" RENAME "LICENSE_DXC_${_license}.txt")
+		endforeach()
+	endif()
+
 	target_link_libraries(limen_d3d12 PRIVATE libhl limen d3d12 dxgi "${LIMEN_DXCOMPILER_LIBRARY}")
 	if(LIMEN_BUILD_AFTERMATH)
 		target_compile_definitions(limen_d3d12 PRIVATE LIMEN_AFTERMATH)

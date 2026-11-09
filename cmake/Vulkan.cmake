@@ -12,6 +12,51 @@ function(limen_resolve_vulkan)
 	)
 	FetchContent_MakeAvailable(VulkanHeaders)
 
+	if(NOT Vulkan_INCLUDE_DIR)
+		set(Vulkan_INCLUDE_DIR "${vulkanheaders_SOURCE_DIR}/include" CACHE PATH "Vulkan headers directory" FORCE)
+	endif()
+	find_package(Vulkan QUIET)
+
+	if(NOT Vulkan_FOUND AND WIN32)
+		set(_loader_dir "${CMAKE_CURRENT_BINARY_DIR}/vulkan-loader-import")
+		file(MAKE_DIRECTORY "${_loader_dir}")
+		file(DOWNLOAD
+			https://raw.githubusercontent.com/KhronosGroup/Vulkan-Loader/v1.4.367/loader/vulkan-1.def
+			"${_loader_dir}/vulkan-1.def"
+			EXPECTED_HASH SHA256=9ba339b7f5ee2df28487698a6840ecf095fac58b415c2c89ad9f161e9d316378
+			TLS_VERIFY ON
+			TIMEOUT 60
+			STATUS _download_status
+		)
+
+		list(GET _download_status 0 _download_code)
+		if(NOT _download_code EQUAL 0)
+			message(FATAL_ERROR "Vulkan loader export download failed: ${_download_status}")
+		endif()
+
+		if(MSVC)
+			string(TOUPPER "${CMAKE_C_COMPILER_ARCHITECTURE_ID}" _machine)
+			if(_machine STREQUAL "WIN32")
+				set(_machine X86)
+			endif()
+
+			set(_library "${_loader_dir}/vulkan-1.lib")
+			execute_process(
+				COMMAND "${CMAKE_AR}" /NOLOGO "/DEF:${_loader_dir}/vulkan-1.def"
+					"/OUT:${_library}" "/MACHINE:${_machine}"
+				COMMAND_ERROR_IS_FATAL ANY
+			)
+		else()
+			set(_library "${_loader_dir}/libvulkan-1.dll.a")
+			execute_process(
+				COMMAND "${CMAKE_DLLTOOL}" -d "${_loader_dir}/vulkan-1.def" -l "${_library}"
+				COMMAND_ERROR_IS_FATAL ANY
+			)
+		endif()
+
+		set(Vulkan_LIBRARY "${_library}" CACHE FILEPATH "Vulkan loader import library" FORCE)
+	endif()
+
 	find_package(Vulkan REQUIRED)
 
 	set(SHADERC_SKIP_TESTS ON CACHE BOOL "" FORCE)

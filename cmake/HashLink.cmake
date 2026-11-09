@@ -18,8 +18,9 @@ function(limen_resolve_hashlink)
 	)
 
 	if(NOT LIMEN_HASHLINK_LIBRARY)
+		unset(LIMEN_HASHLINK_LIBRARY CACHE)
 		find_library(LIMEN_HASHLINK_LIBRARY
-			NAMES hl libhl
+			NAMES libhl hl
 			HINTS
 				"${LIMEN_HASHLINK_ROOT}/build"
 				"${LIMEN_HASHLINK_ROOT}/build/bin"

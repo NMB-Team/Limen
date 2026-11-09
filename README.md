@@ -203,6 +203,26 @@ The OpenGL example requires both `limen.hdll` and `opengl.limen`.
 
 See [examples/README.md](examples/README.md) for more details
 
+## Quick build
+
+On Windows run `build.bat`; on Linux and macOS run `bash build.sh` (Python 3 required).
+The launcher configures, builds, packages the binaries, and opens their folder.
+Later runs reuse the same build directory and compile only changed sources.
+The default is Release; use `--config Debug` for a separate debug build.
+macOS automatically selects the native Intel or Apple Silicon Xcode preset.
+Use `--preset windows-mingw-release` for MinGW, or another configure preset
+for a specific target. `--jobs N` sets the build parallelism.
+GitHub Actions uses the same launcher with `--no-open`.
+
+HashLink must already be built. Its source checkout defaults to the sibling
+`../hashlink-nmb`, or `LIMEN_HASHLINK_ROOT`. Override paths with
+`--hashlink-root /path/to/hashlink` and, if needed,
+`--hashlink-library /path/to/libhl.lib` (or `libhl.so` on Linux).
+The existing standalone build prerequisites still apply.
+Pass additional CMake options after `--`, for example `-- -DLIMEN_BUILD_DLSS=OFF`.
+Use `--no-open` for a terminal or CI run. On headless Linux the output path is printed.
+Binaries are collected in `build/bin/<platform>-<configuration>`.
+
 ## Standalone build
 
 ```sh
@@ -211,6 +231,11 @@ cmake --preset "SEE CMakePresets.json" --fresh \
   -DLIMEN_HASHLINK_LIBRARY=/path/to/hashlink/compiled_dependencies/libhl.lib
 cmake --build --preset "SEE CMakePresets.json"
 ```
+
+Vulkan headers are fetched automatically. On Windows, a missing Vulkan SDK is
+handled by generating the loader import library from pinned Khronos exports.
+The graphics driver must provide the Vulkan runtime. On Linux, install the
+Vulkan loader development library (`libvulkan-dev` or `vulkan-icd-loader`).
 
 SDL3 is built statically by CMake. Set `LIMEN_SDL3_SOURCE_DIR` to use a local
 SDL3 source tree instead of the pinned fetched release.
@@ -228,8 +253,9 @@ x64 MSVC build to compile the AMD FSR 3.1.5 upscaler and DX12 backend into
 [`limen/graphics/postprocess/fsr`](limen/graphics/postprocess/fsr/README.md)
 for source overrides and usage.
 
-CMake locates the DXC runtime DLLs from the Vulkan SDK or HashLink's
-`include/dx` distribution. Their locations can be overridden with
+CMake locates DXC in the Vulkan SDK or HashLink's `include/dx` distribution.
+When missing, it downloads a pinned Microsoft DXC package with its import
+library and runtime DLLs. Their locations can be overridden with
 `LIMEN_DXCOMPILER_RUNTIME_DLL` and `LIMEN_DXIL_RUNTIME_DLL`.
 
 Set `LIMEN_BUILD_AFTERMATH=ON` to add NVIDIA Nsight Aftermath GPU crash
