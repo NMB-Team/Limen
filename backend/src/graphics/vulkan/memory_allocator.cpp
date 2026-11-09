@@ -62,6 +62,7 @@ extern "C" void* limen_vma_create(VkInstance instance, VkPhysicalDevice physical
 	info.vulkanApiVersion = version;
 	info.flags = budget ? VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT : 0;
 	info.pVulkanFunctions = &functions;
+	info.preferredLargeHeapBlockSize = 64ull * 1024 * 1024;
 	*result = vmaCreateAllocator(&info, &a->native);
 	if (*result != VK_SUCCESS)
 		return nullptr;

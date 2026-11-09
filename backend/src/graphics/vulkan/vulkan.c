@@ -2893,7 +2893,10 @@ HL_PRIM void HL_NAME(vk_update_descriptor_sampler)(VkContext ctx, VkDescriptorSe
 }
 
 HL_PRIM void HL_NAME(vk_update_descriptor_sampled_image_range)(VkContext ctx, VkDescriptorSet set, int binding, int first_element, varray* views, int layout) {
-	VkDescriptorImageInfo* image_infos = malloc(sizeof(VkDescriptorImageInfo) * views->size);
+	VkDescriptorImageInfo image_infos_stack[16];
+	VkDescriptorImageInfo* image_infos = views->size <= 16 ? image_infos_stack : malloc(sizeof(VkDescriptorImageInfo) * views->size);
+	if (image_infos == nullptr)
+		hl_error("Vulkan temporary allocation failed");
 
 	for (int i = 0; i < views->size; i++) {
 		image_infos[i] = (VkDescriptorImageInfo){
@@ -2912,11 +2915,15 @@ HL_PRIM void HL_NAME(vk_update_descriptor_sampled_image_range)(VkContext ctx, Vk
 		.pImageInfo = image_infos,
 	};
 	vkUpdateDescriptorSets(ctx->device, 1, &write, 0, nullptr);
-	free(image_infos);
+	if (image_infos != image_infos_stack)
+		free(image_infos);
 }
 
 HL_PRIM void HL_NAME(vk_update_descriptor_sampler_range)(VkContext ctx, VkDescriptorSet set, int binding, int first_element, varray* samplers) {
-	VkDescriptorImageInfo* image_infos = malloc(sizeof(VkDescriptorImageInfo) * samplers->size);
+	VkDescriptorImageInfo image_infos_stack[16];
+	VkDescriptorImageInfo* image_infos = samplers->size <= 16 ? image_infos_stack : malloc(sizeof(VkDescriptorImageInfo) * samplers->size);
+	if (image_infos == nullptr)
+		hl_error("Vulkan temporary allocation failed");
 
 	for (int i = 0; i < samplers->size; i++)
 		image_infos[i] = (VkDescriptorImageInfo){ .sampler = hl_aptr(samplers, VkSampler)[i] };
@@ -2931,7 +2938,8 @@ HL_PRIM void HL_NAME(vk_update_descriptor_sampler_range)(VkContext ctx, VkDescri
 		.pImageInfo = image_infos,
 	};
 	vkUpdateDescriptorSets(ctx->device, 1, &write, 0, nullptr);
-	free(image_infos);
+	if (image_infos != image_infos_stack)
+		free(image_infos);
 }
 
 HL_PRIM void HL_NAME(vk_update_descriptor_storage_image)(VkContext ctx, VkDescriptorSet set, int binding, int array_element, VkImageView view, VkImageLayout layout) {
@@ -2994,7 +3002,10 @@ HL_PRIM void HL_NAME(vk_update_descriptor_buffer_range)(VkContext ctx, VkDescrip
 	if (buffers->size != ranges->size)
 		hl_error("Vulkan descriptor buffer/range batch sizes differ");
 
-	VkDescriptorBufferInfo* buffer_infos = malloc(sizeof(VkDescriptorBufferInfo) * buffers->size);
+	VkDescriptorBufferInfo buffer_infos_stack[16];
+	VkDescriptorBufferInfo* buffer_infos = buffers->size <= 16 ? buffer_infos_stack : malloc(sizeof(VkDescriptorBufferInfo) * buffers->size);
+	if (buffer_infos == nullptr)
+		hl_error("Vulkan temporary allocation failed");
 
 	for (int i = 0; i < buffers->size; i++) {
 		buffer_infos[i] = (VkDescriptorBufferInfo){
@@ -3014,7 +3025,8 @@ HL_PRIM void HL_NAME(vk_update_descriptor_buffer_range)(VkContext ctx, VkDescrip
 		.pBufferInfo = buffer_infos,
 	};
 	vkUpdateDescriptorSets(ctx->device, 1, &write, 0, nullptr);
-	free(buffer_infos);
+	if (buffer_infos != buffer_infos_stack)
+		free(buffer_infos);
 }
 
 HL_PRIM VkSampler HL_NAME(vk_create_sampler)(VkContext ctx, VkSamplerCreateInfo* inf) {
@@ -3818,14 +3830,14 @@ HL_PRIM void HL_NAME(vk_copy_buffer_to_image)(VkCommandBuffer out, VkBuffer buf,
 	vkCmdCopyBufferToImage(out, buf, img, layout, count, regions);
 }
 
-static VkBufferImageCopy2* copy_buffer_image_regions(int count, const VkBufferImageCopy* regions) {
+static VkBufferImageCopy2* copy_buffer_image_regions(int count, const VkBufferImageCopy* regions, VkBufferImageCopy2* copies_stack) {
 	if (count <= 0 || !regions)
 		return nullptr;
 
-	VkBufferImageCopy2* copies = malloc(sizeof(VkBufferImageCopy2) * count);
+	VkBufferImageCopy2* copies = count <= 16 ? copies_stack : malloc(sizeof(VkBufferImageCopy2) * count);
+	if (copies == nullptr)
+		hl_error("Vulkan temporary allocation failed");
 
-	if (!copies)
-		return nullptr;
 	for (int index = 0; index < count; index++) {
 		copies[index] = (VkBufferImageCopy2){
 			.sType = VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2,
@@ -3842,7 +3854,8 @@ static VkBufferImageCopy2* copy_buffer_image_regions(int count, const VkBufferIm
 }
 
 HL_PRIM void HL_NAME(vk_copy_buffer_to_image2)(VkCommandBuffer command, VkBuffer buffer, VkImage image, int layout, int count, VkBufferImageCopy* regions) {
-	VkBufferImageCopy2* copies = copy_buffer_image_regions(count, regions);
+	VkBufferImageCopy2 copies_stack[16];
+	VkBufferImageCopy2* copies = copy_buffer_image_regions(count, regions, copies_stack);
 
 	if (!copies)
 		return;
@@ -3856,11 +3869,13 @@ HL_PRIM void HL_NAME(vk_copy_buffer_to_image2)(VkCommandBuffer command, VkBuffer
 		.pRegions = copies,
 	};
 	compat_vkCmdCopyBufferToImage2(command, &info);
-	free(copies);
+	if (copies != copies_stack)
+		free(copies);
 }
 
 HL_PRIM void HL_NAME(vk_copy_image_to_buffer2)(VkCommandBuffer command, VkImage image, int layout, VkBuffer buffer, int count, VkBufferImageCopy* regions) {
-	VkBufferImageCopy2* copies = copy_buffer_image_regions(count, regions);
+	VkBufferImageCopy2 copies_stack[16];
+	VkBufferImageCopy2* copies = copy_buffer_image_regions(count, regions, copies_stack);
 
 	if (!copies)
 		return;
@@ -3874,7 +3889,8 @@ HL_PRIM void HL_NAME(vk_copy_image_to_buffer2)(VkCommandBuffer command, VkImage 
 		.pRegions = copies,
 	};
 	compat_vkCmdCopyImageToBuffer2(command, &info);
-	free(copies);
+	if (copies != copies_stack)
+		free(copies);
 }
 
 typedef struct {
@@ -3903,10 +3919,11 @@ HL_PRIM void HL_NAME(vk_blit_image2)(VkCommandBuffer command, VkImage source, in
 	if (count <= 0 || !regions)
 		return;
 
-	VkImageBlit2* blits = malloc(sizeof(VkImageBlit2) * count);
+	VkImageBlit2 blits_stack[16];
+	VkImageBlit2* blits = count <= 16 ? blits_stack : malloc(sizeof(VkImageBlit2) * count);
+	if (blits == nullptr)
+		hl_error("Vulkan temporary allocation failed");
 
-	if (!blits)
-		return;
 	for (int index = 0; index < count; index++) {
 		const LimenImageBlitRegion* region = &regions[index];
 		blits[index] = (VkImageBlit2) {
@@ -3945,7 +3962,8 @@ HL_PRIM void HL_NAME(vk_blit_image2)(VkCommandBuffer command, VkImage source, in
 		.filter = (VkFilter)filter,
 	};
 	compat_vkCmdBlitImage2(command, &info);
-	free(blits);
+	if (blits != blits_stack)
+		free(blits);
 }
 
 HL_PRIM void HL_NAME(vk_copy_buffer2)(VkCommandBuffer command, VkBuffer source, VkBuffer destination, int64_t source_offset, int64_t destination_offset, int64_t size) {
