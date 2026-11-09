@@ -378,6 +378,14 @@ class SDLBindings {
 		return null;
 	}
 
+	public static function surfaceDuplicate(surface:SurfacePtr):SurfacePtr {
+		return null;
+	}
+
+	public static function surfaceAddAlternate(surface:SurfacePtr, image:SurfacePtr):Bool {
+		return false;
+	}
+
 	public static function freeSurface(surface:SurfacePtr):Void {}
 
 	public static function cursorCreate(surface:SurfacePtr, hotX:Int, hotY:Int):CursorPtr {

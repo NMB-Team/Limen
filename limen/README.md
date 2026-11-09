@@ -30,3 +30,18 @@ Use `limen.platform.Platform` to initialize and stop the platform layer, and
 `limen.platform.window.Window` to create application windows. Choose a graphics
 package only when the application needs that rendering backend. See the
 repository root README for a usage example and build instructions.
+
+## Window icons
+
+`Window.setIcon(surface)` accepts surfaces with alternate images. Use
+`Surface.addAlternateImage(image)` to attach a copied image; the caller can free
+the source image afterward.
+
+`Surface.fromICO(bytes)` decodes ICO bitmap and PNG frames using `format` and
+returns an owned surface containing every resolution. Free it after calling
+`Window.setIcon(surface)`. `Window.setIconICO(bytes)` and `Window.setIconFile(path)`
+load ICO data and release the temporary surfaces. The file method expects ICO.
+
+With Heaps on HashLink/Limen, `hxd.Window` exposes `setIconICO(bytes)` and
+`setIconFile(path)`. `-D windowIcon=path/to/icon.ico` embeds the ICO at compile
+time and applies it when the default window is created.

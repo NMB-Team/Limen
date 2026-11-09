@@ -67,6 +67,16 @@ class Window {
 		SDLBindings.winSetIcon(win, cast surface);
 	}
 
+	public function setIconICO(bytes:haxe.io.Bytes):Void {
+		var surface = Surface.fromICO(bytes);
+		setIcon(surface);
+		surface.free();
+	}
+
+	public function setIconFile(path:String):Void {
+		setIconICO(sys.io.File.getBytes(path));
+	}
+
 	public inline function resize(width:Int, height:Int):Void {
 		SDLBindings.winSetSize(win, width, height);
 	}

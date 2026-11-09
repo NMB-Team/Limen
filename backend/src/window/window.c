@@ -3,6 +3,7 @@
 
 #ifdef HL_WIN_DESKTOP
 #include "../platform/windows/borderless.h"
+#include "../platform/windows/icon.h"
 #include "../platform/windows/theme.h"
 #endif
 
@@ -211,7 +212,11 @@ HL_PRIM void HL_NAME(win_set_title)(SDL_Window* window, vbyte* title) {
 DEFINE_PRIM(_VOID, win_set_title, TWIN _BYTES);
 
 HL_PRIM void HL_NAME(win_set_icon)(SDL_Window* window, SDL_Surface* surface) {
+#ifdef HL_WIN_DESKTOP
+	limen_windows_set_icon(window, surface);
+#else
 	SDL_SetWindowIcon(window, surface);
+#endif
 }
 DEFINE_PRIM(_VOID, win_set_icon, TWIN _SURF);
 
@@ -349,6 +354,7 @@ DEFINE_PRIM(_I32, win_get_id, TWIN);
 
 HL_PRIM void HL_NAME(window_destroy)(SDL_Window* window) {
 #ifdef HL_WIN_DESKTOP
+	limen_windows_cleanup_icons(window);
 	limen_windows_cleanup_borderless(window);
 #endif
 	SDL_DestroyWindow(window);

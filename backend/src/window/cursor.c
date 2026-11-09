@@ -9,6 +9,24 @@ HL_PRIM SDL_Surface* HL_NAME(surface_from)(vbyte* pixels, int width, int height,
 }
 DEFINE_PRIM(_SURF, surface_from, _BYTES _I32 _I32 _I32 _I32 _I32 _I32 _I32 _I32);
 
+HL_PRIM SDL_Surface* HL_NAME(surface_duplicate)(SDL_Surface* surface) {
+	return SDL_DuplicateSurface(surface);
+}
+DEFINE_PRIM(_SURF, surface_duplicate, _SURF);
+
+HL_PRIM bool HL_NAME(surface_add_alternate)(SDL_Surface* surface, SDL_Surface* image) {
+	SDL_Surface* copy = SDL_DuplicateSurface(image);
+
+	if (copy == nullptr)
+		return false;
+
+	bool result = SDL_AddSurfaceAlternateImage(surface, copy);
+	SDL_DestroySurface(copy);
+
+	return result;
+}
+DEFINE_PRIM(_BOOL, surface_add_alternate, _SURF _SURF);
+
 HL_PRIM void HL_NAME(free_surface)(SDL_Surface* surface) {
 	SDL_DestroySurface(surface);
 }
