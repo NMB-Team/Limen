@@ -74,6 +74,10 @@ class D3D11Bindings {
 		return false;
 	}
 
+	public static function getApiVersion():Float {
+		return 0.;
+	}
+
 	public static function getSupportedVersion():Float {
 		return 0.;
 	}

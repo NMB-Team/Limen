@@ -629,6 +629,32 @@ void register_frame_events() {
 }
 #endif
 
+HL_PRIM int HL_NAME(get_feature_level)() {
+	if (static_driver == nullptr)
+		return 0;
+
+	const D3D_FEATURE_LEVEL levels[] = {
+		D3D_FEATURE_LEVEL_12_2,
+		D3D_FEATURE_LEVEL_12_1,
+		D3D_FEATURE_LEVEL_12_0,
+		D3D_FEATURE_LEVEL_11_1,
+		D3D_FEATURE_LEVEL_11_0,
+	};
+
+	for (const auto& level : levels) {
+		D3D12_FEATURE_DATA_FEATURE_LEVELS data = {1, &level, D3D_FEATURE_LEVEL()};
+		HRESULT result = static_driver->device->CheckFeatureSupport(D3D12_FEATURE_FEATURE_LEVELS, &data, sizeof(data));
+
+		if (SUCCEEDED(result))
+			return data.MaxSupportedFeatureLevel;
+
+		if (result != E_INVALIDARG)
+			ReportDxError(result, __LINE__);
+	}
+
+	return 0;
+}
+
 HL_PRIM int64 HL_NAME(get_driver_version)() {
 	union {
 		LARGE_INTEGER i;
@@ -780,6 +806,7 @@ DEFINE_PRIM(_I32, get_current_back_buffer_index, _NO_ARG);
 DEFINE_PRIM(_VOID, flush_messages, _NO_ARG);
 DEFINE_PRIM(_VOID, suppress_debug_messages, _STRUCT);
 DEFINE_PRIM(_BYTES, get_device_name, _NO_ARG);
+DEFINE_PRIM(_I32, get_feature_level, _NO_ARG);
 DEFINE_PRIM(_I64, get_driver_version, _NO_ARG);
 DEFINE_PRIM(_VOID, query_video_memory_info, _I32 _STRUCT);
 

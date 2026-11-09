@@ -197,6 +197,11 @@ class D3D12Bindings {
 		return null;
 	}
 
+	@:hlNative("limen", "d3d12_get_feature_level")
+	public static function getFeatureLevel():Int {
+		return 0;
+	}
+
 	@:hlNative("limen", "d3d12_get_driver_version")
 	public static function getDriverVersion():Int64 {
 		return 0;

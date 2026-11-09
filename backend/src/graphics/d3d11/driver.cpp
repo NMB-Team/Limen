@@ -3,7 +3,7 @@
 #undef _GUID
 
 #ifdef HL_WIN_DESKTOP
-#include <d3d11.h>
+#include <d3d11_4.h>
 #include <d3dcommon.h>
 #include <d3dcompiler.h>
 #include <dxgi.h>
@@ -407,6 +407,34 @@ HL_PRIM const uchar* HL_NAME(get_device_name)() {
 	return (uchar*)hl_copy_bytes((vbyte*)desc.Description, (int)(ustrlen((uchar*)desc.Description) + 1) * 2);
 }
 
+HL_PRIM double HL_NAME(get_api_version)() {
+	if (driver == nullptr)
+		return 0.;
+
+#ifdef HL_WIN_DESKTOP
+	const struct {
+		IID iid;
+		double version;
+	} interfaces[] = {
+		{__uuidof(ID3D11Device4), 11.4},
+		{__uuidof(ID3D11Device3), 11.3},
+		{__uuidof(ID3D11Device2), 11.2},
+		{__uuidof(ID3D11Device1), 11.1},
+	};
+
+	for (const auto& entry : interfaces) {
+		IUnknown* device = nullptr;
+
+		if (SUCCEEDED(driver->device->QueryInterface(entry.iid, (void**)&device))) {
+			device->Release();
+			return entry.version;
+		}
+	}
+#endif
+
+	return 11.0;
+}
+
 HL_PRIM double HL_NAME(get_supported_version)() {
 	if (driver == nullptr)
 		return 0.;
@@ -695,6 +723,7 @@ DEFINE_PRIM(_VOID, rs_set_scissor_rects, _I32 _BYTES);
 DEFINE_PRIM(_VOID, clear_color, _POINTER _F64 _F64 _F64 _F64);
 DEFINE_PRIM(_VOID, present, _I32 _I32);
 DEFINE_PRIM(_BYTES, get_device_name, _NO_ARG);
+DEFINE_PRIM(_F64, get_api_version, _NO_ARG);
 DEFINE_PRIM(_F64, get_supported_version, _NO_ARG);
 DEFINE_PRIM(_RESOURCE, create_buffer, _I32 _I32 _I32 _I32 _I32 _I32 _BYTES);
 DEFINE_PRIM(_BYTES, map, _RESOURCE _I32 _I32 _BOOL _REF(_I32));
