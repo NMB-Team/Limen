@@ -87,6 +87,7 @@ enum abstract VkWsiStatus(Int) from Int to Int {
 	public var actualHeight:Int;
 	public var transferSource:Int;
 	public var actualPresentMode:Int;
+	public var scaling:Int;
 
 	public function new(width:Int, height:Int, presentMode:PresentMode) {
 		this.width = width;

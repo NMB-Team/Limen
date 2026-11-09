@@ -2088,6 +2088,7 @@ typedef struct {
 	int actual_height;
 	int transfer_source;
 	int actual_present_mode;
+	int scaling;
 } VkSwapchainInfo;
 
 HL_PRIM int HL_NAME(vk_init_swapchain)(VkContext ctx, VkSwapchainInfo* info, varray* outImages) {
@@ -2204,6 +2205,38 @@ HL_PRIM int HL_NAME(vk_init_swapchain)(VkContext ctx, VkSwapchainInfo* info, var
 
 	free(present_modes);
 
+	VkSurfacePresentScalingCapabilitiesEXT scaling = {
+		.sType = VK_STRUCTURE_TYPE_SURFACE_PRESENT_SCALING_CAPABILITIES_EXT,
+	};
+	bool request_scaling = info->scaling != 0;
+	info->scaling = 0;
+	if (request_scaling && (ctx->capability_flags & VK_CAP_SWAPCHAIN_MAINTENANCE_1) && (surface_maintenance1_enabled || surface_maintenance1_ext)) {
+		VkSurfacePresentModeEXT mode_info = {
+			.sType = VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_EXT,
+			.presentMode = present_mode,
+		};
+		VkPhysicalDeviceSurfaceInfo2KHR surface_info = {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR,
+			.pNext = &mode_info,
+			.surface = ctx->surface,
+		};
+		VkSurfaceCapabilities2KHR surface_caps = {
+			.sType = VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_KHR,
+			.pNext = &scaling,
+		};
+		PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR get_capabilities =
+			(PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR)vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfaceCapabilities2KHR");
+		result = get_capabilities(ctx->pdevice, &surface_info, &surface_caps);
+		if (result != VK_SUCCESS) {
+			vk_set_error("Surface scaling query failed: %s (%d)", vk_result_name(result), result);
+			return wsi_status(result);
+		}
+		capabilities = surface_caps.surfaceCapabilities;
+		info->scaling = (scaling.supportedPresentScaling & VK_PRESENT_SCALING_STRETCH_BIT_EXT)
+			&& extent.width >= scaling.minScaledImageExtent.width && extent.width <= scaling.maxScaledImageExtent.width
+			&& extent.height >= scaling.minScaledImageExtent.height && extent.height <= scaling.maxScaledImageExtent.height;
+	}
+
 	uint32_t image_count = capabilities.minImageCount + 1;
 
 	if (capabilities.maxImageCount > 0 && image_count > capabilities.maxImageCount)
@@ -2250,10 +2283,15 @@ HL_PRIM int HL_NAME(vk_init_swapchain)(VkContext ctx, VkSwapchainInfo* info, var
 		.presentModeCount = 1,
 		.pPresentModes = &present_mode,
 	};
+	VkSwapchainPresentScalingCreateInfoEXT scaling_info = {
+		.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_SCALING_CREATE_INFO_EXT,
+		.pNext = &present_modes_info,
+		.scalingBehavior = VK_PRESENT_SCALING_STRETCH_BIT_EXT,
+	};
 
 	VkSwapchainCreateInfoKHR swapchain_info = {
 		.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-		.pNext = (ctx->capability_flags & VK_CAP_SWAPCHAIN_MAINTENANCE_1) ? &present_modes_info : nullptr,
+		.pNext = info->scaling ? (void*)&scaling_info : (ctx->capability_flags & VK_CAP_SWAPCHAIN_MAINTENANCE_1) ? &present_modes_info : nullptr,
 		.surface = ctx->surface,
 		.minImageCount = image_count,
 		.imageFormat = format.format,
