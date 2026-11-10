@@ -12,9 +12,8 @@ GPU rendering is provided separately by the `OpenGL`, `Vulkan`, `Direct3D 11` an
 
 </div>
 
-> [!IMPORTANT]
-> This repository is the canonical implementation. HashLink embeds it through
-> its `LIMEN_SOURCE_DIR` CMake option.
+> [!NOTE]
+> Darwin/macOS builds and tests are temporarily disabled in the GitHub Actions workflow. macOS release artifacts are temporarily unavailable.
 
 ## Haxe API
 
