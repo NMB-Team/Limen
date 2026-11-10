@@ -17,7 +17,7 @@ import limen.platform.window.WindowMode;
 @:noCompletion
 @:hlNative("limen")
 class SDLBindings {
-	public static function initOnce():Bool {
+	public static function initOnce(onEvent:Dynamic, event:Dynamic):Bool {
 		return false;
 	}
 
@@ -103,11 +103,9 @@ class SDLBindings {
 		return false;
 	}
 
-	public static function eventLoop(event:Dynamic):Bool {
-		return false;
-	}
+	public static function pumpEvents():Void {}
 
-	public static function setWindowEventWatch(onEvent:Dynamic, event:Dynamic):Void {}
+	public static function copyEvent(source:Dynamic, target:Dynamic):Void {}
 
 	public static function hintValue(name:hl.Bytes, value:hl.Bytes):Bool {
 		return false;

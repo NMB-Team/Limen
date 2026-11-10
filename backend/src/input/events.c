@@ -1,9 +1,9 @@
 #include "../core/internal.h"
 
-static bool text_editing = false;
-static vclosure* window_event_watch_callback = nullptr;
-static limen_event* window_event_watch_event = nullptr;
-static bool window_event_watch_registered = false;
+static SDL_AtomicInt text_editing;
+static vclosure* event_watch_callback = nullptr;
+static limen_event* event_watch_template = nullptr;
+static bool event_watch_registered = false;
 
 static bool translate_window_event(const SDL_Event* source, limen_event* destination) {
 	if (source->type < SDL_EVENT_WINDOW_FIRST || source->type > SDL_EVENT_WINDOW_LAST) {
@@ -120,7 +120,7 @@ static bool translate_keyboard_event(const SDL_Event* source, limen_event* desti
 
 			return true;
 		case SDL_EVENT_TEXT_EDITING:
-			text_editing = true;
+			SDL_SetAtomicInt(&text_editing, 1);
 
 			return false;
 		case SDL_EVENT_TEXT_INPUT:
@@ -347,36 +347,43 @@ bool limen_translate_event(const SDL_Event* source, limen_event* destination) {
 	       translate_joystick_event(source, destination) || translate_drop_event(source, destination) || translate_pen_event(source, destination);
 }
 
-static bool SDLCALL window_event_watch(void* userdata, SDL_Event* event) {
+static bool SDLCALL event_watch(void* userdata, SDL_Event* source) {
 	(void)userdata;
+	vdynamic* stack_top;
+	bool registered_thread = hl_get_thread() == nullptr;
 
-	switch (event->type) {
-		case SDL_EVENT_WINDOW_EXPOSED:
-		case SDL_EVENT_WINDOW_MOVED:
-		case SDL_EVENT_WINDOW_RESIZED:
-		case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
-			if (window_event_watch_callback && window_event_watch_event && limen_translate_event(event, window_event_watch_event)) {
-				vdynamic* arguments[1] = { (vdynamic*)window_event_watch_event };
-				hl_dyn_call(window_event_watch_callback, arguments, 1);
-			}
+	if (registered_thread)
+		hl_register_thread(&stack_top);
 
-			break;
-		default:
-			break;
+	limen_event* event = (limen_event*)hl_alloc_obj(event_watch_template->t);
+	bool is_exception = false;
+	vdynamic* exception = nullptr;
+
+	if (limen_translate_event(source, event)) {
+		vdynamic* arguments[] = { (vdynamic*)event };
+		exception = hl_dyn_call_safe(event_watch_callback, arguments, 1, &is_exception);
 	}
+
+	if (is_exception)
+		hl_print_uncaught_exception(exception);
+
+	if (registered_thread)
+		hl_unregister_thread();
 
 	return true;
 }
 
-HL_PRIM bool HL_NAME(event_loop)(limen_event* event) {
+HL_PRIM void HL_NAME(pump_events)() {
 	SDL_Event source;
 
-	while (SDL_PollEvent(&source))
-		if (limen_translate_event(&source, event))
-			return true;
-	return false;
+	while (SDL_PollEvent(&source)) {}
 }
-DEFINE_PRIM(_BOOL, event_loop, _DYN);
+DEFINE_PRIM(_VOID, pump_events, _NO_ARG);
+
+HL_PRIM void HL_NAME(copy_event)(limen_event* source, limen_event* destination) {
+	memcpy((char*)destination + sizeof(hl_type*), (char*)source + sizeof(hl_type*), sizeof(limen_event) - sizeof(hl_type*));
+}
+DEFINE_PRIM(_VOID, copy_event, _DYN _DYN);
 
 #ifdef LIMEN_BUILD_TESTS
 HL_PRIM bool HL_NAME(test_queue_input_events)() {
@@ -409,32 +416,35 @@ HL_PRIM bool HL_NAME(test_queue_input_events)() {
 DEFINE_PRIM(_BOOL, test_queue_input_events, _NO_ARG);
 #endif
 
-HL_PRIM int HL_NAME(event_poll)(SDL_Event* event) {
-	return SDL_PollEvent(event);
-}
-DEFINE_PRIM(_I32, event_poll, _STRUCT);
-
-HL_PRIM void HL_NAME(set_window_event_watch)(vclosure* callback, limen_event* event) {
-	if (window_event_watch_callback == nullptr)
-		hl_add_root(&window_event_watch_callback);
-	if (window_event_watch_event == nullptr)
-		hl_add_root(&window_event_watch_event);
-	if (callback != nullptr && !window_event_watch_registered) {
-		SDL_AddEventWatch(window_event_watch, nullptr);
-		window_event_watch_registered = true;
-	} else if (callback == nullptr && window_event_watch_registered) {
-		SDL_RemoveEventWatch(window_event_watch, nullptr);
-		window_event_watch_registered = false;
+void limen_set_event_watch(vclosure* callback, limen_event* event) {
+	if (event_watch_registered) {
+		SDL_RemoveEventWatch(event_watch, nullptr);
+		event_watch_registered = false;
+		hl_remove_root(&event_watch_callback);
+		hl_remove_root(&event_watch_template);
 	}
 
-	window_event_watch_callback = callback;
-	window_event_watch_event = callback != nullptr ? event : nullptr;
+	event_watch_callback = callback;
+	event_watch_template = callback != nullptr ? event : nullptr;
+
+	if (callback != nullptr) {
+		hl_add_root(&event_watch_callback);
+		hl_add_root(&event_watch_template);
+
+		if (!SDL_AddEventWatch(event_watch, nullptr)) {
+			hl_remove_root(&event_watch_callback);
+			hl_remove_root(&event_watch_template);
+			event_watch_callback = nullptr;
+			event_watch_template = nullptr;
+			hl_error("Could not register SDL event watch");
+		}
+
+		event_watch_registered = true;
+	}
 }
-DEFINE_PRIM(_VOID, set_window_event_watch, _DYN _DYN);
 
 HL_PRIM bool HL_NAME(is_text_input_shown)() {
-	bool result = text_editing;
-	text_editing = false;
+	bool result = SDL_SetAtomicInt(&text_editing, 0) != 0;
 
 	return result;
 }

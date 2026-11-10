@@ -7,15 +7,23 @@
 #include <SDL3/SDL_main.h>
 #endif
 
-HL_PRIM bool HL_NAME(init_once)() {
+HL_PRIM bool HL_NAME(init_once)(vclosure* callback, limen_event* event) {
 	SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
 	SDL_SetHint(SDL_HINT_IME_IMPLEMENTED_UI, "none");
 
 #ifdef HL_ANDROID
 	SDL_SetMainReady();
 #endif
-	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
+	if (!SDL_Init(SDL_INIT_EVENTS))
 		hl_error("SDL_Init failed: %s", hl_to_utf16(SDL_GetError()));
+
+	limen_set_event_watch(callback, event);
+
+	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
+		uchar* error = hl_to_utf16(SDL_GetError());
+		limen_set_event_watch(nullptr, nullptr);
+		SDL_Quit();
+		hl_error("SDL_Init failed: %s", error);
 
 		return false;
 	}
@@ -26,9 +34,10 @@ HL_PRIM bool HL_NAME(init_once)() {
 #endif
 	return true;
 }
-DEFINE_PRIM(_BOOL, init_once, _NO_ARG);
+DEFINE_PRIM(_BOOL, init_once, _DYN _DYN);
 
 HL_PRIM void HL_NAME(quit)() {
+	limen_set_event_watch(nullptr, nullptr);
 	limen_tray_clear_callbacks(); // clean callbacks of tray
 	limen_modules_unload();
 	SDL_Quit();

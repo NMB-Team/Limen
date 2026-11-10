@@ -57,6 +57,14 @@ window.destroy();
 Platform.quit();
 ```
 
+`Platform.addEventWatchListener(listener)` receives every supported event directly
+on its SDL producer thread. Use `removeEventWatchListener(listener)` to unsubscribe.
+Listeners may run outside the main thread and should synchronize shared state.
+`pollEvent()` and `processEvents()` consume independent queued copies on the caller's
+thread. Keep polling to pump OS events and drain the queue even when using listeners.
+In heaps-nmb, `hxd.Window.addEventWatchListener()` exposes native LIMEN events for
+that window, while existing event targets retain synchronous delivery.
+
 Platform types are grouped under
 - `limen.platform.event`,
 - `limen.platform.cursor`,

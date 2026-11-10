@@ -30,12 +30,15 @@ class Platform {
 	static var isLinuxPlatform = false;
 
 	static final event = new Event();
-	static final watchEvent = new Event();
+	static var pendingErrors = new sys.thread.Deque<Dynamic>();
+	static var pendingEvents = new sys.thread.Deque<Event>();
+	static final listenerMutex = new sys.thread.Mutex();
+	static var eventWatchListeners:Array<Event -> Void> = [];
 
 	public static function init(preferredGraphicsDriver:GraphicsDriver = OpenGL, ?supportedGraphicsDrivers:Array<GraphicsDriver>):Void {
 		if (initDone)
 			return;
-		if (!SDLBindings.initOnce())
+		if (!SDLBindings.initOnce(dispatchEventWatch, event))
 			throw "Failed to init SDL";
 
 		videoBackend = detectVideoBackend();
@@ -70,8 +73,35 @@ class Platform {
 		return @:privateAccess SDLBindings.hintValue((name : String).toUtf8(), value.toUtf8());
 	}
 
-	public static function watchWindowEvents(onEvent:Null<Event -> Void>):Void {
-		SDLBindings.setWindowEventWatch(onEvent, watchEvent);
+	/** listeners run on the SDL event producer thread */
+	public static function addEventWatchListener(listener:Event -> Void):Void {
+		listenerMutex.acquire();
+		eventWatchListeners = eventWatchListeners.concat([listener]);
+		listenerMutex.release();
+	}
+
+	public static function removeEventWatchListener(listener:Event -> Void):Void {
+		listenerMutex.acquire();
+		eventWatchListeners = eventWatchListeners.filter(value -> !Reflect.compareMethods(value, listener));
+		listenerMutex.release();
+	}
+
+	static function dispatchEventWatch(source:Event):Void {
+		final queued = new Event();
+		SDLBindings.copyEvent(source, queued);
+		pendingEvents.add(queued);
+
+		listenerMutex.acquire();
+		final listeners = eventWatchListeners;
+		listenerMutex.release();
+
+		for (listener in listeners) {
+			try {
+				listener(source);
+			} catch (error:Dynamic) {
+				pendingErrors.add(error);
+			}
+		}
 	}
 
 	public static function processEvents(onEvent:Event -> Bool):Bool {
@@ -84,9 +114,29 @@ class Platform {
 	}
 
 	public static function pollEvent(target:Event):Bool {
-		final available = SDLBindings.eventLoop(target);
+		var queued = pendingEvents.pop(false);
+
+		if (queued == null) {
+			SDLBindings.pumpEvents();
+			queued = pendingEvents.pop(false);
+		}
+
 		Tray.dispatchCallbacks();
-		return available;
+
+		final error = pendingErrors.pop(false);
+
+		if (error != null) {
+			if (queued != null)
+				pendingEvents.push(queued);
+
+			throw error;
+		}
+
+		if (queued == null)
+			return false;
+
+		SDLBindings.copyEvent(queued, target);
+		return true;
 	}
 
 	public static function quit():Void {
@@ -94,6 +144,8 @@ class Platform {
 			return;
 		Tray.destroyAll();
 		SDLBindings.quit();
+		pendingEvents = new sys.thread.Deque<Event>();
+		pendingErrors = new sys.thread.Deque<Dynamic>();
 
 		graphicsDriver = None;
 		videoBackend = Unknown;
