@@ -3,7 +3,8 @@ package limen.platform.system;
 import limen.platform.internal.SDLBindings;
 
 /**
-	System information. Read power and theme properties on the main thread.
+	Provides operating system and hardware information, power status, and the current system theme.
+	Read power and theme properties on the main thread.
 **/
 class System {
 	public static var powerState(get, never):PowerState;
@@ -22,6 +23,14 @@ class System {
 		Platform name, or "Unknown" when unavailable.
 	**/
 	public static var platform(get, never):String;
+
+	/**
+		OS, process architecture, logical CPU count and RAM. Available before Platform.init().
+	**/
+	public static function getInfo():String {
+		final value = SDLBindings.getSystemInfo();
+		return value == null ? platform : @:privateAccess String.fromUTF8(value);
+	}
 
 	@:noCompletion
 	static function get_powerState():PowerState {

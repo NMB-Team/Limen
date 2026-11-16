@@ -8,5 +8,5 @@ if(WIN32)
 		backend/src/platform/windows/icon.c
 		backend/src/platform/windows/theme.c
 	)
-	list(APPEND LIMEN_PLATFORM_LIBRARIES winmm dwmapi)
+	list(APPEND LIMEN_PLATFORM_LIBRARIES winmm dwmapi advapi32)
 endif()

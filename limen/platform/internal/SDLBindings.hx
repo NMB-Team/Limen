@@ -140,6 +140,10 @@ class SDLBindings {
 		return null;
 	}
 
+	public static function getSystemInfo():hl.Bytes {
+		return null;
+	}
+
 	public static function getBasePath():hl.Bytes {
 		return null;
 	}
