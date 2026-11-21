@@ -1,7 +1,7 @@
 package;
 
 import limen.graphics.GraphicsDriver;
-import limen.graphics.renderer.opengl.OpenGL;
+import limen.graphics.renderer.opengl.OpenGL as GL;
 import limen.graphics.renderer.opengl.shader.Shaders.Program;
 import limen.graphics.renderer.opengl.shader.Shaders.Shader;
 import limen.graphics.renderer.opengl.command.Commands;
@@ -29,10 +29,10 @@ class ExampleGL {
 			resizable: true
 		});
 
-		final context = OpenGL.create(window, {
+		final context = GL.create(window, {
 			minimumMajor: 3,
 			minimumMinor: 3,
-			flags: OpenGL.DOUBLE_BUFFER | OpenGL.CORE_PROFILE,
+			flags: GL.DOUBLE_BUFFER | GL.CORE_PROFILE,
 			presentMode: Immediate
 		});
 

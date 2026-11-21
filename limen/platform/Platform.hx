@@ -73,7 +73,7 @@ class Platform {
 		return @:privateAccess SDLBindings.hintValue((name : String).toUtf8(), value.toUtf8());
 	}
 
-	/** listeners run on the SDL event producer thread */
+	/* listeners run on the SDL event producer thread */
 	public static function addEventWatchListener(listener:Event -> Void):Void {
 		listenerMutex.acquire();
 		eventWatchListeners = eventWatchListeners.concat([listener]);
