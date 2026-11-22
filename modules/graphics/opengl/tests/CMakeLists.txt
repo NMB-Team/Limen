@@ -9,7 +9,8 @@ if(WIN32 AND NOT MINGW)
 	add_test(NAME limen_opengl_capabilities COMMAND limen_opengl_capabilities_test)
 	set_tests_properties(limen_opengl_capabilities PROPERTIES
 		LABELS opengl
-		ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:$<TARGET_FILE_DIR:limen>"
+		TIMEOUT 60
+		ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:$<TARGET_FILE_DIR:libhl>"
 	)
 endif()
 

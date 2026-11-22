@@ -6,6 +6,8 @@ add_test(NAME limen_vma_memory COMMAND limen_vma_memory_test)
 if(WIN32)
 	set_tests_properties(limen_vma_memory PROPERTIES
 		SKIP_RETURN_CODE 77
+		TIMEOUT 60
+		ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:$<TARGET_FILE_DIR:libhl>"
 	)
 endif()
 set_tests_properties(limen_vma_memory PROPERTIES LABELS vulkan)
