@@ -1,6 +1,7 @@
--cp .
--cp ../../
+--cwd ../..
+workspace.hxml
+-cp examples/window
 
 -main ExampleWindow
 
--hl exwindow.hl
+-hl examples/window/exwindow.hl

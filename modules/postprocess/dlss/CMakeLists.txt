@@ -1,3 +1,9 @@
+set(_sources native/dlss.cpp)
+limen_register_module(dlss ${_sources})
+if(NOT LIMEN_BUILD_DLSS)
+	return()
+endif()
+
 set(_LIMEN_STREAMLINE_ROOT_HINTS
 	"${CMAKE_CURRENT_SOURCE_DIR}/native/streamline"
 )
@@ -30,8 +36,7 @@ foreach(_runtime_name
 	)
 endforeach()
 
-add_library(limen_dlss SHARED native/dlss.cpp)
-limen_set_native_library(limen_dlss dlss .limen)
+limen_add_module(dlss ${_sources})
 target_include_directories(limen_dlss PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/native/streamline"
 )
@@ -39,18 +44,15 @@ target_link_libraries(limen_dlss PRIVATE
 	libhl
 	dxgi
 	user32
+	limen_postprocess_common
 )
 if(LIMEN_BUILD_VULKAN)
 	target_compile_definitions(limen_dlss PRIVATE LIMEN_POSTPROCESS_VULKAN)
 	target_include_directories(limen_dlss PRIVATE "${LIMEN_SOURCE_DIR}/modules/graphics/vulkan/native")
 	target_link_libraries(limen_dlss PRIVATE Vulkan::Headers)
 endif()
-add_custom_command(TARGET limen_dlss POST_BUILD
-	COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-		${_LIMEN_STREAMLINE_RUNTIME_FILES} "$<TARGET_FILE_DIR:limen_dlss>"
-)
-install(FILES ${_LIMEN_STREAMLINE_RUNTIME_FILES} DESTINATION "${LIMEN_HDLL_DESTINATION}")
+limen_stage_runtime(limen_dlss ${_LIMEN_STREAMLINE_RUNTIME_FILES})
 install(
-	FILES "${LIMEN_SOURCE_DIR}/limen/graphics/postprocess/dlss/LICENSE_STREAMLINE"
+	FILES "${LIMEN_SOURCE_DIR}/modules/postprocess/dlss/haxe/limen/graphics/postprocess/dlss/LICENSE_STREAMLINE"
 	DESTINATION "${LIMEN_HDLL_DESTINATION}"
 )

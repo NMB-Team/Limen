@@ -24,20 +24,22 @@ find_program(LIMEN_HASHLINK_EXECUTABLE NAMES hl
 		"${LIMEN_HASHLINK_ROOT}/build/bin"
 )
 if(LIMEN_HAXE_EXECUTABLE AND LIMEN_HASHLINK_EXECUTABLE)
+	file(GLOB_RECURSE _LIMEN_PLATFORM_HAXE_SOURCES CONFIGURE_DEPENDS
+		"${LIMEN_SOURCE_DIR}/modules/core/haxe/*.hx"
+		"${LIMEN_SOURCE_DIR}/modules/platform/haxe/*.hx"
+	)
 	set(_LIMEN_WINDOW_FLAGS_HL "${CMAKE_CURRENT_BINARY_DIR}/window_flags.hl")
 	add_custom_command(
 		OUTPUT "${_LIMEN_WINDOW_FLAGS_HL}"
 		COMMAND "${LIMEN_HAXE_EXECUTABLE}"
-			-cp "${CMAKE_CURRENT_SOURCE_DIR}/.."
+			--cwd "${LIMEN_SOURCE_DIR}" workspace.hxml
 			-cp "${CMAKE_CURRENT_SOURCE_DIR}"
-			-lib format
 			-main WindowFlagsTest
 			-hl "${_LIMEN_WINDOW_FLAGS_HL}"
 		DEPENDS
 			WindowFlagsTest.hx
-			../limen/platform/window/Window.hx
-			../limen/platform/window/WindowFlags.hx
-			../limen/platform/window/WindowOptions.hx
+			"${LIMEN_SOURCE_DIR}/workspace.hxml"
+			${_LIMEN_PLATFORM_HAXE_SOURCES}
 		VERBATIM
 	)
 	add_custom_target(limen_window_flags_haxe_test ALL
@@ -61,22 +63,14 @@ if(LIMEN_HAXE_EXECUTABLE AND LIMEN_HASHLINK_EXECUTABLE)
 	add_custom_command(
 		OUTPUT "${_LIMEN_INPUT_EVENTS_HL}"
 		COMMAND "${LIMEN_HAXE_EXECUTABLE}"
-			-cp "${CMAKE_CURRENT_SOURCE_DIR}/.."
+			--cwd "${LIMEN_SOURCE_DIR}" workspace.hxml
 			-cp "${CMAKE_CURRENT_SOURCE_DIR}"
-			-lib format
 			-main InputEventsTest
 			-hl "${_LIMEN_INPUT_EVENTS_HL}"
 		DEPENDS
 			InputEventsTest.hx
-			../limen/platform/event/Event.hx
-			../limen/platform/event/EventType.hx
-			../limen/platform/internal/SDLBindings.hx
-			../limen/platform/input/touch/Touch.hx
-			../limen/platform/input/touch/TouchDeviceType.hx
-			../limen/platform/input/pen/Pen.hx
-			../limen/platform/input/pen/PenDeviceType.hx
-			../limen/platform/input/pen/PenAxis.hx
-			../limen/platform/input/pen/PenInputFlags.hx
+			"${LIMEN_SOURCE_DIR}/workspace.hxml"
+			${_LIMEN_PLATFORM_HAXE_SOURCES}
 		VERBATIM
 	)
 	add_custom_target(limen_input_events_haxe_test ALL DEPENDS "${_LIMEN_INPUT_EVENTS_HL}")
@@ -199,8 +193,8 @@ if(LIMEN_BUILD_OPENGL)
 		)
 		if(_LIMEN_HEAPS_RESULT EQUAL 0)
 			add_test(NAME limen_opengl_readback_lifecycle
-				COMMAND "${LIMEN_HAXE_EXECUTABLE}" -lib heaps
-					-cp "${CMAKE_CURRENT_SOURCE_DIR}/.." -cp "${CMAKE_CURRENT_SOURCE_DIR}"
+				COMMAND "${LIMEN_HAXE_EXECUTABLE}" --cwd "${LIMEN_SOURCE_DIR}" workspace.hxml
+					-lib heaps -cp "${CMAKE_CURRENT_SOURCE_DIR}"
 					--run OpenGLReadbackTest
 			)
 			set_tests_properties(limen_opengl_readback_lifecycle PROPERTIES
@@ -214,7 +208,7 @@ if(LIMEN_BUILD_OPENGL)
 		add_test(NAME limen_opengl_validation_shaders
 			COMMAND "${LIMEN_HAXE_EXECUTABLE}" -cp "${CMAKE_CURRENT_SOURCE_DIR}"
 				--run OpenGLValidationTest
-				"${CMAKE_CURRENT_SOURCE_DIR}/../limen/graphics/renderer/opengl/OpenGL.hx"
+				"${LIMEN_SOURCE_DIR}/modules/graphics/opengl/haxe/limen/graphics/renderer/opengl/OpenGL.hx"
 				"${LIMEN_GLSLANG_VALIDATOR}"
 				"${CMAKE_CURRENT_BINARY_DIR}/opengl-validation"
 		)

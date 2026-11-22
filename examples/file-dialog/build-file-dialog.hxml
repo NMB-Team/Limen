@@ -1,6 +1,7 @@
--cp .
--cp ../../
+--cwd ../..
+workspace.hxml
+-cp examples/file-dialog
 
 -main ExampleFileDialog
 
--hl exfiledialog.hl
+-hl examples/file-dialog/exfiledialog.hl

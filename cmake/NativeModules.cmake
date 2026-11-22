@@ -1,0 +1,58 @@
+include(Hlc)
+
+function(limen_register_module module)
+	set(_sources)
+	foreach(_source IN LISTS ARGN)
+		cmake_path(ABSOLUTE_PATH _source OUTPUT_VARIABLE _path)
+		list(APPEND _sources "${_path}")
+	endforeach()
+
+	set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${_sources})
+	set_property(DIRECTORY "${LIMEN_SOURCE_DIR}" APPEND PROPERTY LIMEN_NATIVE_MODULES "${module}")
+	set_property(DIRECTORY "${LIMEN_SOURCE_DIR}" PROPERTY LIMEN_${module}_PRIMITIVE_SOURCES ${_sources})
+endfunction()
+
+function(limen_add_module module)
+	set(_target "limen_${module}")
+	add_library(${_target} SHARED ${ARGN})
+	limen_set_native_library(${_target} "${module}" .limen)
+endfunction()
+
+function(limen_finalize_native_modules)
+	get_property(_modules DIRECTORY "${LIMEN_SOURCE_DIR}" PROPERTY LIMEN_NATIVE_MODULES)
+	set(_install_targets limen)
+	set(_proxy_content "#include \"module_loader.h\"\n")
+
+	foreach(_module IN LISTS _modules)
+		get_property(_sources DIRECTORY "${LIMEN_SOURCE_DIR}" PROPERTY LIMEN_${_module}_PRIMITIVE_SOURCES)
+		set(_def_content "LIBRARY ${_module}.limen\nEXPORTS\n")
+
+		foreach(_source IN LISTS _sources)
+			file(STRINGS "${_source}" _primitive_lines REGEX "^[ \t]*DEFINE_PRIM\\(")
+			foreach(_line IN LISTS _primitive_lines)
+				string(REGEX REPLACE "^[ \t]*DEFINE_PRIM\\([^,]+,[ \t]*([A-Za-z0-9_]+).*$" "\\1" _primitive "${_line}")
+				string(APPEND _proxy_content "LIMEN_MODULE_PROXY(${_module}, ${_primitive})\n")
+				if(MSVC)
+					string(APPEND _def_content "\tlimen_${_module}_${_primitive}\n")
+				endif()
+			endforeach()
+		endforeach()
+
+		if(MSVC)
+			file(CONFIGURE OUTPUT "${LIMEN_BINARY_DIR}/limen_${_module}_hlc.def" CONTENT "${_def_content}" @ONLY)
+		endif()
+
+		if(TARGET limen_${_module})
+			list(APPEND _install_targets limen_${_module})
+		endif()
+	endforeach()
+
+	set(_proxy_source "${LIMEN_BINARY_DIR}/limen_module_proxies.c")
+	file(CONFIGURE OUTPUT "${_proxy_source}" CONTENT "${_proxy_content}" @ONLY)
+	target_sources(limen PRIVATE "${_proxy_source}")
+
+	if(MSVC)
+		limen_add_hlc_import_library(${_install_targets})
+	endif()
+	limen_install_native_targets(${_install_targets})
+endfunction()

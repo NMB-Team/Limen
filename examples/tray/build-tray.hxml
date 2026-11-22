@@ -1,6 +1,7 @@
--cp .
--cp ../../
+--cwd ../..
+workspace.hxml
+-cp examples/tray
 
 -main ExampleTray
 
--hl extray.hl
+-hl examples/tray/extray.hl

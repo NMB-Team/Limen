@@ -36,3 +36,22 @@ function(limen_set_native_library target output_name suffix)
 		)
 	endif()
 endfunction()
+
+function(limen_install_native_targets)
+	set(_destinations
+		RUNTIME DESTINATION "${LIMEN_HDLL_DESTINATION}"
+		LIBRARY DESTINATION "${LIMEN_HDLL_DESTINATION}"
+	)
+	if(NOT MSVC)
+		list(APPEND _destinations ARCHIVE DESTINATION "${LIMEN_HDLL_DESTINATION}")
+	endif()
+	install(TARGETS ${ARGN} ${_destinations})
+endfunction()
+
+function(limen_stage_runtime target)
+	add_custom_command(TARGET ${target} POST_BUILD
+		COMMAND "${CMAKE_COMMAND}" -E copy_if_different ${ARGN} "$<TARGET_FILE_DIR:${target}>"
+		VERBATIM
+	)
+	install(FILES ${ARGN} DESTINATION "${LIMEN_HDLL_DESTINATION}")
+endfunction()

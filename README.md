@@ -168,6 +168,32 @@ dxcompiler.dll
 dxil.dll
 ```
 
+## Haxe development and installation
+
+From the checkout, install the Haxe dependency and check all library packages.
+
+```sh
+haxelib install format
+haxe display.hxml
+```
+
+The examples and editor configuration use [`workspace.hxml`](workspace.hxml).
+To use the live checkout from another project, run
+`haxelib dev limen /path/to/limen` and keep `-lib limen` in your application.
+
+Build and install a Haxelib ZIP from the repository root.
+
+```sh
+python tools/package_haxelib.py
+haxelib install build/haxelib/limen.zip
+```
+
+GitHub releases also include `limen-haxelib.zip`. If you previously registered
+the checkout with `haxelib dev`, run `haxelib dev limen` to switch back to the
+installed version. Applications still use `-lib limen` and `limen.*` imports.
+Use the matching native binaries from the same revision when running HashLink.
+See the [Haxe API guide](docs/HAXE_API.md).
+
 ## Examples
 
 Small self-contained examples are available in [`examples/`](examples/).
@@ -254,13 +280,13 @@ DLSS support is disabled by default and is not required to build or install
 LIMEN. On Windows x64, set `LIMEN_BUILD_DLSS=ON` and
 `LIMEN_STREAMLINE_SDK_ROOT` to build `dlss.limen`; the Streamline
 runtime DLLs are required only for that opt-in module. See
-[`limen/graphics/postprocess/dlss`](limen/graphics/postprocess/dlss/README.md)
+[`limen.graphics.postprocess.dlss`](modules/postprocess/dlss/README.md)
 for build instructions, usage, and licensing.
 
 FSR support is disabled by default. Set `LIMEN_BUILD_FSR=ON` in a Windows
 x64 MSVC build to compile the AMD FSR 3.1.5 upscaler and DX12 backend into
 `fsr.limen`, without AMD runtime DLLs. See
-[`limen/graphics/postprocess/fsr`](limen/graphics/postprocess/fsr/README.md)
+[`limen.graphics.postprocess.fsr`](modules/postprocess/fsr/README.md)
 for source overrides and usage.
 
 CMake locates DXC in the Vulkan SDK or HashLink's `include/dx` distribution.

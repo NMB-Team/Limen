@@ -1,4 +1,4 @@
--cp .
+workspace.hxml
 
 --macro include('limen')
 --no-output

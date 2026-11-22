@@ -1,6 +1,7 @@
--cp .
--cp ../../
+--cwd ../..
+workspace.hxml
+-cp examples/clipboard
 
 -main ExampleClipboard
 
--hl exclipboard.hl
+-hl examples/clipboard/exclipboard.hl

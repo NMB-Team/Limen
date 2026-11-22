@@ -33,3 +33,29 @@ set(LIMEN_AFTERMATH_LIBRARY "" CACHE FILEPATH "Path to the NVIDIA Nsight Afterma
 set(LIMEN_AFTERMATH_RUNTIME_DLL "" CACHE FILEPATH "Path to the NVIDIA Nsight Aftermath runtime DLL.")
 
 set(LIMEN_FIDELITYFX_VULKAN_SOURCE_DIR "" CACHE PATH "Optional FidelityFX SDK 1.1.4 source tree for its Vulkan API and runtime.")
+
+function(limen_validate_options)
+	if(LIMEN_BUILD_D3D12 AND NOT LIMEN_WINDOWS_X64)
+		message(FATAL_ERROR "LIMEN_BUILD_D3D12 is supported only on Windows x64.")
+	endif()
+
+	if(LIMEN_BUILD_D3D12MA AND NOT (LIMEN_WINDOWS_X64 AND LIMEN_BUILD_D3D12))
+		message(FATAL_ERROR "LIMEN_BUILD_D3D12MA requires Windows x64 and D3D12.")
+	endif()
+
+	if(LIMEN_BUILD_DLSS AND (NOT LIMEN_WINDOWS_X64 OR NOT (LIMEN_BUILD_D3D12 OR LIMEN_BUILD_D3D11 OR LIMEN_BUILD_VULKAN)))
+		message(FATAL_ERROR "LIMEN_BUILD_DLSS requires Windows x64 and a D3D11, D3D12, or Vulkan backend.")
+	endif()
+
+	if(LIMEN_BUILD_FSR AND (NOT LIMEN_WINDOWS_X64 OR NOT (LIMEN_BUILD_D3D12 OR LIMEN_BUILD_VULKAN) OR NOT MSVC))
+		message(FATAL_ERROR "LIMEN_BUILD_FSR requires Windows x64, MSVC, and a D3D12 or Vulkan backend.")
+	endif()
+
+	if(LIMEN_BUILD_VMA AND NOT LIMEN_BUILD_VULKAN)
+		message(FATAL_ERROR "LIMEN_BUILD_VMA requires LIMEN_BUILD_VULKAN.")
+	endif()
+
+	if(LIMEN_BUILD_VULKAN AND NOT LIMEN_BUILD_SHADERC)
+		message(FATAL_ERROR "LIMEN_BUILD_VULKAN requires LIMEN_BUILD_SHADERC because the Vulkan backend compiles shaders at runtime.")
+	endif()
+endfunction()

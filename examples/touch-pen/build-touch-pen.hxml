@@ -1,6 +1,7 @@
--cp .
--cp ../../
+--cwd ../..
+workspace.hxml
+-cp examples/touch-pen
 
 -main ExampleTouchPen
 
--hl touch-pen.hl
+-hl examples/touch-pen/touch-pen.hl

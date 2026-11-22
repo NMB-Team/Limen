@@ -1,5 +1,2 @@
-foreach(_target limen_d3d11 limen_vulkan limen_dlss limen_fsr limen_fsr_vulkan)
-	if(TARGET ${_target})
-		target_include_directories(${_target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/native")
-	endif()
-endforeach()
+add_library(limen_postprocess_common INTERFACE)
+target_include_directories(limen_postprocess_common INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/native")

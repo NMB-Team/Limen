@@ -24,7 +24,7 @@
 	"haxe.enableCompilationServer": false,
 
 	"haxecheckstyle.configurationFile": "checkstyle.json",
-	"haxecheckstyle.sourceFolders": ["limen"],
+	"haxecheckstyle.sourceFolders": ["modules"],
 	"haxecheckstyle.codeSimilarityBufferSize": 100,
 
 	"haxe.configurations": [

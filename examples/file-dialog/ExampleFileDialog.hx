@@ -3,7 +3,7 @@ package;
 import limen.platform.Platform;
 import limen.platform.event.Event;
 import limen.platform.event.EventType;
-import limen.platform.system.FileDialog;
+import limen.platform.system.dialog.FileDialog;
 import limen.platform.window.Window;
 
 class ExampleFileDialog {

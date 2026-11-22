@@ -4,6 +4,11 @@ on:
   push:
     paths:
       - 'modules/**'
+      - 'examples/**'
+      - 'tests/**'
+      - 'haxelib.json'
+      - 'extraParams.hxml'
+      - 'workspace.hxml'
 
       - 'CMakeLists.txt'
       - 'cmake/**'
@@ -16,6 +21,11 @@ on:
   pull_request:
     paths:
       - 'modules/**'
+      - 'examples/**'
+      - 'tests/**'
+      - 'haxelib.json'
+      - 'extraParams.hxml'
+      - 'workspace.hxml'
 
       - 'CMakeLists.txt'
       - 'cmake/**'
@@ -236,6 +246,7 @@ jobs:
       - name: Package release assets
         run: |
           mkdir release
+          python3 tools/package_haxelib.py --output release/limen-haxelib.zip
           for artifact in artifacts/limen-*; do
             platform="${artifact##*/limen-}"
             python3 tools/make_release_manifest.py "$artifact" "$platform" "$GITHUB_SHA" "release/limen-${platform}.manifest"

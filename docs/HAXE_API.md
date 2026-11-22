@@ -1,10 +1,9 @@
 # Haxe API
 
-This directory contains LIMEN's public Haxe API. Applications import these
-modules to create windows, process input and platform events, use system
-services, and access the supported graphics APIs. The implementation calls
-the native modules built from [`../modules`](../modules) through HashLink
-`@:hlNative` bindings.
+LIMEN's public Haxe API spans the `haxe/` classpaths in the
+[native modules](../modules/README.md). Applications import the same
+`limen.*` packages from the checkout or a Haxelib installation. The
+implementation calls the native modules through HashLink `@:hlNative` bindings.
 
 ## What it uses
 
@@ -16,20 +15,20 @@ the native modules built from [`../modules`](../modules) through HashLink
 
 ## Layout
 
-- `platform/` is the cross-platform application layer. It includes platform
+- `limen.platform` is the cross-platform application layer. It includes platform
   lifecycle, windows, surfaces, events, input, displays, cursors, and system
   utilities.
-- `graphics/opengl/` provides OpenGL context creation and GL types.
-- `graphics/vulkan/` provides Vulkan runtime, surface, device, resource,
+- `limen.graphics.renderer.opengl` provides OpenGL context creation and GL types.
+- `limen.graphics.renderer.vulkan` provides Vulkan runtime, surface, device, resource,
   pipeline, and command types.
-- `graphics/d3d11/` and `graphics/d3d12/` provide the Windows Direct3D APIs.
-- `internal/` packages contain native declarations and are implementation
+- `limen.graphics.renderer.d3d11` and `limen.graphics.renderer.d3d12` provide the Windows Direct3D APIs.
+- `internal` packages contain native declarations and are implementation
   details rather than application-facing APIs.
 
 Use `limen.platform.Platform` to initialize and stop the platform layer, and
 `limen.platform.window.Window` to create application windows. Choose a graphics
 package only when the application needs that rendering backend. See the
-repository root README for a usage example and build instructions.
+[repository README](../README.md) for usage examples and build instructions.
 
 ## Window icons
 

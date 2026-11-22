@@ -1,8 +1,13 @@
-add_library(limen_opengl SHARED
+set(_sources
 	native/context.c
 	native/gl.c
 )
-limen_set_native_library(limen_opengl opengl .limen)
+limen_register_module(opengl ${_sources})
+if(NOT LIMEN_BUILD_OPENGL)
+	return()
+endif()
+
+limen_add_module(opengl ${_sources})
 limen_enable_c23_nullptr(limen_opengl)
 target_include_directories(limen_opengl PRIVATE
 	"${LIMEN_SOURCE_DIR}/modules/platform/native"

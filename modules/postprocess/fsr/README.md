@@ -1,7 +1,7 @@
 # AMD FSR
 
 It uses the shared postprocess device, texture, and command types on D3D12 and
-Vulkan. See [GPU postprocessing](../README.md) for the common contract.
+Vulkan. See [GPU postprocessing](../common/README.md) for the common contract.
 
 Context, result, and debug types live in the FSR package. Quality and creation
 flags are in `fsr.upscaling`; dispatch parameters and flags are in `fsr.frame`.

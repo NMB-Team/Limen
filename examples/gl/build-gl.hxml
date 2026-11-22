@@ -1,6 +1,7 @@
--cp .
--cp ../../
+--cwd ../..
+workspace.hxml
+-cp examples/gl
 
 -main ExampleGL
 
--hl exgl.hl
+-hl examples/gl/exgl.hl

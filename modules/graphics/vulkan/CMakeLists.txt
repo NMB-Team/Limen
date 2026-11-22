@@ -1,13 +1,20 @@
-add_library(limen_vulkan SHARED
-	native/surface.c
+set(_sources native/surface.c)
+if(LIMEN_BUILD_VMA)
+	list(APPEND _sources native/memory_allocator.cpp)
+endif()
+list(APPEND _sources
 	native/vulkan.c
 	native/shaderc.c
 	native/spirv.c
 )
-limen_set_native_library(limen_vulkan vulkan .limen)
+limen_register_module(vulkan ${_sources})
+if(NOT LIMEN_BUILD_VULKAN)
+	return()
+endif()
+
+limen_add_module(vulkan ${_sources})
 if(LIMEN_BUILD_VMA)
 	limen_resolve_vma()
-	target_sources(limen_vulkan PRIVATE native/memory_allocator.cpp)
 	target_compile_definitions(limen_vulkan PRIVATE LIMEN_VMA)
 endif()
 limen_enable_c23_nullptr(limen_vulkan)
@@ -20,6 +27,7 @@ target_link_libraries(limen_vulkan PRIVATE
 	shaderc
 	SPIRV-Tools-static
 	limen_spirv_reflect
+	limen_postprocess_common
 )
 if(MINGW)
 	target_link_options(limen_vulkan PRIVATE -static-libgcc -static-libstdc++)

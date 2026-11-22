@@ -30,3 +30,8 @@ if(WIN32)
 	)
 	target_link_libraries(limen PRIVATE winmm dwmapi advapi32)
 endif()
+
+if(LIMEN_BUILD_VULKAN)
+	target_compile_definitions(limen PRIVATE LIMEN_HAS_VULKAN)
+	target_link_libraries(limen PRIVATE Vulkan::Headers)
+endif()

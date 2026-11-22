@@ -1,3 +1,13 @@
+set(_sources native/driver.cpp)
+if(LIMEN_BUILD_D3D12MA)
+	list(APPEND _sources native/memory_allocator.cpp)
+endif()
+list(APPEND _sources native/debug.cpp)
+limen_register_module(d3d12 ${_sources})
+if(NOT (LIMEN_WINDOWS_X64 AND LIMEN_BUILD_D3D12))
+	return()
+endif()
+
 if(CMAKE_GENERATOR_PLATFORM STREQUAL "ARM64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "^(ARM64|aarch64)$")
 	set(_LIMEN_DXC_ARCH arm64)
 elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -112,15 +122,10 @@ if(LIMEN_BUILD_AFTERMATH)
 	endif()
 endif()
 
-add_library(limen_d3d12 SHARED
-	native/driver.cpp
-	native/debug.cpp
-)
-limen_set_native_library(limen_d3d12 d3d12 .limen)
+limen_add_module(d3d12 ${_sources})
 if(LIMEN_BUILD_D3D12MA)
 	include(D3D12MA)
 	limen_resolve_d3d12ma()
-	target_sources(limen_d3d12 PRIVATE native/memory_allocator.cpp)
 	target_compile_definitions(limen_d3d12 PRIVATE LIMEN_D3D12MA)
 	target_link_libraries(limen_d3d12 PRIVATE limen_d3d12ma)
 endif()
@@ -141,22 +146,8 @@ if(LIMEN_BUILD_AFTERMATH)
 	target_include_directories(limen_d3d12 PRIVATE "${LIMEN_AFTERMATH_INCLUDE_DIR}")
 	target_link_libraries(limen_d3d12 PRIVATE "${LIMEN_AFTERMATH_LIBRARY}")
 endif()
-add_custom_command(TARGET limen_d3d12 POST_BUILD
-	COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-		"${LIMEN_DXCOMPILER_RUNTIME_DLL}" "$<TARGET_FILE_DIR:limen_d3d12>"
-	COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-		"${LIMEN_DXIL_RUNTIME_DLL}" "$<TARGET_FILE_DIR:limen_d3d12>"
-)
+set(_runtimes "${LIMEN_DXCOMPILER_RUNTIME_DLL}" "${LIMEN_DXIL_RUNTIME_DLL}")
 if(LIMEN_BUILD_AFTERMATH)
-	add_custom_command(TARGET limen_d3d12 POST_BUILD
-		COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-			"${LIMEN_AFTERMATH_RUNTIME_DLL}" "$<TARGET_FILE_DIR:limen_d3d12>"
-	)
+	list(APPEND _runtimes "${LIMEN_AFTERMATH_RUNTIME_DLL}")
 endif()
-install(
-	FILES "${LIMEN_DXCOMPILER_RUNTIME_DLL}" "${LIMEN_DXIL_RUNTIME_DLL}"
-	DESTINATION "${LIMEN_HDLL_DESTINATION}"
-)
-if(LIMEN_BUILD_AFTERMATH)
-	install(FILES "${LIMEN_AFTERMATH_RUNTIME_DLL}" DESTINATION "${LIMEN_HDLL_DESTINATION}")
-endif()
+limen_stage_runtime(limen_d3d12 ${_runtimes})
