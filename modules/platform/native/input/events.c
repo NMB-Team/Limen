@@ -1,4 +1,4 @@
-#include "internal.h"
+#include "platform_internal.h"
 
 static SDL_AtomicInt text_editing;
 static vclosure* event_watch_callback = nullptr;

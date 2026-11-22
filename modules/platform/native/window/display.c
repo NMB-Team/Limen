@@ -1,4 +1,4 @@
-#include "internal.h"
+#include "platform_internal.h"
 
 #ifdef HL_WIN_DESKTOP
 #include <windows.h>

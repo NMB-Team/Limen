@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <cstring>
 #include <cstddef>
-#include "requirements.h"
+#include "vulkan_requirements.h"
 #include "postprocess_types.h"
 #ifdef LIMEN_POSTPROCESS_VULKAN
 #include <vulkan/vulkan.h>

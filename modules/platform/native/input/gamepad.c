@@ -1,4 +1,4 @@
-#include "internal.h"
+#include "platform_internal.h"
 
 #define TGCTRL _ABSTRACT(limen_gamepad)
 #define THAPTIC _ABSTRACT(limen_haptic)

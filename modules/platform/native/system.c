@@ -1,4 +1,4 @@
-#include "internal.h"
+#include "platform_internal.h"
 
 #if defined(SDL_PLATFORM_WIN32)
 #include <windows.h>

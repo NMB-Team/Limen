@@ -1,4 +1,4 @@
-#include "internal.h"
+#include "platform_internal.h"
 
 #define _TRAY _ABSTRACT(limen_tray)
 #define _TRAY_MENU _ABSTRACT(limen_tray_menu)

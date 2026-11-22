@@ -1,4 +1,4 @@
-#include "internal.h"
+#include "platform_internal.h"
 
 #define _CURSOR _ABSTRACT(limen_cursor)
 

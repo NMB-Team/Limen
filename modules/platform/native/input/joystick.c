@@ -1,4 +1,4 @@
-#include "internal.h"
+#include "platform_internal.h"
 
 #define TJOY _ABSTRACT(limen_joystick)
 

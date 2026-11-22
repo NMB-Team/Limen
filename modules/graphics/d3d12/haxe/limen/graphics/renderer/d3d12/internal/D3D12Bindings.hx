@@ -42,9 +42,9 @@ import limen.platform.window.Window;
 
 abstract CompilerHandle(hl.Abstract<"dx_compiler">) {}
 typedef Adapter = hl.Abstract<"dx_adapter">;
-typedef Factory = hl.Abstract<"dx_factory">;
-typedef Device = hl.Abstract<"dx_device">;
-typedef SwapChain = hl.Abstract<"dx_swapchain">;
+typedef Factory = limen.graphics.internal.D3D12Handles.Factory;
+typedef Device = limen.graphics.internal.D3D12Handles.Device;
+typedef SwapChain = limen.graphics.internal.D3D12Handles.SwapChain;
 
 @:noDoc
 @:noCompletion

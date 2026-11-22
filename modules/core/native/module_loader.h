@@ -1,6 +1,6 @@
 #pragma once
 
-#include "internal.h"
+#include <hl.h>
 
 void* limen_module_load(const char* name);
 void* limen_module_resolve(const char* module_name, const char* primitive_name, const char** signature);

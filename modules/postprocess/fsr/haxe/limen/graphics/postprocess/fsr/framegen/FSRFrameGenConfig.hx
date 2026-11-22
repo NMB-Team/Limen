@@ -1,8 +1,8 @@
 package limen.graphics.postprocess.fsr.framegen;
 
-import limen.graphics.renderer.d3d12.resource.Resources.Dx12Resource;
+import limen.graphics.internal.D3D12Handles.Dx12Resource;
+import limen.graphics.internal.D3D12Handles.SwapChain;
 import limen.graphics.renderer.d3d12.resource.Resources.ResourceState;
-import limen.graphics.renderer.d3d12.internal.D3D12Bindings.SwapChain;
 
 @:keep @:struct
 class FSRFrameGenConfig {

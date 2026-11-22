@@ -1,14 +1,7 @@
-#include "internal.h"
+#include "graphics_driver.h"
+#include "limen_native.h"
 #include "module_loader.h"
-
-typedef enum {
-	LIMEN_GRAPHICS_NONE,
-	LIMEN_GRAPHICS_OPENGL,
-	LIMEN_GRAPHICS_VULKAN,
-	LIMEN_GRAPHICS_D3D11,
-	LIMEN_GRAPHICS_D3D12,
-	LIMEN_GRAPHICS_DRIVER_COUNT,
-} limen_graphics_driver;
+#include <SDL3/SDL.h>
 
 static const char* limen_graphics_modules[LIMEN_GRAPHICS_DRIVER_COUNT] = {
 	nullptr, "opengl.limen", "vulkan.limen", "d3d11.limen", "d3d12.limen",

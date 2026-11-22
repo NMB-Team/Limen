@@ -1,4 +1,4 @@
-#include "internal.h"
+#include "platform_internal.h"
 
 HL_PRIM varray* HL_NAME(get_touch_devices)() {
 	int count = 0;

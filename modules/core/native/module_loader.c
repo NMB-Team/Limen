@@ -1,4 +1,5 @@
 #include "module_loader.h"
+#include <SDL3/SDL.h>
 
 typedef void* (*limen_primitive_resolver)(const char** signature);
 

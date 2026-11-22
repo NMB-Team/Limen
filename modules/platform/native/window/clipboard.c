@@ -1,4 +1,4 @@
-#include "internal.h"
+#include "platform_internal.h"
 #include <limits.h>
 
 HL_PRIM bool HL_NAME(set_clipboard_text)(char* text) {

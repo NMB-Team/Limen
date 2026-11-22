@@ -13,17 +13,7 @@ enum abstract CpuPageProperty(Int) {
 	final WRITE_BACK = 3;
 }
 
-@:hlNative("limen", "d3d12_resource_")
-abstract Dx12Resource(hl.Abstract<"dx_resource">) {
-	public function release() {}
-
-	public inline function setName(name:String) {
-		set_name(@:privateAccess name.bytes);
-	}
-
-	@:noCompletion
-	private function set_name(name:hl.Bytes) {}
-}
+typedef Dx12Resource = limen.graphics.internal.D3D12Handles.Dx12Resource;
 
 enum abstract Dx12ResourceDimension(Int) {
 	final UNKNOWN = 0;

@@ -48,7 +48,6 @@ target_link_libraries(limen_dlss PRIVATE
 )
 if(LIMEN_BUILD_VULKAN)
 	target_compile_definitions(limen_dlss PRIVATE LIMEN_POSTPROCESS_VULKAN)
-	target_include_directories(limen_dlss PRIVATE "${LIMEN_SOURCE_DIR}/modules/graphics/vulkan/native")
 	target_link_libraries(limen_dlss PRIVATE Vulkan::Headers)
 endif()
 limen_stage_runtime(limen_dlss ${_LIMEN_STREAMLINE_RUNTIME_FILES})

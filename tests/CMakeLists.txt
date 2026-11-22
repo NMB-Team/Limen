@@ -5,6 +5,7 @@ add_executable(limen_event_translation_test
 limen_enable_c23_nullptr(limen_event_translation_test)
 target_include_directories(limen_event_translation_test PRIVATE
 	"${LIMEN_SOURCE_DIR}/modules/core/native"
+	"${LIMEN_SOURCE_DIR}/modules/platform/native"
 )
 target_link_libraries(limen_event_translation_test PRIVATE libhl SDL3::SDL3)
 
@@ -12,6 +13,7 @@ add_executable(limen_window_flags_test "${LIMEN_SOURCE_DIR}/modules/platform/tes
 limen_enable_c23_nullptr(limen_window_flags_test)
 target_include_directories(limen_window_flags_test PRIVATE
 	"${LIMEN_SOURCE_DIR}/modules/core/native"
+	"${LIMEN_SOURCE_DIR}/modules/platform/native"
 )
 target_link_libraries(limen_window_flags_test PRIVATE limen libhl SDL3::Headers)
 
@@ -25,7 +27,6 @@ find_program(LIMEN_HASHLINK_EXECUTABLE NAMES hl
 )
 if(LIMEN_HAXE_EXECUTABLE AND LIMEN_HASHLINK_EXECUTABLE)
 	file(GLOB_RECURSE _LIMEN_PLATFORM_HAXE_SOURCES CONFIGURE_DEPENDS
-		"${LIMEN_SOURCE_DIR}/modules/core/haxe/*.hx"
 		"${LIMEN_SOURCE_DIR}/modules/platform/haxe/*.hx"
 	)
 	set(_LIMEN_WINDOW_FLAGS_HL "${CMAKE_CURRENT_BINARY_DIR}/window_flags.hl")

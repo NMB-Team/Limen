@@ -27,7 +27,7 @@
 #define HL_NAME(n) limen_vulkan_##n
 #include <hl.h>
 #include "postprocess_types.h"
-#include "requirements.h"
+#include "vulkan_requirements.h"
 #include "native_window.h"
 #include <stddef.h>
 

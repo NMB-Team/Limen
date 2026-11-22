@@ -144,8 +144,8 @@ enum VkDependencyFlag {
 	DEVICE_GROUP;
 }
 
-abstract VkDeviceMemory(hl.Abstract<"vk_device_memory">) {}
-abstract VkImage(hl.Abstract<"vk_image">) {}
+typedef VkDeviceMemory = limen.graphics.internal.VulkanHandles.VkDeviceMemory;
+typedef VkImage = limen.graphics.internal.VulkanHandles.VkImage;
 
 enum VkImageAspectFlag {
 	COLOR;
@@ -288,7 +288,7 @@ enum VkImageUsageFlag {
 	FRAGMENT_DENSITY_MAP_EXT;
 }
 
-abstract VkImageView(hl.Abstract<"vk_image_view">) {}
+typedef VkImageView = limen.graphics.internal.VulkanHandles.VkImageView;
 
 enum VkImageViewCreateFlag {
 	FRAGMENT_DENSITY_MAP_DYNAMIC_EXT;

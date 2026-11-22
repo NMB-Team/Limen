@@ -1,4 +1,4 @@
-#include "internal.h"
+#include "platform_internal.h"
 
 typedef enum {
 	LIMEN_DIALOG_ERROR = -1,

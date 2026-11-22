@@ -1,4 +1,4 @@
-#include "internal.h"
+#include "platform_internal.h"
 #include <stdio.h>
 
 extern void* hlp_win_create_ex(const char** signature);

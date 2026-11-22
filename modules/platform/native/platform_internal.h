@@ -1,11 +1,8 @@
 #pragma once
 
-#define HL_NAME(n) limen_##n
-
-#include "hlsystem.h"
+#include "limen_native.h"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_gamepad.h>
-#include <hl.h>
 #include <stdint.h>
 #include <string.h>
 

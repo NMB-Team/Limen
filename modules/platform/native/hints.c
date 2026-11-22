@@ -1,4 +1,4 @@
-#include "internal.h"
+#include "platform_internal.h"
 
 bool limen_hint_window_grab_keyboard = false;
 

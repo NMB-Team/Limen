@@ -1,4 +1,4 @@
-#include "internal.h"
+#include "platform_internal.h"
 
 static bool relative_mouse_mode = false;
 

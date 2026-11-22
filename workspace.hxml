@@ -1,4 +1,3 @@
--cp modules/core/haxe
 -cp modules/graphics/common/haxe
 -cp modules/graphics/d3d11/haxe
 -cp modules/graphics/d3d12/haxe
@@ -6,6 +5,7 @@
 -cp modules/graphics/vulkan/haxe
 -cp modules/platform/haxe
 -cp modules/postprocess/common/haxe
+-cp modules/postprocess/common/interop/haxe
 -cp modules/postprocess/dlss/haxe
 -cp modules/postprocess/fsr/haxe
 

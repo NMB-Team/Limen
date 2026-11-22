@@ -1,4 +1,4 @@
-#include "internal.h"
+#include "platform_internal.h"
 #include <assert.h>
 
 static limen_event translate(SDL_Event* source) {

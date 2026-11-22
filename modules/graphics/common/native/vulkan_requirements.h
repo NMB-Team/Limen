@@ -1,5 +1,8 @@
 #pragma once
 
+#include <hl.h>
+#include <stdint.h>
+
 typedef struct VulkanRequirements {
 	varray* instanceExtensions;
 	varray* deviceExtensions;

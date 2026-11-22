@@ -1,9 +1,14 @@
 #pragma once
 
+#include "graphics_driver.h"
 #include <stdint.h>
 
 #ifdef __cplusplus
-enum class PostProcessBackend : int { Vulkan = 2, D3D11 = 3, D3D12 = 4 };
+enum class PostProcessBackend : int {
+	Vulkan = LIMEN_GRAPHICS_VULKAN,
+	D3D11 = LIMEN_GRAPHICS_D3D11,
+	D3D12 = LIMEN_GRAPHICS_D3D12,
+};
 #else
 typedef int PostProcessBackend;
 #endif

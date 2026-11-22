@@ -1,4 +1,4 @@
-#include "internal.h"
+#include "platform_internal.h"
 
 HL_PRIM void HL_NAME(text_input)(bool enable) {
 	SDL_Window** windows;

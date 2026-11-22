@@ -1,2 +1,3 @@
 add_library(limen_postprocess_common INTERFACE)
 target_include_directories(limen_postprocess_common INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/native")
+target_link_libraries(limen_postprocess_common INTERFACE limen_graphics_common)

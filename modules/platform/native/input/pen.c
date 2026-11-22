@@ -1,4 +1,4 @@
-#include "internal.h"
+#include "platform_internal.h"
 
 HL_PRIM int HL_NAME(get_pen_device_type)(int id) {
 	return SDL_GetPenDeviceType((SDL_PenID)id);

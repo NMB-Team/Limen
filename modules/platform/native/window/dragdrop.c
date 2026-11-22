@@ -1,4 +1,4 @@
-#include "internal.h"
+#include "platform_internal.h"
 
 HL_PRIM void HL_NAME(set_drag_and_drop_enabled)(bool enabled) {
 	SDL_SetEventEnabled(SDL_EVENT_DROP_BEGIN, enabled);

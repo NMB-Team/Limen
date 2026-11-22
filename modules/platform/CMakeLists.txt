@@ -1,4 +1,5 @@
 target_sources(limen PRIVATE
+	native/init.c
 	native/hints.c
 	native/system.c
 	native/time.c
@@ -21,6 +22,11 @@ target_sources(limen PRIVATE
 )
 target_include_directories(limen PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/native")
 target_link_libraries(limen PRIVATE SDL3::SDL3-static)
+
+target_compile_definitions(limen PRIVATE LIMEN_PLATFORM_BUILD)
+if(LIMEN_BUILD_TESTS)
+	target_compile_definitions(limen PRIVATE LIMEN_BUILD_TESTS)
+endif()
 
 if(WIN32)
 	target_sources(limen PRIVATE
