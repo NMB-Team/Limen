@@ -9,6 +9,7 @@ on:
       - 'haxelib.json'
       - 'extraParams.hxml'
       - 'workspace.hxml'
+      - 'display.hxml'
 
       - 'CMakeLists.txt'
       - 'cmake/**'
@@ -26,6 +27,7 @@ on:
       - 'haxelib.json'
       - 'extraParams.hxml'
       - 'workspace.hxml'
+      - 'display.hxml'
 
       - 'CMakeLists.txt'
       - 'cmake/**'
@@ -195,26 +197,39 @@ jobs:
             -DWITH_VIDEO=OFF
           cmake --build hashlink-build --config Release --target libhl --parallel
 
-      - name: Build and package LIMEN
+      - name: Build, test, and package LIMEN
         run: |
           launcher=(bash build.sh)
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             launcher=(python tools/build.py)
           fi
 
-          "${launcher[@]}" \
-            --preset "${{ matrix.preset }}" \
-            --jobs "${{ matrix.build_jobs }}" \
-            --no-open \
-            --hashlink-root "$GITHUB_WORKSPACE/hashlink" \
-            --hashlink-library "$GITHUB_WORKSPACE/hashlink-build/${{ matrix.hashlink_library }}" \
-            -- \
+          build_args=(
+            --preset "${{ matrix.preset }}"
+            --jobs "${{ matrix.build_jobs }}"
+            --test all
+            --no-open
+            --hashlink-root "$GITHUB_WORKSPACE/hashlink"
+            --hashlink-library "$GITHUB_WORKSPACE/hashlink-build/${{ matrix.hashlink_library }}"
+          )
+
+          "${launcher[@]}" "${build_args[@]}" -- \
             ${{ matrix.cmake_arch }} \
-            -DLIMEN_BUILD_TESTS=ON \
             ${{ matrix.graphics_options }}
 
-      - name: Test LIMEN
-        run: ctest --test-dir "build/launcher/${{ matrix.preset }}" -C Release --output-on-failure
+          profiles=()
+          case "${{ matrix.platform }}" in
+            windows-x64) profiles=(platform opengl vulkan d3d11 d3d12) ;;
+            linux-x64) profiles=(platform opengl vulkan) ;;
+          esac
+          for module in "${profiles[@]}"; do
+            module_options=()
+            if [[ "$module" == d3d12 ]]; then
+              module_options+=(-DLIMEN_BUILD_D3D12MA=ON)
+            fi
+            "${launcher[@]}" "${build_args[@]}" --modules "$module" -- \
+              ${{ matrix.cmake_arch }} "${module_options[@]}"
+          done
 
       - name: Upload LIMEN package
         uses: actions/upload-artifact@v7
@@ -223,9 +238,38 @@ jobs:
           path: build/bin/${{ matrix.preset }}
           if-no-files-found: error
 
+  haxe:
+    name: Haxe workspace (${{ matrix.haxe-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        haxe-version: [5.0.0-preview.1, 4.3.7]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: krdlab/setup-haxe@v2
+        with:
+          haxe-version: ${{ matrix.haxe-version }}
+      - name: Compile checkout and examples
+        run: |
+          haxelib install format 3.8.0 --always
+          haxe display.hxml
+          for hxml in examples/*/*.hxml; do
+            (cd "${hxml%/*}" && haxe "${hxml##*/}")
+          done
+      - name: Compile against the local checkout with Haxelib
+        run: |
+          haxelib dev limen "$GITHUB_WORKSPACE"
+          mkdir -p build/haxe-consumer
+          (
+            cd build/haxe-consumer
+            haxe -lib limen -D hl-ver=1.15.0 --macro "include('limen')" \
+              -cp ../../examples/window -main ExampleWindow -hl window.hl
+          )
+
   publish-latest:
     name: Publish latest release
-    needs: build
+    needs: [build, haxe]
     if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest
     concurrency: publish-limen-latest
@@ -246,9 +290,9 @@ jobs:
       - name: Package release assets
         run: |
           mkdir release
-          python3 tools/package_haxelib.py --output release/limen-haxelib.zip
           for artifact in artifacts/limen-*; do
             platform="${artifact##*/limen-}"
+            cp LICENSE LICENCE_SDL "$artifact/"
             python3 tools/make_release_manifest.py "$artifact" "$platform" "$GITHUB_SHA" "release/limen-${platform}.manifest"
             if [[ "$platform" == windows-* ]]; then
               (
@@ -289,3 +333,9 @@ jobs:
           gh release upload latest release/* \
             --repo "$GITHUB_REPOSITORY" \
             --clobber
+
+          legacy_asset=$(gh release view latest --repo "$GITHUB_REPOSITORY" \
+            --json assets --jq '.assets[] | select(.name == "limen-haxelib.zip") | .name')
+          if [[ -n "$legacy_asset" ]]; then
+            gh release delete-asset latest "$legacy_asset" --repo "$GITHUB_REPOSITORY" --yes
+          fi

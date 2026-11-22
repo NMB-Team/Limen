@@ -81,16 +81,27 @@ APIs. Vulkan entry points use the descriptor classpath directly. D3D11 uses
 `CommandBuffer` for `getPostProcessCommands()`. FSR and DLSS use it for
 dispatch and retain the D3D12 declarations required by their typed swapchain,
 queue, and frame-generation calls. Their Haxe declarations are available in
-the same Haxelib distribution across native build configurations.
+the checkout across native build configurations.
 
-Each module keeps its native implementation in `native/` and any native tests
-in `tests/`. Configure and build from the repository root using the existing
-[build commands](../README.md#quick-build). The root CMake project resolves shared
-dependencies and configures the modules. Each backend CMake file registers its
-primitive sources with `limen_register_module()` even when its build option
-is disabled so applications can still load the core HashLink proxies. Enabled
-backends use `limen_add_module()` and declare their own build dependencies.
+Each module keeps its native implementation in `native/` and its tests in
+`tests/`. Shared checks live in the [root test directory](../tests).
+Build and test from the repository root using the
+[launcher](../README.md#build-and-test-selected-modules), or run CTest with
+`-L <module>` after enabling `LIMEN_BUILD_TESTS` in CMake.
 
-When adding a module's first Haxe source, add its `haxe/` directory to
-[`workspace.hxml`](../workspace.hxml). The workspace and Haxelib development
-mode share this list, and the packager checks it against the source tree.
+## Adding a native module
+
+1. Add the module under the relevant subsystem and give it its own
+   `CMakeLists.txt`. Register its primitive sources with
+   `limen_register_module()` before checking its build option. Enabled modules
+   use `limen_add_module()` and declare their own dependencies and compile flags.
+2. Add the option and target restrictions to [Options.cmake](../cmake/Options.cmake),
+   include the module from the root CMake file, and add its name and dependency
+   rules to [build.py](../tools/build.py). Use `limen_stage_runtime()` for SDK
+   binaries so they are copied, installed, and checked with the package.
+3. Put Haxe sources in the module's `haxe/` directory and register that classpath
+   in [workspace.hxml](../workspace.hxml). Checkout builds and Haxelib
+   development mode share this list.
+4. Keep module-specific tests beside the module. Register them in the
+   [test entry point](../tests/CMakeLists.txt) and label them with the module name.
+   Verify the isolated selection and add relevant CI coverage.

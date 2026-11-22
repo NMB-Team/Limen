@@ -6,7 +6,7 @@ import limen.platform.input.touch.Touch;
 import limen.platform.input.touch.TouchDeviceType;
 import limen.platform.input.pen.Pen;
 import limen.platform.input.pen.PenDeviceType;
-import limen.platform.input.pen.PenAxis;
+import limen.platform.input.pen.PenAxis as Axis;
 import limen.platform.input.pen.PenInputFlags;
 
 @:hlNative("limen")
@@ -57,7 +57,7 @@ class InputEventsTest {
 
 		if (!Platform.pollEvent(event) || event.type != EventType.PenAxis)
 			throw "Pen axis event was not delivered";
-		if (event.windowId != 8 || event.penId != 0xf1234567 || event.penX != 12.25 || event.penY != 34.5 || event.penAxis != PenAxis.TiltX || event.penValue != -45.5)
+		if (event.windowId != 8 || event.penId != 0xf1234567 || event.penX != 12.25 || event.penY != 34.5 || event.penAxis != Axis.TiltX || event.penValue != -45.5)
 			throw "Pen fields do not match the native layout";
 		if (!event.penState.has(PenInputFlags.Down | PenInputFlags.EraserTip | PenInputFlags.InProximity) || event.penState.has(PenInputFlags.Button1))
 			throw "Pen input flags lost bits across the native boundary";

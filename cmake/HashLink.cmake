@@ -14,8 +14,10 @@ function(limen_resolve_hashlink)
 		NAMES hl.h
 		HINTS "${LIMEN_HASHLINK_ROOT}/src"
 		NO_DEFAULT_PATH
-		REQUIRED
 	)
+	if(NOT LIMEN_HASHLINK_INCLUDE_DIR)
+		message(FATAL_ERROR "HashLink headers were not found. Set LIMEN_HASHLINK_ROOT to a HashLink checkout containing src/hl.h.")
+	endif()
 
 	if(NOT LIMEN_HASHLINK_LIBRARY)
 		unset(LIMEN_HASHLINK_LIBRARY CACHE)
@@ -25,8 +27,10 @@ function(limen_resolve_hashlink)
 				"${LIMEN_HASHLINK_ROOT}/build"
 				"${LIMEN_HASHLINK_ROOT}/build/bin"
 				"${LIMEN_HASHLINK_ROOT}/x64/Release"
-			REQUIRED
 		)
+	endif()
+	if(NOT EXISTS "${LIMEN_HASHLINK_LIBRARY}")
+		message(FATAL_ERROR "The HashLink library was not found. Build HashLink and set LIMEN_HASHLINK_LIBRARY to the built library or import library.")
 	endif()
 
 	add_library(libhl UNKNOWN IMPORTED GLOBAL)

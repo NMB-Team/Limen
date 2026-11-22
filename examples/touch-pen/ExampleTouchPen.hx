@@ -11,7 +11,7 @@ import limen.platform.Platform;
 import limen.platform.event.Event;
 import limen.platform.event.EventType;
 import limen.platform.event.WindowStateChange;
-import limen.platform.input.pen.PenAxis;
+import limen.platform.input.pen.PenAxis as Axis;
 import limen.platform.input.pen.PenInputFlags;
 import limen.platform.window.Window;
 import limen.platform.window.WindowFlags;
@@ -131,7 +131,7 @@ class ExampleTouchPen {
 							fingers.remove(key);
 						showPressure("Touch", event.pressure);
 					case EventType.PenDown, EventType.PenMove, EventType.PenUp, EventType.PenAxis:
-						if (event.type == EventType.PenAxis && event.penAxis != PenAxis.Pressure)
+						if (event.type == EventType.PenAxis && event.penAxis != Axis.Pressure)
 							continue;
 						final x = event.penX * WIDTH / window.width;
 						final y = event.penY * HEIGHT / window.height;

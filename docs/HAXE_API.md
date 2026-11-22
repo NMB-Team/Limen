@@ -2,8 +2,9 @@
 
 LIMEN's public Haxe API spans the `haxe/` classpaths in the
 [native modules](../modules/README.md). Applications import the same
-`limen.*` packages from the checkout or a Haxelib installation. The
-implementation calls the native modules through HashLink `@:hlNative` bindings.
+`limen.*` packages from the checkout, which can be registered with
+`haxelib dev limen` for use with `-lib limen`. The implementation calls the
+native modules through HashLink `@:hlNative` bindings.
 
 ## What it uses
 

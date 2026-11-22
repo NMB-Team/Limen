@@ -10,6 +10,5 @@
 	"dependencies": {
 		"format": ""
 	},
-	"url": "https://github.com/NMB-Team/Limen",
-	"releasenote": "Package Limen's module sources as one Haxelib."
+	"url": "https://github.com/NMB-Team/Limen"
 }

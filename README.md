@@ -168,9 +168,10 @@ dxcompiler.dll
 dxil.dll
 ```
 
-## Haxe development and installation
+## Haxe development
 
-From the checkout, install the Haxe dependency and check all library packages.
+The checkout supports Haxe 4.3.7 and Haxe 5. From the checkout, install the
+Haxe dependency and check all library packages.
 
 ```sh
 haxelib install format
@@ -178,20 +179,15 @@ haxe display.hxml
 ```
 
 The examples and editor configuration use [`workspace.hxml`](workspace.hxml).
+It targets HashLink 1.15 so Haxe 4.3.7 exposes `hl.CArray`. When compiling
+an external project with Haxe 4.3.7, pass `-D hl-ver=1.15.0` alongside
+`-lib limen`.
 To use the live checkout from another project, run
 `haxelib dev limen /path/to/limen` and keep `-lib limen` in your application.
 
-Build and install a Haxelib ZIP from the repository root.
-
-```sh
-python tools/package_haxelib.py
-haxelib install build/haxelib/limen.zip
-```
-
-GitHub releases also include `limen-haxelib.zip`. If you previously registered
-the checkout with `haxelib dev`, run `haxelib dev limen` to switch back to the
-installed version. Applications still use `-lib limen` and `limen.*` imports.
 Use the matching native binaries from the same revision when running HashLink.
+GitHub Releases provide platform-specific native archives with the required
+runtime files and licenses, alongside manifests for the HashLink updater.
 See the [Haxe API guide](docs/HAXE_API.md).
 
 ## Examples
@@ -259,6 +255,39 @@ Pass additional CMake options after `--`, for example `-- -DLIMEN_BUILD_DLSS=OFF
 Use `--no-open` for a terminal or CI run. On headless Linux the output path is printed.
 Binaries are collected in `build/bin/<platform>-<configuration>`.
 
+### Build and test selected modules
+
+```sh
+python tools/build.py --modules platform
+python tools/build.py --modules opengl
+python tools/build.py --modules opengl,vulkan,fsr
+python tools/build.py --test opengl --no-open
+python tools/build.py --test all --no-open
+```
+
+Every native build includes `limen.hdll`. Use `platform` for a build with only
+that binary. Add `opengl`, `vulkan`, `d3d11`, `d3d12`, `fsr`, or `dlss` to
+select optional binaries. FSR uses an enabled D3D12 or Vulkan backend. DLSS
+also supports D3D11. The launcher adds Vulkan when a selected postprocessor
+needs a backend and the selection has none it supports.
+
+CMake checks the target platform and SDK requirements. D3D11 requires Windows,
+D3D12 and DLSS require Windows x64, and FSR also requires MSVC. Pass SDK paths
+and optional settings after `--`. For example, select D3D11 with DLSS and
+provide the Streamline SDK path using
+`--modules d3d11,dlss -- -DLIMEN_STREAMLINE_SDK_ROOT=/path/to/streamline`.
+
+Explicit selections append the resolved module set to the preset name in
+both `build/launcher/` and `build/bin/`. Builds without a selection keep
+their existing directories and CMake defaults. Reinstalling a profile
+removes obsolete files from its previous CMake install.
+
+`--test <module>` selects that module when used on its own and runs its CTest
+label. Use `--test all` for all enabled tests or `--test integration` for
+shared integration checks. The package check verifies installed native
+binaries and SDK runtime files together. Optional allocator tests follow
+`LIMEN_BUILD_VMA` and `LIMEN_BUILD_D3D12MA`.
+
 ## Standalone build
 
 ```sh
@@ -302,4 +331,4 @@ include directory, library, and runtime DLL can be overridden with
 `LIMEN_AFTERMATH_INCLUDE_DIR`, `LIMEN_AFTERMATH_LIBRARY`, and
 `LIMEN_AFTERMATH_RUNTIME_DLL`.
 
-Enable `LIMEN_BUILD_TESTS` for the native event-translation tests.
+Enable `LIMEN_BUILD_TESTS` for CTest when building directly with CMake.

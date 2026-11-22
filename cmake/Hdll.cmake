@@ -49,6 +49,11 @@ function(limen_install_native_targets)
 endfunction()
 
 function(limen_stage_runtime target)
+	foreach(_file IN LISTS ARGN)
+		get_filename_component(_name "${_file}" NAME)
+		set_property(DIRECTORY "${LIMEN_SOURCE_DIR}" APPEND PROPERTY LIMEN_RUNTIME_FILES "${_name}")
+	endforeach()
+
 	add_custom_command(TARGET ${target} POST_BUILD
 		COMMAND "${CMAKE_COMMAND}" -E copy_if_different ${ARGN} "$<TARGET_FILE_DIR:${target}>"
 		VERBATIM

@@ -24,16 +24,17 @@ foreach(_runtime_name
 	nvngx_dlss.dll
 	nvngx_dlssg.dll
 )
-	string(MAKE_C_IDENTIFIER "${_runtime_name}" _runtime_id)
-	find_file(_LIMEN_STREAMLINE_RUNTIME_${_runtime_id}
+	unset(_runtime_file)
+	find_file(_runtime_file
 		NAMES "${_runtime_name}"
 		HINTS ${_LIMEN_STREAMLINE_ROOT_HINTS}
 		PATH_SUFFIXES bin/x64 x64
-		REQUIRED
+		NO_CACHE
 	)
-	list(APPEND _LIMEN_STREAMLINE_RUNTIME_FILES
-		"${_LIMEN_STREAMLINE_RUNTIME_${_runtime_id}}"
-	)
+	if(NOT _runtime_file)
+		message(FATAL_ERROR "DLSS requires ${_runtime_name}. Set LIMEN_STREAMLINE_SDK_ROOT or STREAMLINE_SDK to a Streamline SDK with the Windows x64 runtime files.")
+	endif()
+	list(APPEND _LIMEN_STREAMLINE_RUNTIME_FILES "${_runtime_file}")
 endforeach()
 
 limen_add_module(dlss ${_sources})

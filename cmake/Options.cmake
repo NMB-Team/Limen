@@ -35,6 +35,10 @@ set(LIMEN_AFTERMATH_RUNTIME_DLL "" CACHE FILEPATH "Path to the NVIDIA Nsight Aft
 set(LIMEN_FIDELITYFX_VULKAN_SOURCE_DIR "" CACHE PATH "Optional FidelityFX SDK 1.1.4 source tree for its Vulkan API and runtime.")
 
 function(limen_validate_options)
+	if(LIMEN_BUILD_D3D11 AND NOT WIN32)
+		message(FATAL_ERROR "LIMEN_BUILD_D3D11 requires a Windows target.")
+	endif()
+
 	if(LIMEN_BUILD_D3D12 AND NOT LIMEN_WINDOWS_X64)
 		message(FATAL_ERROR "LIMEN_BUILD_D3D12 is supported only on Windows x64.")
 	endif()
