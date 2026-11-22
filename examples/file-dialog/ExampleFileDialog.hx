@@ -1,10 +1,10 @@
 package;
 
-import limen.platform.Platform;
-import limen.platform.event.Event;
-import limen.platform.event.EventType;
-import limen.platform.system.dialog.FileDialog;
-import limen.platform.window.Window;
+import limen.Platform;
+import limen.Event;
+import limen.EventType;
+import limen.system.dialog.FileDialog;
+import limen.Window;
 
 class ExampleFileDialog {
 	static function main() {

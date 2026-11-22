@@ -1,8 +1,17 @@
 # Native Modules
 
 CMake builds these modules into `limen.hdll` and the optional `.limen` binaries.
-Haxe sources live in each module's `haxe/` classpath. The public package
-names are documented in the [Haxe API guide](../docs/HAXE_API.md).
+Modules with Haxe bindings own their own `src/` classpath. The checkout and
+local Haxelib development use the list in [`workspace.hxml`](../workspace.hxml).
+See the [Haxe API guide](../docs/HAXE_API.md) for public package names.
+
+```text
+graphics/opengl/
+  src/limen/opengl/
+  native/
+  tests/
+  CMakeLists.txt
+```
 
 | Module | Native responsibilities | Binary |
 | --- | --- | --- |
@@ -17,8 +26,6 @@ names are documented in the [Haxe API guide](../docs/HAXE_API.md).
 | `postprocess/common` | Shared post-processing types | |
 | `postprocess/fsr` | AMD FidelityFX Super Resolution | `fsr.limen` |
 | `postprocess/dlss` | NVIDIA Streamline DLSS | `dlss.limen` |
-
-The Haxe runtime entry point, `limen.platform.Platform`, lives in `platform`.
 
 ## Dependencies
 
@@ -47,41 +54,11 @@ Vulkan SDK headers when its Vulkan support is enabled. Renderer binaries link
 independently, and a build with all optional modules disabled ships only
 `limen.hdll`.
 
-The Haxe classpaths have a separate dependency graph.
-
-```mermaid
-flowchart TD
-    Platform --> GraphicsCommon["graphics/common"]
-    OpenGL --> Platform
-    D3D12 --> Platform
-    Vulkan --> Platform
-    D3D11 --> Platform
-    D3D11 --> Commands["postprocess/common/interop"]
-    D3D11 --> Descriptors["postprocess/common"]
-    Vulkan --> Descriptors
-    Descriptors --> GraphicsCommon
-    Commands --> Vulkan
-    Commands --> D3D12
-    FSR --> Platform
-    FSR --> Commands
-    FSR --> Descriptors
-    FSR --> D3D12
-    DLSS --> Platform
-    DLSS --> Commands
-    DLSS --> Descriptors
-    DLSS --> D3D12
-```
-
-Platform uses shared graphics driver IDs. Vulkan and D3D11 use shared
-postprocessing descriptors, whose native handle types are defined in
-`graphics/common`. Legacy renderer imports still resolve to those same types.
-The separate `postprocess/common/interop/haxe` classpath contains
-`CommandBuffer`, which depends on the existing typed D3D12 and Vulkan command
-APIs. Vulkan entry points use the descriptor classpath directly. D3D11 uses
-`CommandBuffer` for `getPostProcessCommands()`. FSR and DLSS use it for
-dispatch and retain the D3D12 declarations required by their typed swapchain,
-queue, and frame-generation calls. Their Haxe declarations are available in
-the checkout across native build configurations.
+In Haxe, platform-only code uses `platform/src` and `graphics/common/src`.
+OpenGL adds its own classpath. Vulkan, D3D11, and D3D12 also use
+`postprocess/common/src` for shared descriptors. Each renderer owns its
+handle conversions. FSR and DLSS use D3D12 types in their D3D12-specific
+calls, and DLSS uses the Vulkan requirements type for Vulkan initialization.
 
 Each module keeps its native implementation in `native/` and its tests in
 `tests/`. Shared checks live in the [root test directory](../tests).
@@ -99,9 +76,8 @@ Build and test from the repository root using the
    include the module from the root CMake file, and add its name and dependency
    rules to [build.py](../tools/build.py). Use `limen_stage_runtime()` for SDK
    binaries so they are copied, installed, and checked with the package.
-3. Put Haxe sources in the module's `haxe/` directory and register that classpath
-   in [workspace.hxml](../workspace.hxml). Checkout builds and Haxelib
-   development mode share this list.
+3. Put Haxe bindings in the module's `src/limen/` package and add its `src/`
+   classpath to [`workspace.hxml`](../workspace.hxml).
 4. Keep module-specific tests beside the module. Register them in the
    [test entry point](../tests/CMakeLists.txt) and label them with the module name.
    Verify the isolated selection and add relevant CI coverage.

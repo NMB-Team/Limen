@@ -1,0 +1,13 @@
+package limen.dlss.upscaling;
+
+@:keep @:struct
+class DLSSOptions {
+	public var mode:DLSSMode;
+	public var outputWidth:Int;
+	public var outputHeight:Int;
+	public var preset:DLSSPreset;
+	public var colorBufferHDR:Bool;
+	public var autoExposure:Bool;
+
+	public function new() {}
+}

@@ -1,20 +1,20 @@
 package;
 
-import limen.graphics.renderer.opengl.OpenGL;
-import limen.graphics.renderer.opengl.command.Commands;
-import limen.graphics.renderer.opengl.format.Formats;
-import limen.graphics.renderer.opengl.resource.Textures;
-import limen.graphics.renderer.opengl.shader.Shaders;
-import limen.graphics.renderer.opengl.shader.Shaders.Shader;
-import limen.graphics.renderer.opengl.vertex.VertexArrays;
-import limen.platform.Platform;
-import limen.platform.event.Event;
-import limen.platform.event.EventType;
-import limen.platform.event.WindowStateChange;
-import limen.platform.input.pen.PenAxis as Axis;
-import limen.platform.input.pen.PenInputFlags;
-import limen.platform.window.Window;
-import limen.platform.window.WindowFlags;
+import limen.opengl.OpenGL;
+import limen.opengl.command.Commands;
+import limen.opengl.format.Formats;
+import limen.opengl.resource.Textures;
+import limen.opengl.shader.Shaders;
+import limen.opengl.shader.Shaders.Shader;
+import limen.opengl.vertex.VertexArrays;
+import limen.Platform;
+import limen.Event;
+import limen.EventType;
+import limen.window.WindowStateChange;
+import limen.input.PenAxis as Axis;
+import limen.input.PenInputFlags;
+import limen.Window;
+import limen.window.WindowFlags;
 
 private typedef PointerState = {x:Float, y:Float, pressure:Float, down:Bool}
 

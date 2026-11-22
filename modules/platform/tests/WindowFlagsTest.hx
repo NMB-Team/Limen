@@ -1,6 +1,6 @@
-import limen.platform.window.Window;
-import limen.platform.window.WindowFlags;
-import limen.platform.window.WindowFlags.*;
+import limen.Window;
+import limen.window.WindowFlags;
+import limen.window.WindowFlags.*;
 import haxe.Int64;
 
 @:hlNative("limen")

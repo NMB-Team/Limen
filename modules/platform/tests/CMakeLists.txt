@@ -19,8 +19,9 @@ target_link_libraries(limen_window_flags_test PRIVATE limen libhl SDL3::Headers)
 
 set(_LIMEN_PLATFORM_TESTS limen_window_flags)
 if(LIMEN_HAXE_EXECUTABLE AND LIMEN_HASHLINK_EXECUTABLE)
-	file(GLOB_RECURSE _LIMEN_PLATFORM_HAXE_SOURCES CONFIGURE_DEPENDS
-		"${LIMEN_SOURCE_DIR}/modules/platform/haxe/*.hx"
+	file(GLOB_RECURSE _LIMEN_HAXE_SOURCES CONFIGURE_DEPENDS
+		"${LIMEN_SOURCE_DIR}/modules/platform/src/limen/*.hx"
+		"${LIMEN_SOURCE_DIR}/modules/graphics/common/src/limen/*.hx"
 	)
 	set(_LIMEN_WINDOW_FLAGS_HL "${CMAKE_CURRENT_BINARY_DIR}/window_flags.hl")
 	add_custom_command(
@@ -33,7 +34,7 @@ if(LIMEN_HAXE_EXECUTABLE AND LIMEN_HASHLINK_EXECUTABLE)
 		DEPENDS
 			WindowFlagsTest.hx
 			"${LIMEN_SOURCE_DIR}/workspace.hxml"
-			${_LIMEN_PLATFORM_HAXE_SOURCES}
+			${_LIMEN_HAXE_SOURCES}
 		VERBATIM
 	)
 	add_custom_target(limen_window_flags_haxe_test ALL
@@ -64,7 +65,7 @@ if(LIMEN_HAXE_EXECUTABLE AND LIMEN_HASHLINK_EXECUTABLE)
 		DEPENDS
 			InputEventsTest.hx
 			"${LIMEN_SOURCE_DIR}/workspace.hxml"
-			${_LIMEN_PLATFORM_HAXE_SOURCES}
+			${_LIMEN_HAXE_SOURCES}
 		VERBATIM
 	)
 	add_custom_target(limen_input_events_haxe_test ALL DEPENDS "${_LIMEN_INPUT_EVENTS_HL}")

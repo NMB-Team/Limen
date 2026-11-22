@@ -1,1 +1,1 @@
---macro tools.haxe.LimenWorkspace.configure()
+--macro limenbuild.Workspace.addClassPaths()

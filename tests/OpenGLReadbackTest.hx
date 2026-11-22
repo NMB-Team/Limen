@@ -20,7 +20,7 @@ private class TestGL {
 	public function cancelBufferReadback(request:Dynamic):Void cancels++;
 }
 
-@:build(OpenGLReadbackBuild.build("limen/graphics/renderer/opengl/OpenGL.hx", ["cancelReadbacks", "makeCurrent", "destroy"]))
+@:build(OpenGLReadbackBuild.build("limen/opengl/OpenGL.hx", ["cancelReadbacks", "makeCurrent", "destroy"]))
 private class TestContext {
 	public var readbackCancels:Array<Void->Void> = [];
 	public var failed = false;

@@ -17,17 +17,18 @@ GPU rendering is provided separately by the `OpenGL`, `Vulkan`, `Direct3D 11` an
 
 ## Haxe API
 
-The public API follows the native subsystem layout.
+Each module keeps its Haxe bindings in `src/limen/` beside its native code,
+tests, and CMake configuration. See the [module layout](modules/README.md).
 
 A window does not require a graphics backend. Use `GraphicsDriver.None` when
 LIMEN is only needed for platform, window and input functionality:
 
 ```haxe
-import limen.graphics.GraphicsDriver;
-import limen.platform.Platform;
-import limen.platform.window.Window;
-import limen.platform.event.Event;
-import limen.platform.event.EventType;
+import limen.GraphicsDriver;
+import limen.Platform;
+import limen.Window;
+import limen.Event;
+import limen.EventType;
 
 Platform.init(GraphicsDriver.None);
 
@@ -64,34 +65,30 @@ thread. Keep polling to pump OS events and drain the queue even when using liste
 In heaps-nmb, `hxd.Window.addEventWatchListener()` exposes native LIMEN events for
 that window, while existing event targets retain synchronous delivery.
 
-Platform types are grouped under
-- `limen.platform.event`,
-- `limen.platform.cursor`,
-- `limen.platform.input`,
-- `limen.platform.display`,
-- `limen.platform.window`,
-- `limen.platform.system`.
+`Platform`, `Window`, `Event`, `EventType`, and `GraphicsDriver` are in
+`limen`. Related types live in `limen.window`, `limen.input`, `limen.display`,
+`limen.cursor`, and `limen.system`.
 
 Graphics backends own their context and device setup.
 
 For example, an OpenGL window uses `WindowFlags.SDL_WINDOW_OPENGL` and
 
 ```haxe
-limen.graphics.renderer.opengl.OpenGL.create(window)
+limen.opengl.OpenGL.create(window)
 ```
 
 OpenGL rendering operations are public modules under
-`limen.graphics.renderer.opengl`: `command.Commands`, `device.Capabilities`,
+`limen.opengl`: `command.Commands`, `device.Capabilities`,
 `format.Formats`, `pipeline.State`, `query.Queries`, `render.Framebuffers`,
 `resource.Buffers`, `resource.Textures`, `shader.Shaders`, and `vertex.VertexArrays`.
 Resource handles and related constants live in their owning modules;
 `internal.OpenGLBindings` handles context setup and lifecycle only.
 
 D3D12 concepts live under
-`limen.graphics.renderer.d3d12.command`, `descriptor`, `pipeline`, `query`, `resource`, and `shader`.
+`limen.d3d12.command`, `descriptor`, `pipeline`, `query`, `resource`, and `shader`.
 
 D3D11 uses matching `command`, `descriptor`, `pipeline`, `resource`, and `shader`
-packages under `limen.graphics.renderer.d3d11`. Shader compilation lives in
+packages under `limen.d3d11`. Shader compilation lives in
 `shader.ShaderCompiler`; rendering commands live in `command.Commands`.
 
 Vulkan follows the equivalent package structure.
@@ -178,10 +175,10 @@ haxelib install format
 haxe display.hxml
 ```
 
-The examples and editor configuration use [`workspace.hxml`](workspace.hxml).
-It targets HashLink 1.15 so Haxe 4.3.7 exposes `hl.CArray`. When compiling
-an external project with Haxe 4.3.7, pass `-D hl-ver=1.15.0` alongside
-`-lib limen`.
+The examples, editor configuration, and local Haxelib setup share the module
+classpaths in [`workspace.hxml`](workspace.hxml). It targets HashLink 1.15 so Haxe 4.3.7
+exposes `hl.CArray`. When compiling an external project with Haxe 4.3.7, pass
+`-D hl-ver=1.15.0` alongside `-lib limen`.
 To use the live checkout from another project, run
 `haxelib dev limen /path/to/limen` and keep `-lib limen` in your application.
 
@@ -309,13 +306,13 @@ DLSS support is disabled by default and is not required to build or install
 LIMEN. On Windows x64, set `LIMEN_BUILD_DLSS=ON` and
 `LIMEN_STREAMLINE_SDK_ROOT` to build `dlss.limen`; the Streamline
 runtime DLLs are required only for that opt-in module. See
-[`limen.graphics.postprocess.dlss`](modules/postprocess/dlss/README.md)
+[`limen.dlss`](modules/postprocess/dlss/README.md)
 for build instructions, usage, and licensing.
 
 FSR support is disabled by default. Set `LIMEN_BUILD_FSR=ON` in a Windows
 x64 MSVC build to compile the AMD FSR 3.1.5 upscaler and DX12 backend into
 `fsr.limen`, without AMD runtime DLLs. See
-[`limen.graphics.postprocess.fsr`](modules/postprocess/fsr/README.md)
+[`limen.fsr`](modules/postprocess/fsr/README.md)
 for source overrides and usage.
 
 CMake locates DXC in the Vulkan SDK or HashLink's `include/dx` distribution.

@@ -18,7 +18,7 @@ if(LIMEN_HAXE_EXECUTABLE AND LIMEN_GLSLANG_VALIDATOR)
 	add_test(NAME limen_opengl_validation_shaders
 		COMMAND "${LIMEN_HAXE_EXECUTABLE}" -cp "${CMAKE_CURRENT_SOURCE_DIR}"
 			--run OpenGLValidationTest
-			"${LIMEN_SOURCE_DIR}/modules/graphics/opengl/haxe/limen/graphics/renderer/opengl/OpenGL.hx"
+			"${LIMEN_SOURCE_DIR}/modules/graphics/opengl/src/limen/opengl/OpenGL.hx"
 			"${LIMEN_GLSLANG_VALIDATOR}"
 			"${CMAKE_CURRENT_BINARY_DIR}/opengl-validation"
 	)

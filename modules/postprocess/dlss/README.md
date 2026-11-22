@@ -1,6 +1,6 @@
 # NVIDIA DLSS
 
-`limen.graphics.postprocess.dlss.DLSS` integrates NVIDIA Streamline with Limen's
+`limen.dlss.DLSS` integrates NVIDIA Streamline with Limen's
 shared postprocess device, texture, and command types on D3D11, D3D12, and Vulkan.
 See [GPU postprocessing](../common/README.md) for the common contract and Vulkan setup.
 The bundled Streamline headers are version 2.14.1.
@@ -82,7 +82,7 @@ separate operations.
 
 ## License
 
-[LICENSE_STREAMLINE](haxe/limen/graphics/postprocess/dlss/LICENSE_STREAMLINE) reproduces the upstream
+[LICENSE_STREAMLINE](LICENSE_STREAMLINE) reproduces the upstream
 [Streamline 2.14.1 license](https://github.com/NVIDIAGameWorks/Streamline/blob/v2.14.1/license.txt)
 and is installed beside `dlss.limen`. The bundled source headers retain their
 original NVIDIA copyright notices.

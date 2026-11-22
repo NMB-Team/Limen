@@ -18,7 +18,8 @@ function(limen_resolve_fidelityfx)
 
 	file(GLOB_RECURSE _sdk_inputs CONFIGURE_DEPENDS "${_sdk}/api/*" "${_sdk}/backend/*" "${_sdk}/upscalers/*" "${_sdk}/framegeneration/*")
 	set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${_sdk_inputs})
-	set(_build_sdk "${CMAKE_CURRENT_BINARY_DIR}/fidelityfx-source")
+	# keep the copied SDK path short for MSVC's relative includes
+	set(_build_sdk "${LIMEN_BINARY_DIR}/ffx-sdk")
 	file(COPY "${_sdk}/api" "${_sdk}/backend" "${_sdk}/upscalers" "${_sdk}/framegeneration"
 		DESTINATION "${_build_sdk}"
 		PATTERN ffx_fsr3upscaler.cpp EXCLUDE
@@ -213,5 +214,5 @@ function(limen_resolve_fidelityfx)
 	target_include_directories(limen_fidelityfx PRIVATE "${_shaders}")
 	target_compile_definitions(limen_fidelityfx PRIVATE FFX_UPSCALER FFX_FRAMEGENERATION FFX_BACKEND_DX12 UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
 	target_link_libraries(limen_fidelityfx PRIVATE d3d12 dxgi)
-	install(FILES "${LIMEN_SOURCE_DIR}/modules/postprocess/fsr/haxe/limen/graphics/postprocess/fsr/LICENSE_FIDELITYFX" DESTINATION "${LIMEN_HDLL_DESTINATION}")
+	install(FILES "${LIMEN_SOURCE_DIR}/modules/postprocess/fsr/LICENSE_FIDELITYFX" DESTINATION "${LIMEN_HDLL_DESTINATION}")
 endfunction()

@@ -1,18 +1,18 @@
 package;
 
-import limen.graphics.GraphicsDriver;
-import limen.graphics.renderer.opengl.OpenGL as GL;
-import limen.graphics.renderer.opengl.shader.Shaders.Program;
-import limen.graphics.renderer.opengl.shader.Shaders.Shader;
-import limen.graphics.renderer.opengl.command.Commands;
-import limen.graphics.renderer.opengl.shader.Shaders;
-import limen.graphics.renderer.opengl.vertex.VertexArrays;
-import limen.platform.Platform;
-import limen.platform.window.Window;
-import limen.platform.window.WindowFlags;
-import limen.platform.window.WindowMode;
-import limen.platform.event.Event;
-import limen.platform.event.EventType;
+import limen.GraphicsDriver;
+import limen.opengl.OpenGL as GL;
+import limen.opengl.shader.Shaders.Program;
+import limen.opengl.shader.Shaders.Shader;
+import limen.opengl.command.Commands;
+import limen.opengl.shader.Shaders;
+import limen.opengl.vertex.VertexArrays;
+import limen.Platform;
+import limen.Window;
+import limen.window.WindowFlags;
+import limen.window.WindowMode;
+import limen.Event;
+import limen.EventType;
 
 class ExampleGL {
 	static inline final F11_SCANCODE = 68;

@@ -1,13 +1,12 @@
--cp modules/graphics/common/haxe
--cp modules/graphics/d3d11/haxe
--cp modules/graphics/d3d12/haxe
--cp modules/graphics/opengl/haxe
--cp modules/graphics/vulkan/haxe
--cp modules/platform/haxe
--cp modules/postprocess/common/haxe
--cp modules/postprocess/common/interop/haxe
--cp modules/postprocess/dlss/haxe
--cp modules/postprocess/fsr/haxe
+-cp modules/platform/src
+-cp modules/graphics/common/src
+-cp modules/graphics/opengl/src
+-cp modules/graphics/vulkan/src
+-cp modules/graphics/d3d11/src
+-cp modules/graphics/d3d12/src
+-cp modules/postprocess/common/src
+-cp modules/postprocess/fsr/src
+-cp modules/postprocess/dlss/src
 
 -lib format
 -D limen

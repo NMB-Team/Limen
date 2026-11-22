@@ -1,10 +1,9 @@
 # Haxe API
 
-LIMEN's public Haxe API spans the `haxe/` classpaths in the
-[native modules](../modules/README.md). Applications import the same
-`limen.*` packages from the checkout, which can be registered with
-`haxelib dev limen` for use with `-lib limen`. The implementation calls the
-native modules through HashLink `@:hlNative` bindings.
+Each [module](../modules/README.md) owns its Haxe bindings in `src/limen/`.
+To use the checkout in another project, run `haxelib dev limen /path/to/limen`
+and compile with `-lib limen`. This loads the module classpaths listed in
+[`workspace.hxml`](../workspace.hxml).
 
 ## What it uses
 
@@ -16,20 +15,20 @@ native modules through HashLink `@:hlNative` bindings.
 
 ## Layout
 
-- `limen.platform` is the cross-platform application layer. It includes platform
-  lifecycle, windows, surfaces, events, input, displays, cursors, and system
-  utilities.
-- `limen.graphics.renderer.opengl` provides OpenGL context creation and GL types.
-- `limen.graphics.renderer.vulkan` provides Vulkan runtime, surface, device, resource,
-  pipeline, and command types.
-- `limen.graphics.renderer.d3d11` and `limen.graphics.renderer.d3d12` provide the Windows Direct3D APIs.
-- `internal` packages contain native declarations and are implementation
-  details rather than application-facing APIs.
+- `limen.Platform` initializes and shuts down the platform layer using a
+  `limen.GraphicsDriver`. Use `limen.Window` to create windows and `limen.Event`
+  with `limen.EventType` to handle events.
+- `limen.window`, `limen.input`, `limen.display`, `limen.cursor`, and
+  `limen.system` expose related types and functions.
+- `limen.opengl` provides OpenGL context creation and GL types.
+- `limen.vulkan` provides Vulkan runtime and surface setup, a public
+  `limen.vulkan.Context`, and types grouped by Vulkan subsystem.
+- `limen.d3d11` and `limen.d3d12` provide the Windows Direct3D APIs.
+- `limen.fsr` and `limen.dlss` expose the optional
+  upscalers and share descriptors under `limen.postprocess`.
+- `internal` packages contain low-level native declarations.
 
-Use `limen.platform.Platform` to initialize and stop the platform layer, and
-`limen.platform.window.Window` to create application windows. Choose a graphics
-package only when the application needs that rendering backend. See the
-[repository README](../README.md) for usage examples and build instructions.
+See the [repository README](../README.md) for usage examples and build instructions.
 
 ## Window icons
 

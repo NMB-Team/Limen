@@ -53,6 +53,6 @@ if(LIMEN_BUILD_VULKAN)
 endif()
 limen_stage_runtime(limen_dlss ${_LIMEN_STREAMLINE_RUNTIME_FILES})
 install(
-	FILES "${LIMEN_SOURCE_DIR}/modules/postprocess/dlss/haxe/limen/graphics/postprocess/dlss/LICENSE_STREAMLINE"
+	FILES "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE_STREAMLINE"
 	DESTINATION "${LIMEN_HDLL_DESTINATION}"
 )

@@ -1,0 +1,38 @@
+package limen.vulkan.query;
+
+import limen.vulkan.Types.NextPtr;
+import limen.vulkan.Types.UnusedFlags;
+import limen.vulkan.Types.VkStructureType;
+
+abstract VkQueryPool(hl.Abstract<"vk_query_pool">) {}
+
+enum abstract VkQueryType(Int) {
+	final OCCLUSION = 0;
+	final PIPELINE_STATISTICS = 1;
+	final TIMESTAMP = 2;
+}
+
+enum VkQueryControlFlag {
+	PRECISE;
+}
+
+enum VkQueryResultFlag {
+	RESULT_64;
+	WAIT;
+	WITH_AVAILABILITY;
+	PARTIAL;
+}
+
+@:keep @:struct class VkQueryPoolCreateInfo {
+	var type:VkStructureType;
+	var next:NextPtr;
+	var flags:UnusedFlags;
+
+	public var queryType:VkQueryType;
+	public var queryCount:Int;
+	public var pipelineStatistics:Int;
+
+	public function new() {
+		type = QUERY_POOL_CREATE_INFO;
+	}
+}

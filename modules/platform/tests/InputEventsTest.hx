@@ -1,13 +1,13 @@
 import haxe.Int64;
-import limen.platform.Platform;
-import limen.platform.event.Event;
-import limen.platform.event.EventType;
-import limen.platform.input.touch.Touch;
-import limen.platform.input.touch.TouchDeviceType;
-import limen.platform.input.pen.Pen;
-import limen.platform.input.pen.PenDeviceType;
-import limen.platform.input.pen.PenAxis as Axis;
-import limen.platform.input.pen.PenInputFlags;
+import limen.Platform;
+import limen.Event;
+import limen.EventType;
+import limen.input.Touch;
+import limen.input.TouchDeviceType;
+import limen.input.Pen;
+import limen.input.PenDeviceType;
+import limen.input.PenAxis as Axis;
+import limen.input.PenInputFlags;
 
 @:hlNative("limen")
 private class InputEventsTestBindings {

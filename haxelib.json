@@ -6,7 +6,7 @@
 	],
 	"description": "Cross-platform runtime, input and graphics integration layer.",
 	"version": "1.0.0",
-	"classPath": ".",
+	"classPath": "tools/haxe",
 	"dependencies": {
 		"format": ""
 	},

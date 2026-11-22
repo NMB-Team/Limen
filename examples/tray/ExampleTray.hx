@@ -2,10 +2,10 @@ package;
 
 import haxe.io.Bytes;
 
-import limen.platform.Platform;
-import limen.platform.Surface;
-import limen.platform.event.Event;
-import limen.platform.system.tray.Tray;
+import limen.Platform;
+import limen.Surface;
+import limen.Event;
+import limen.system.tray.Tray;
 
 class ExampleTray {
 	static function main() {

@@ -2,8 +2,8 @@ package;
 
 import haxe.io.Bytes;
 
-import limen.platform.Platform;
-import limen.platform.system.Clipboard;
+import limen.Platform;
+import limen.system.Clipboard;
 
 class ExampleClipboard {
 	static function main() {

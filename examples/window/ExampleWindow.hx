@@ -1,11 +1,11 @@
 package;
 
-import limen.platform.Platform;
-import limen.platform.window.Window;
-import limen.platform.display.Display;
-import limen.platform.event.Event;
-import limen.platform.event.EventType;
-import limen.platform.event.WindowStateChange;
+import limen.Platform;
+import limen.Window;
+import limen.display.Display;
+import limen.Event;
+import limen.EventType;
+import limen.window.WindowStateChange;
 
 class ExampleWindow {
 	static function main() {

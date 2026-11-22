@@ -34,9 +34,9 @@ The examples target HashLink and expect LIMEN's native modules to be available t
 
 At minimum, the window example needs `limen.hdll`. The OpenGL and Touch and Pen examples also need the OpenGL graphics module (`opengl.limen`).
 
-Run `haxelib install format` before compiling the examples. Each example's
-HXML uses the checkout's shared workspace classpaths. Build LIMEN and make
-sure HashLink can find its native modules before running an example.
+Run `haxelib install format` before compiling the examples. The example HXML
+files use the module classpaths from [`workspace.hxml`](../workspace.hxml).
+Build LIMEN and make sure HashLink can find its native modules before running an example.
 
 ## Running
 
