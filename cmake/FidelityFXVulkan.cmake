@@ -16,7 +16,7 @@ function(limen_enable_fsr_vulkan target)
 		message(FATAL_ERROR "LIMEN_FIDELITYFX_VULKAN_SOURCE_DIR must contain FidelityFX SDK 1.1.4 with its Vulkan runtime.")
 	endif()
 	# Isolate the older Vulkan API headers from the current D3D12 SDK.
-	add_library(limen_fsr_vulkan OBJECT "${CMAKE_CURRENT_SOURCE_DIR}/backend/src/graphics/postprocess/fsr/vulkan.cpp")
+	add_library(limen_fsr_vulkan OBJECT "${CMAKE_CURRENT_SOURCE_DIR}/native/vulkan.cpp")
 	target_include_directories(limen_fsr_vulkan PRIVATE "${_sdk}/ffx-api/include")
 	target_compile_definitions(limen_fsr_vulkan PRIVATE LIMEN_POSTPROCESS_VULKAN)
 	target_link_libraries(limen_fsr_vulkan PRIVATE libhl Vulkan::Headers)

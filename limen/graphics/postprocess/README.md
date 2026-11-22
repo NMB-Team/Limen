@@ -2,7 +2,7 @@
 
 DLSS and FSR share `PostProcessDevice`, `TextureResource`, and `CommandBuffer`.
 Their SDK-specific settings, camera constants, and result codes remain separate.
-Native integrations live under `backend/src/graphics/postprocess`, independently
+Native integrations live under `modules/postprocess`, independently
 of the renderer implementations.
 
 | Provider | D3D11 upscaling | D3D12 upscaling | Vulkan upscaling | Frame generation |

@@ -1,17 +1,17 @@
 add_executable(limen_event_translation_test
-	event_translation.c
-	../backend/src/input/events.c
+	"${LIMEN_SOURCE_DIR}/modules/platform/tests/event_translation.c"
+	"${LIMEN_SOURCE_DIR}/modules/platform/native/input/events.c"
 )
 limen_enable_c23_nullptr(limen_event_translation_test)
 target_include_directories(limen_event_translation_test PRIVATE
-	"${CMAKE_CURRENT_SOURCE_DIR}/../backend/src"
+	"${LIMEN_SOURCE_DIR}/modules/core/native"
 )
 target_link_libraries(limen_event_translation_test PRIVATE libhl SDL3::SDL3)
 
-add_executable(limen_window_flags_test window_flags.c)
+add_executable(limen_window_flags_test "${LIMEN_SOURCE_DIR}/modules/platform/tests/window_flags.c")
 limen_enable_c23_nullptr(limen_window_flags_test)
 target_include_directories(limen_window_flags_test PRIVATE
-	"${CMAKE_CURRENT_SOURCE_DIR}/../backend/src"
+	"${LIMEN_SOURCE_DIR}/modules/core/native"
 )
 target_link_libraries(limen_window_flags_test PRIVATE limen libhl SDL3::Headers)
 
@@ -30,6 +30,7 @@ if(LIMEN_HAXE_EXECUTABLE AND LIMEN_HASHLINK_EXECUTABLE)
 		COMMAND "${LIMEN_HAXE_EXECUTABLE}"
 			-cp "${CMAKE_CURRENT_SOURCE_DIR}/.."
 			-cp "${CMAKE_CURRENT_SOURCE_DIR}"
+			-lib format
 			-main WindowFlagsTest
 			-hl "${_LIMEN_WINDOW_FLAGS_HL}"
 		DEPENDS
@@ -62,13 +63,14 @@ if(LIMEN_HAXE_EXECUTABLE AND LIMEN_HASHLINK_EXECUTABLE)
 		COMMAND "${LIMEN_HAXE_EXECUTABLE}"
 			-cp "${CMAKE_CURRENT_SOURCE_DIR}/.."
 			-cp "${CMAKE_CURRENT_SOURCE_DIR}"
+			-lib format
 			-main InputEventsTest
 			-hl "${_LIMEN_INPUT_EVENTS_HL}"
 		DEPENDS
 			InputEventsTest.hx
 			../limen/platform/event/Event.hx
 			../limen/platform/event/EventType.hx
-			../limen/platform/internal/SdlBindings.hx
+			../limen/platform/internal/SDLBindings.hx
 			../limen/platform/input/touch/Touch.hx
 			../limen/platform/input/touch/TouchDeviceType.hx
 			../limen/platform/input/pen/Pen.hx
@@ -151,7 +153,10 @@ elseif(NOT WIN32)
 endif()
 
 if(LIMEN_BUILD_D3D12MA)
-	add_executable(limen_d3d12ma_test d3d12ma.cpp ../backend/src/graphics/d3d12/memory_allocator.cpp)
+	add_executable(limen_d3d12ma_test
+		"${LIMEN_SOURCE_DIR}/modules/graphics/d3d12/tests/d3d12ma.cpp"
+		"${LIMEN_SOURCE_DIR}/modules/graphics/d3d12/native/memory_allocator.cpp"
+	)
 	target_link_libraries(limen_d3d12ma_test PRIVATE libhl limen_d3d12ma)
 	add_test(NAME limen_d3d12ma COMMAND limen_d3d12ma_test)
 	set_tests_properties(limen_d3d12ma PROPERTIES
@@ -160,7 +165,7 @@ if(LIMEN_BUILD_D3D12MA)
 endif()
 
 if(LIMEN_BUILD_VMA)
-	add_executable(limen_vma_memory_test vma_memory.cpp)
+	add_executable(limen_vma_memory_test "${LIMEN_SOURCE_DIR}/modules/graphics/vulkan/tests/vma_memory.cpp")
 	get_target_property(_LIMEN_VMA_INCLUDES limen_vulkan INCLUDE_DIRECTORIES)
 	target_include_directories(limen_vma_memory_test PRIVATE ${_LIMEN_VMA_INCLUDES})
 	target_link_libraries(limen_vma_memory_test PRIVATE libhl Vulkan::Headers Vulkan::Vulkan)
@@ -173,11 +178,11 @@ if(LIMEN_BUILD_VMA)
 endif()
 
 if(LIMEN_BUILD_OPENGL AND WIN32 AND NOT MINGW)
-	add_executable(limen_opengl_capabilities_test opengl_capabilities.c)
+	add_executable(limen_opengl_capabilities_test "${LIMEN_SOURCE_DIR}/modules/graphics/opengl/tests/opengl_capabilities.c")
 	limen_enable_c23_nullptr(limen_opengl_capabilities_test)
 	target_include_directories(limen_opengl_capabilities_test PRIVATE
-		"${CMAKE_CURRENT_SOURCE_DIR}/../backend/src/platform"
-		"${CMAKE_CURRENT_SOURCE_DIR}/../backend/include/gl"
+		"${LIMEN_SOURCE_DIR}/modules/platform/native"
+		"${LIMEN_SOURCE_DIR}/modules/graphics/opengl/native/include"
 	)
 	target_link_libraries(limen_opengl_capabilities_test PRIVATE libhl opengl32)
 	add_test(NAME limen_opengl_capabilities COMMAND limen_opengl_capabilities_test)
@@ -215,9 +220,9 @@ if(LIMEN_BUILD_OPENGL)
 		)
 	endif()
 
-	add_executable(limen_opengl_sdl_failures_test opengl_sdl_failures.c)
+	add_executable(limen_opengl_sdl_failures_test "${LIMEN_SOURCE_DIR}/modules/graphics/opengl/tests/opengl_sdl_failures.c")
 	limen_enable_c23_nullptr(limen_opengl_sdl_failures_test)
-	target_include_directories(limen_opengl_sdl_failures_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../backend/src/platform")
+	target_include_directories(limen_opengl_sdl_failures_test PRIVATE "${LIMEN_SOURCE_DIR}/modules/platform/native")
 	target_link_libraries(limen_opengl_sdl_failures_test PRIVATE SDL3::SDL3-static)
 	add_test(NAME limen_opengl_sdl_failures COMMAND limen_opengl_sdl_failures_test)
 endif()

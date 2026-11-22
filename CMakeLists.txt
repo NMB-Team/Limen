@@ -32,13 +32,14 @@ if(MSVC)
 	)
 endif()
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+set(LIMEN_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+set(LIMEN_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+list(APPEND CMAKE_MODULE_PATH "${LIMEN_SOURCE_DIR}/cmake")
 
 include(Options)
 include(HashLink)
 include(SDL3)
 include(Hdll)
-include(Platform)
 include(Vulkan)
 
 limen_resolve_hashlink()
@@ -54,34 +55,34 @@ set(_LIMEN_MODULE_PROXY_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/limen_module_proxies
 set(_LIMEN_MODULE_PROXY_CONTENT "#include \"module_loader.h\"\n")
 set(_LIMEN_MODULE_PROXY_INPUTS
 	opengl
-		backend/src/graphics/opengl/context.c
-		backend/src/graphics/opengl/gl.c
+		modules/graphics/opengl/native/context.c
+		modules/graphics/opengl/native/gl.c
 	vulkan
-		backend/src/graphics/vulkan/surface.c
-		backend/src/graphics/vulkan/vulkan.c
-		backend/src/graphics/vulkan/shaderc.c
-		backend/src/graphics/vulkan/spirv.c
+		modules/graphics/vulkan/native/surface.c
+		modules/graphics/vulkan/native/vulkan.c
+		modules/graphics/vulkan/native/shaderc.c
+		modules/graphics/vulkan/native/spirv.c
 	d3d11
-		backend/src/graphics/d3d11/driver.cpp
+		modules/graphics/d3d11/native/driver.cpp
 	d3d12
-		backend/src/graphics/d3d12/driver.cpp
-		backend/src/graphics/d3d12/debug.cpp
+		modules/graphics/d3d12/native/driver.cpp
+		modules/graphics/d3d12/native/debug.cpp
 	dlss
-		backend/src/graphics/postprocess/dlss/dlss.cpp
+		modules/postprocess/dlss/native/dlss.cpp
 	fsr
-		backend/src/graphics/postprocess/fsr/fsr.cpp
-		backend/src/graphics/postprocess/fsr/d3d12.cpp
+		modules/postprocess/fsr/native/fsr.cpp
+		modules/postprocess/fsr/native/d3d12.cpp
 )
 if(LIMEN_BUILD_VMA)
 	if(NOT LIMEN_BUILD_VULKAN)
 		message(FATAL_ERROR "LIMEN_BUILD_VMA requires LIMEN_BUILD_VULKAN.")
 	endif()
-	list(FIND _LIMEN_MODULE_PROXY_INPUTS backend/src/graphics/vulkan/vulkan.c _LIMEN_VMA_PROXY_INDEX)
-	list(INSERT _LIMEN_MODULE_PROXY_INPUTS ${_LIMEN_VMA_PROXY_INDEX} backend/src/graphics/vulkan/memory_allocator.cpp)
+	list(FIND _LIMEN_MODULE_PROXY_INPUTS modules/graphics/vulkan/native/vulkan.c _LIMEN_VMA_PROXY_INDEX)
+	list(INSERT _LIMEN_MODULE_PROXY_INPUTS ${_LIMEN_VMA_PROXY_INDEX} modules/graphics/vulkan/native/memory_allocator.cpp)
 endif()
 if(LIMEN_BUILD_D3D12MA)
-	list(FIND _LIMEN_MODULE_PROXY_INPUTS backend/src/graphics/d3d12/debug.cpp _LIMEN_D3D12_PROXY_INDEX)
-	list(INSERT _LIMEN_MODULE_PROXY_INPUTS ${_LIMEN_D3D12_PROXY_INDEX} backend/src/graphics/d3d12/memory_allocator.cpp)
+	list(FIND _LIMEN_MODULE_PROXY_INPUTS modules/graphics/d3d12/native/debug.cpp _LIMEN_D3D12_PROXY_INDEX)
+	list(INSERT _LIMEN_MODULE_PROXY_INPUTS ${_LIMEN_D3D12_PROXY_INDEX} modules/graphics/d3d12/native/memory_allocator.cpp)
 endif()
 set(_LIMEN_MODULE_PROXY_MODULE "")
 foreach(_input IN LISTS _LIMEN_MODULE_PROXY_INPUTS)
@@ -113,44 +114,10 @@ if(MSVC)
 	endforeach()
 endif()
 
-add_library(limen SHARED
-	backend/src/core/hints.c
-	backend/src/core/init.c
-	backend/src/core/graphics_driver.c
-	backend/src/core/module_loader.c
-	backend/src/core/system.c
-	backend/src/core/time.c
-	backend/src/input/events.c
-	backend/src/input/gamepad.c
-	backend/src/input/joystick.c
-	backend/src/input/keyboard.c
-	backend/src/input/mouse.c
-	backend/src/input/touch.c
-	backend/src/input/pen.c
-	backend/src/window/clipboard.c
-	backend/src/window/cursor.c
-	backend/src/window/display.c
-	backend/src/window/dragdrop.c
-	backend/src/window/file_dialog.c
-	backend/src/window/tray.c
-	backend/src/window/window.c
-	backend/src/platform/graphics.c
-	${LIMEN_PLATFORM_SOURCES}
-	"${_LIMEN_MODULE_PROXY_SOURCE}"
-)
-limen_set_native_library(limen limen .hdll)
-if(MSVC)
-	set_target_properties(limen PROPERTIES ARCHIVE_OUTPUT_NAME limen_core)
-endif()
-target_compile_definitions(limen PRIVATE LIMEN_PLATFORM_BUILD)
-limen_enable_c23_nullptr(limen)
-target_include_directories(limen
-	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/backend/include"
-	PRIVATE
-		"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/core"
-		"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/platform"
-)
-target_link_libraries(limen PRIVATE libhl SDL3::SDL3-static ${LIMEN_PLATFORM_LIBRARIES})
+add_subdirectory(modules/core)
+add_subdirectory(modules/platform)
+add_subdirectory(modules/graphics/common)
+add_subdirectory(modules/graphics/metal)
 
 if(LIMEN_BUILD_D3D12 AND NOT LIMEN_WINDOWS_X64)
 	message(FATAL_ERROR "LIMEN_BUILD_D3D12 is supported only on Windows x64.")
@@ -178,321 +145,30 @@ if(LIMEN_BUILD_VULKAN)
 endif()
 
 if(LIMEN_BUILD_OPENGL)
-	add_library(limen_opengl SHARED
-		backend/src/graphics/opengl/context.c
-		backend/src/graphics/opengl/gl.c
-	)
-	limen_set_native_library(limen_opengl opengl .limen)
-	limen_enable_c23_nullptr(limen_opengl)
-	target_include_directories(limen_opengl PRIVATE
-		"${CMAKE_CURRENT_SOURCE_DIR}/backend/include"
-		"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/platform"
-		"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/graphics/opengl"
-	)
-	if(WIN32 AND NOT MINGW)
-		target_include_directories(limen_opengl PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/backend/include/gl")
-	endif()
-	target_link_libraries(limen_opengl PRIVATE libhl limen)
-	find_package(Threads REQUIRED)
-	target_link_libraries(limen_opengl PRIVATE Threads::Threads)
-	if(APPLE)
-		find_package(OpenGL REQUIRED)
-		target_compile_definitions(limen_opengl PRIVATE GL_SILENCE_DEPRECATION)
-		target_link_libraries(limen_opengl PRIVATE OpenGL::GL)
-	elseif(WIN32)
-		target_link_libraries(limen_opengl PRIVATE opengl32)
-	elseif(ANDROID)
-		target_link_libraries(limen_opengl PRIVATE GLESv3)
-	else()
-		find_package(OpenGL REQUIRED)
-		target_link_libraries(limen_opengl PRIVATE OpenGL::GL)
-	endif()
+	add_subdirectory(modules/graphics/opengl)
 endif()
 
 if(LIMEN_BUILD_VULKAN)
-	add_library(limen_vulkan SHARED
-		backend/src/graphics/vulkan/surface.c
-		backend/src/graphics/vulkan/vulkan.c
-		backend/src/graphics/vulkan/shaderc.c
-		backend/src/graphics/vulkan/spirv.c
-	)
-	limen_set_native_library(limen_vulkan vulkan .limen)
-	if(LIMEN_BUILD_VMA)
-		limen_resolve_vma()
-		target_sources(limen_vulkan PRIVATE backend/src/graphics/vulkan/memory_allocator.cpp)
-		target_compile_definitions(limen_vulkan PRIVATE LIMEN_VMA)
-	endif()
-	limen_enable_c23_nullptr(limen_vulkan)
-	target_include_directories(limen_vulkan PRIVATE
-		"${CMAKE_CURRENT_SOURCE_DIR}/backend/include"
-		"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/platform"
-	)
-	target_link_libraries(limen_vulkan PRIVATE
-		libhl
-		limen
-		Vulkan::Headers
-		Vulkan::Vulkan
-		shaderc
-		SPIRV-Tools-static
-		limen_spirv_reflect
-	)
-	if(MINGW)
-		target_link_options(limen_vulkan PRIVATE -static-libgcc -static-libstdc++)
-	endif()
-	target_compile_definitions(limen_vulkan PRIVATE HL_VULKAN_HAS_SHADERC HL_VULKAN_HAS_SPIRV_REFLECT HL_VULKAN_HAS_SPIRV_TOOLS)
+	add_subdirectory(modules/graphics/vulkan)
 endif()
 
 if(WIN32 AND LIMEN_BUILD_D3D11)
-	add_library(limen_d3d11 SHARED backend/src/graphics/d3d11/driver.cpp)
-	limen_set_native_library(limen_d3d11 d3d11 .limen)
-	target_include_directories(limen_d3d11 PRIVATE
-		"${CMAKE_CURRENT_SOURCE_DIR}/backend/include"
-		"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/platform"
-	)
-	target_link_libraries(limen_d3d11 PRIVATE libhl limen d3d11 dxgi d3dcompiler)
+	add_subdirectory(modules/graphics/d3d11)
 endif()
 
 if(LIMEN_WINDOWS_X64 AND LIMEN_BUILD_D3D12)
-	if(CMAKE_GENERATOR_PLATFORM STREQUAL "ARM64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "^(ARM64|aarch64)$")
-		set(_LIMEN_DXC_ARCH arm64)
-	elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
-		set(_LIMEN_DXC_ARCH x64)
-	else()
-		set(_LIMEN_DXC_ARCH x86)
-	endif()
-	set(_LIMEN_DXC_RUNTIME_HINTS
-		"${CMAKE_SOURCE_DIR}/include/dx/bin/${_LIMEN_DXC_ARCH}"
-		"${LIMEN_HASHLINK_ROOT}/include/dx/bin/${_LIMEN_DXC_ARCH}"
-	)
-	set(_LIMEN_DXC_LIBRARY_HINTS
-		"${CMAKE_SOURCE_DIR}/include/dx/lib/${_LIMEN_DXC_ARCH}"
-		"${LIMEN_HASHLINK_ROOT}/include/dx/lib/${_LIMEN_DXC_ARCH}"
-	)
-	if(_LIMEN_DXC_ARCH STREQUAL "arm64")
-		list(APPEND _LIMEN_DXC_RUNTIME_HINTS "$ENV{VULKAN_SDK}/Bin-ARM64")
-		list(APPEND _LIMEN_DXC_LIBRARY_HINTS "$ENV{VULKAN_SDK}/Lib-ARM64")
-	else()
-		list(APPEND _LIMEN_DXC_RUNTIME_HINTS "$ENV{VULKAN_SDK}/Bin")
-		list(APPEND _LIMEN_DXC_LIBRARY_HINTS "$ENV{VULKAN_SDK}/Lib")
-	endif()
-	if(NOT LIMEN_DXCOMPILER_LIBRARY)
-		unset(LIMEN_DXCOMPILER_LIBRARY CACHE)
-		find_library(LIMEN_DXCOMPILER_LIBRARY
-			NAMES dxcompiler
-			HINTS ${_LIMEN_DXC_LIBRARY_HINTS}
-		)
-	endif()
-	if(NOT LIMEN_DXCOMPILER_RUNTIME_DLL)
-		unset(LIMEN_DXCOMPILER_RUNTIME_DLL CACHE)
-		find_file(LIMEN_DXCOMPILER_RUNTIME_DLL
-			NAMES dxcompiler.dll
-			HINTS ${_LIMEN_DXC_RUNTIME_HINTS}
-		)
-	endif()
-	if(NOT LIMEN_DXIL_RUNTIME_DLL)
-		unset(LIMEN_DXIL_RUNTIME_DLL CACHE)
-		find_file(LIMEN_DXIL_RUNTIME_DLL
-			NAMES dxil.dll
-			HINTS ${_LIMEN_DXC_RUNTIME_HINTS}
-		)
-	endif()
-
-	if(NOT LIMEN_DXCOMPILER_LIBRARY OR NOT LIMEN_DXCOMPILER_RUNTIME_DLL OR NOT LIMEN_DXIL_RUNTIME_DLL)
-		FetchContent_Declare(limen_dxc
-			URL https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.8.2505.1/dxc_2025_07_14.zip
-			URL_HASH SHA256=9ad895a6b039e3a8f8c22a1009f866800b840a74b50db9218d13319e215ea8a4
-			SOURCE_SUBDIR limen-unused
-		)
-		FetchContent_MakeAvailable(limen_dxc)
-		set(LIMEN_DXC_PACKAGE_DIR "${limen_dxc_SOURCE_DIR}" CACHE INTERNAL "Fetched DXC package directory")
-
-		if(NOT LIMEN_DXCOMPILER_LIBRARY)
-			set(LIMEN_DXCOMPILER_LIBRARY "${limen_dxc_SOURCE_DIR}/lib/${_LIMEN_DXC_ARCH}/dxcompiler.lib" CACHE FILEPATH "DXC import library" FORCE)
-		endif()
-		if(NOT LIMEN_DXCOMPILER_RUNTIME_DLL)
-			set(LIMEN_DXCOMPILER_RUNTIME_DLL "${limen_dxc_SOURCE_DIR}/bin/${_LIMEN_DXC_ARCH}/dxcompiler.dll" CACHE FILEPATH "DXC runtime" FORCE)
-		endif()
-		if(NOT LIMEN_DXIL_RUNTIME_DLL)
-			set(LIMEN_DXIL_RUNTIME_DLL "${limen_dxc_SOURCE_DIR}/bin/${_LIMEN_DXC_ARCH}/dxil.dll" CACHE FILEPATH "DXIL runtime" FORCE)
-		endif()
-	endif()
-
-	if(LIMEN_BUILD_AFTERMATH)
-		if(_LIMEN_DXC_ARCH STREQUAL "arm64")
-			message(FATAL_ERROR "NVIDIA Nsight Aftermath is not supported by the Windows ARM64 build.")
-		endif()
-		set(_LIMEN_AFTERMATH_ROOT_HINTS
-			"${CMAKE_CURRENT_SOURCE_DIR}/backend/include/aftermath"
-			"${CMAKE_SOURCE_DIR}/include/aftermath"
-		)
-		if(LIMEN_HASHLINK_ROOT)
-			list(APPEND _LIMEN_AFTERMATH_ROOT_HINTS "${LIMEN_HASHLINK_ROOT}/include/aftermath")
-		endif()
-		set(_LIMEN_AFTERMATH_INCLUDE_HINTS ${_LIMEN_AFTERMATH_ROOT_HINTS})
-		if(LIMEN_AFTERMATH_SDK_ROOT)
-			list(APPEND _LIMEN_AFTERMATH_ROOT_HINTS "${LIMEN_AFTERMATH_SDK_ROOT}")
-			list(APPEND _LIMEN_AFTERMATH_INCLUDE_HINTS "${LIMEN_AFTERMATH_SDK_ROOT}/include")
-		endif()
-		if(DEFINED ENV{NSIGHT_AFTERMATH_SDK})
-			list(APPEND _LIMEN_AFTERMATH_ROOT_HINTS "$ENV{NSIGHT_AFTERMATH_SDK}")
-			list(APPEND _LIMEN_AFTERMATH_INCLUDE_HINTS "$ENV{NSIGHT_AFTERMATH_SDK}/include")
-		endif()
-		find_path(LIMEN_AFTERMATH_INCLUDE_DIR
-			NAMES GFSDK_Aftermath.h
-			HINTS ${_LIMEN_AFTERMATH_INCLUDE_HINTS}
-			REQUIRED
-		)
-		if(_LIMEN_DXC_ARCH STREQUAL "x64")
-			set(_LIMEN_AFTERMATH_LIBRARY_NAME GFSDK_Aftermath_Lib.x64)
-		else()
-			set(_LIMEN_AFTERMATH_LIBRARY_NAME GFSDK_Aftermath_Lib.x86)
-		endif()
-		if(NOT LIMEN_AFTERMATH_LIBRARY)
-			unset(LIMEN_AFTERMATH_LIBRARY CACHE)
-			find_library(LIMEN_AFTERMATH_LIBRARY
-				NAMES ${_LIMEN_AFTERMATH_LIBRARY_NAME}
-				HINTS ${_LIMEN_AFTERMATH_ROOT_HINTS}
-				PATH_SUFFIXES "lib/${_LIMEN_DXC_ARCH}" ${_LIMEN_DXC_ARCH}
-				REQUIRED
-			)
-		endif()
-		if(NOT LIMEN_AFTERMATH_RUNTIME_DLL)
-			unset(LIMEN_AFTERMATH_RUNTIME_DLL CACHE)
-			find_file(LIMEN_AFTERMATH_RUNTIME_DLL
-				NAMES "${_LIMEN_AFTERMATH_LIBRARY_NAME}.dll"
-				HINTS ${_LIMEN_AFTERMATH_ROOT_HINTS}
-				PATH_SUFFIXES "bin/${_LIMEN_DXC_ARCH}" "lib/${_LIMEN_DXC_ARCH}" ${_LIMEN_DXC_ARCH}
-				REQUIRED
-			)
-		endif()
-	endif()
-
-	add_library(limen_d3d12 SHARED
-		backend/src/graphics/d3d12/driver.cpp
-		backend/src/graphics/d3d12/debug.cpp
-	)
-	limen_set_native_library(limen_d3d12 d3d12 .limen)
-	if(LIMEN_BUILD_D3D12MA)
-		include(D3D12MA)
-		limen_resolve_d3d12ma()
-		target_sources(limen_d3d12 PRIVATE backend/src/graphics/d3d12/memory_allocator.cpp)
-		target_compile_definitions(limen_d3d12 PRIVATE LIMEN_D3D12MA)
-		target_link_libraries(limen_d3d12 PRIVATE limen_d3d12ma)
-	endif()
-	target_include_directories(limen_d3d12 PRIVATE
-		"${CMAKE_CURRENT_SOURCE_DIR}/backend/include"
-		"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/platform"
-	)
-	if(LIMEN_DXC_PACKAGE_DIR)
-		target_include_directories(limen_d3d12 PRIVATE "${LIMEN_DXC_PACKAGE_DIR}/inc")
-		foreach(_license LLVM MIT MS)
-			install(FILES "${LIMEN_DXC_PACKAGE_DIR}/LICENSE-${_license}.txt"
-				DESTINATION "${LIMEN_HDLL_DESTINATION}" RENAME "LICENSE_DXC_${_license}.txt")
-		endforeach()
-	endif()
-
-	target_link_libraries(limen_d3d12 PRIVATE libhl limen d3d12 dxgi "${LIMEN_DXCOMPILER_LIBRARY}")
-	if(LIMEN_BUILD_AFTERMATH)
-		target_compile_definitions(limen_d3d12 PRIVATE LIMEN_AFTERMATH)
-		target_include_directories(limen_d3d12 PRIVATE "${LIMEN_AFTERMATH_INCLUDE_DIR}")
-		target_link_libraries(limen_d3d12 PRIVATE "${LIMEN_AFTERMATH_LIBRARY}")
-	endif()
-	add_custom_command(TARGET limen_d3d12 POST_BUILD
-		COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-			"${LIMEN_DXCOMPILER_RUNTIME_DLL}" "$<TARGET_FILE_DIR:limen_d3d12>"
-		COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-			"${LIMEN_DXIL_RUNTIME_DLL}" "$<TARGET_FILE_DIR:limen_d3d12>"
-	)
-	if(LIMEN_BUILD_AFTERMATH)
-		add_custom_command(TARGET limen_d3d12 POST_BUILD
-			COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-				"${LIMEN_AFTERMATH_RUNTIME_DLL}" "$<TARGET_FILE_DIR:limen_d3d12>"
-		)
-	endif()
-	install(
-		FILES "${LIMEN_DXCOMPILER_RUNTIME_DLL}" "${LIMEN_DXIL_RUNTIME_DLL}"
-		DESTINATION "${LIMEN_HDLL_DESTINATION}"
-	)
-	if(LIMEN_BUILD_AFTERMATH)
-		install(FILES "${LIMEN_AFTERMATH_RUNTIME_DLL}" DESTINATION "${LIMEN_HDLL_DESTINATION}")
-	endif()
+	add_subdirectory(modules/graphics/d3d12)
 endif()
 
 if(LIMEN_BUILD_FSR)
-	add_library(limen_fsr SHARED backend/src/graphics/postprocess/fsr/fsr.cpp)
-	limen_set_native_library(limen_fsr fsr .limen)
-	target_link_libraries(limen_fsr PRIVATE libhl limen)
-	if(LIMEN_BUILD_D3D12)
-		include(FidelityFX)
-		limen_resolve_fidelityfx()
-		target_sources(limen_fsr PRIVATE backend/src/graphics/postprocess/fsr/d3d12.cpp)
-		target_compile_definitions(limen_fsr PRIVATE LIMEN_POSTPROCESS_D3D12)
-		target_include_directories(limen_fsr PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/backend/src/platform")
-		target_link_libraries(limen_fsr PRIVATE limen_fidelityfx d3d12 dxgi)
-	endif()
-	if(LIMEN_BUILD_VULKAN)
-		include(FidelityFXVulkan)
-		limen_enable_fsr_vulkan(limen_fsr)
-	endif()
+	add_subdirectory(modules/postprocess/fsr)
 endif()
 
 if(LIMEN_BUILD_DLSS)
-	set(_LIMEN_STREAMLINE_ROOT_HINTS
-		"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/graphics/postprocess/dlss/streamline"
-	)
-	if(LIMEN_STREAMLINE_SDK_ROOT)
-		list(APPEND _LIMEN_STREAMLINE_ROOT_HINTS "${LIMEN_STREAMLINE_SDK_ROOT}")
-	endif()
-	if(DEFINED ENV{STREAMLINE_SDK})
-		list(APPEND _LIMEN_STREAMLINE_ROOT_HINTS "$ENV{STREAMLINE_SDK}")
-	endif()
-	set(_LIMEN_STREAMLINE_RUNTIME_FILES)
-	foreach(_runtime_name
-		sl.interposer.dll
-		sl.common.dll
-		sl.pcl.dll
-		sl.reflex.dll
-		sl.dlss.dll
-		sl.dlss_g.dll
-		nvngx_dlss.dll
-		nvngx_dlssg.dll
-	)
-		string(MAKE_C_IDENTIFIER "${_runtime_name}" _runtime_id)
-		find_file(_LIMEN_STREAMLINE_RUNTIME_${_runtime_id}
-			NAMES "${_runtime_name}"
-			HINTS ${_LIMEN_STREAMLINE_ROOT_HINTS}
-			PATH_SUFFIXES bin/x64 x64
-			REQUIRED
-		)
-		list(APPEND _LIMEN_STREAMLINE_RUNTIME_FILES
-			"${_LIMEN_STREAMLINE_RUNTIME_${_runtime_id}}"
-		)
-	endforeach()
-
-	add_library(limen_dlss SHARED backend/src/graphics/postprocess/dlss/dlss.cpp)
-	limen_set_native_library(limen_dlss dlss .limen)
-	target_include_directories(limen_dlss PRIVATE
-		"${CMAKE_CURRENT_SOURCE_DIR}/backend/src/graphics/postprocess/dlss/streamline"
-	)
-	target_link_libraries(limen_dlss PRIVATE
-		libhl
-		dxgi
-		user32
-	)
-	if(LIMEN_BUILD_VULKAN)
-		target_compile_definitions(limen_dlss PRIVATE LIMEN_POSTPROCESS_VULKAN)
-		target_link_libraries(limen_dlss PRIVATE Vulkan::Headers)
-	endif()
-	add_custom_command(TARGET limen_dlss POST_BUILD
-		COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-			${_LIMEN_STREAMLINE_RUNTIME_FILES} "$<TARGET_FILE_DIR:limen_dlss>"
-	)
-	install(FILES ${_LIMEN_STREAMLINE_RUNTIME_FILES} DESTINATION "${LIMEN_HDLL_DESTINATION}")
-	install(
-		FILES "${CMAKE_CURRENT_SOURCE_DIR}/limen/graphics/postprocess/dlss/LICENSE_STREAMLINE"
-		DESTINATION "${LIMEN_HDLL_DESTINATION}"
-	)
+	add_subdirectory(modules/postprocess/dlss)
 endif()
+
+add_subdirectory(modules/postprocess/common)
 
 set(_LIMEN_INSTALL_TARGETS limen)
 foreach(_target limen_opengl limen_vulkan limen_d3d11 limen_d3d12 limen_dlss limen_fsr)

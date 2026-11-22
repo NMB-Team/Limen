@@ -3,7 +3,7 @@
 This directory contains LIMEN's public Haxe API. Applications import these
 modules to create windows, process input and platform events, use system
 services, and access the supported graphics APIs. The implementation calls
-the native modules built from [`../backend`](../backend) through HashLink
+the native modules built from [`../modules`](../modules) through HashLink
 `@:hlNative` bindings.
 
 ## What it uses

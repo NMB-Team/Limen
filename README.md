@@ -210,6 +210,9 @@ The OpenGL example requires both `limen.hdll` and `opengl.limen`.
 
 See [examples/README.md](examples/README.md) for more details
 
+The [native module layout](modules/README.md) describes where each backend
+and its native tests live.
+
 ## Quick build
 
 On Windows run `build.bat`; on Linux and macOS run `bash build.sh` (Python 3 required).

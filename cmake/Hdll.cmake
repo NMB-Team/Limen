@@ -7,6 +7,12 @@ else()
 endif()
 
 function(limen_set_native_library target output_name suffix)
+	foreach(_kind RUNTIME LIBRARY ARCHIVE)
+		if(NOT DEFINED CMAKE_${_kind}_OUTPUT_DIRECTORY)
+			set_target_properties(${target} PROPERTIES ${_kind}_OUTPUT_DIRECTORY "${LIMEN_BINARY_DIR}")
+		endif()
+	endforeach()
+
 	set_target_properties(${target} PROPERTIES
 		PREFIX ""
 		OUTPUT_NAME "${output_name}"

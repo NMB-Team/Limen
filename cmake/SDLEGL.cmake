@@ -26,7 +26,7 @@ function(limen_patch_sdl_egl)
 			message(FATAL_ERROR "Unsupported SDL EGL context builder: ${_source}")
 		endif()
 
-		set(_helper "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../backend/src/platform/egl_robustness.h")
+		set(_helper "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../modules/platform/native/egl_robustness.h")
 		file(TO_CMAKE_PATH "${_helper}" _helper)
 		set(_setup "    // limen: negotiate reset notification without replacing application callbacks\n")
 		string(APPEND _setup "    EGLint context_flags = _this->gl_config.flags;\n")
