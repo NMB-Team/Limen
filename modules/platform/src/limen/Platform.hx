@@ -18,6 +18,10 @@ import limen.system.Paths;
 import limen.system.Time;
 import limen.system.tray.Tray;
 
+private typedef ListenerFailure = {
+	final value:Dynamic;
+}
+
 class Platform {
 	public static var graphicsDriver(default, null):GraphicsDriver = None;
 	public static var videoBackend(default, null):VideoBackend = Unknown;
@@ -27,16 +31,20 @@ class Platform {
 	static var isWin32 = false;
 	static var isLinuxPlatform = false;
 
+	static inline final EVENT_READY = 1;
+	static inline final EVENT_DEFERRED = 2;
+
 	static final event = new Event();
-	static var pendingErrors = new sys.thread.Deque<Dynamic>();
-	static var pendingEvents = new sys.thread.Deque<Event>();
+	static var pendingErrors = new sys.thread.Deque<ListenerFailure>();
+	static final retryEvents:Array<Event> = [];
+	static var spareEvent:Null<Event> = new Event();
 	static final listenerMutex = new sys.thread.Mutex();
 	static var eventWatchListeners:Array<Event -> Void> = [];
 
 	public static function init(preferredGraphicsDriver:GraphicsDriver = OpenGL, ?supportedGraphicsDrivers:Array<GraphicsDriver>):Void {
 		if (initDone)
 			return;
-		if (!SDLBindings.initOnce(dispatchEventWatch, event))
+		if (!SDLBindings.initEventQueue(dispatchEventWatch, event))
 			throw "Failed to init SDL";
 
 		videoBackend = detectVideoBackend();
@@ -75,20 +83,20 @@ class Platform {
 	public static function addEventWatchListener(listener:Event -> Void):Void {
 		listenerMutex.acquire();
 		eventWatchListeners = eventWatchListeners.concat([listener]);
+		if (eventWatchListeners.length == 1)
+			SDLBindings.setEventWatchEnabled(true);
 		listenerMutex.release();
 	}
 
 	public static function removeEventWatchListener(listener:Event -> Void):Void {
 		listenerMutex.acquire();
 		eventWatchListeners = eventWatchListeners.filter(value -> !Reflect.compareMethods(value, listener));
+		if (eventWatchListeners.length == 0)
+			SDLBindings.setEventWatchEnabled(false);
 		listenerMutex.release();
 	}
 
 	static function dispatchEventWatch(source:Event):Void {
-		final queued = new Event();
-		SDLBindings.copyEvent(source, queued);
-		pendingEvents.add(queued);
-
 		listenerMutex.acquire();
 		final listeners = eventWatchListeners;
 		listenerMutex.release();
@@ -97,7 +105,8 @@ class Platform {
 			try {
 				listener(source);
 			} catch (error:Dynamic) {
-				pendingErrors.add(error);
+				pendingErrors.add({value: error});
+				SDLBindings.markEventWatchError();
 			}
 		}
 	}
@@ -112,38 +121,52 @@ class Platform {
 	}
 
 	public static function pollEvent(target:Event):Bool {
-		var queued = pendingEvents.pop(false);
+		final retryEvent = retryEvents.pop();
+		final queued = retryEvent ?? spareEvent ?? new Event();
+		if (queued == spareEvent)
+			spareEvent = null;
 
-		if (queued == null) {
-			SDLBindings.pumpEvents();
-			queued = pendingEvents.pop(false);
-		}
-
-		Tray.dispatchCallbacks();
-
-		final error = pendingErrors.pop(false);
-
-		if (error != null) {
-			if (queued != null)
-				pendingEvents.push(queued);
-
+		var result:Int;
+		try {
+			result = retryEvent != null ? EVENT_READY | EVENT_DEFERRED : SDLBindings.nextEvent(target, queued);
+			if ((result & EVENT_DEFERRED) != 0)
+				Tray.dispatchCallbacks();
+		} catch (error:Dynamic) {
+			spareEvent = queued;
 			throw error;
 		}
 
-		if (queued == null)
-			return false;
+		final received = (result & EVENT_READY) != 0;
+		if ((result & EVENT_DEFERRED) != 0) {
+			final error = pendingErrors.pop(false);
+			if (error != null) {
+				if (received)
+					retryEvents.push(queued);
+				else
+					spareEvent = queued;
 
-		SDLBindings.copyEvent(queued, target);
-		return true;
+				throw error.value;
+			}
+
+			if (received) {
+				SDLBindings.copyEvent(queued, target);
+				queued.inputChar = queued.dropFile = null;
+			}
+		}
+
+		spareEvent = queued;
+		return received;
 	}
 
 	public static function quit():Void {
 		if (!initDone)
 			return;
+		SDLBindings.validateEventShutdown();
 		Tray.destroyAll();
 		SDLBindings.quit();
-		pendingEvents = new sys.thread.Deque<Event>();
-		pendingErrors = new sys.thread.Deque<Dynamic>();
+		retryEvents.resize(0);
+		spareEvent = new Event();
+		pendingErrors = new sys.thread.Deque<ListenerFailure>();
 
 		graphicsDriver = None;
 		videoBackend = Unknown;
@@ -225,6 +248,16 @@ class Platform {
 
 	public static inline function setMouseMotionEvents(enabled:Bool):Void {
 		Mouse.setMotionEvents(enabled);
+	}
+
+	/**
+		Allow polling to merge consecutive queued mouse movements for the same window,
+		device and button state. Uses the latest position and timestamp and sums the
+		relative movement. Event Watch still receives each event. Defaults to false.
+		Call on the main thread after init. Quit restores the default.
+	**/
+	public static inline function setMouseMotionCoalescing(enabled:Bool):Void {
+		SDLBindings.setMouseMotionCoalescing(enabled);
 	}
 
 	public static inline function setClipboardText(text:String):Bool {

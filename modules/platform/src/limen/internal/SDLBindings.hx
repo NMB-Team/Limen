@@ -21,6 +21,20 @@ class SDLBindings {
 		return false;
 	}
 
+	public static function initEventQueue(onEvent:Dynamic, event:Dynamic):Bool {
+		return false;
+	}
+
+	public static function setEventWatchEnabled(enabled:Bool):Void {}
+
+	public static function setMouseMotionCoalescing(enabled:Bool):Void {}
+
+	public static function markEventWatchError():Void {}
+
+	public static function nextEvent(target:Dynamic, deferred:Dynamic):Int {
+		return 0;
+	}
+
 	public static function selectGraphicsDriver(preferred:Int, supported:Int):Int {
 		return 0;
 	}
@@ -38,6 +52,8 @@ class SDLBindings {
 	}
 
 	public static function quit():Void {}
+
+	public static function validateEventShutdown():Void {}
 
 	public static function trayCreate(icon:SurfacePtr, tooltip:hl.Bytes):TrayPtr {
 		return null;

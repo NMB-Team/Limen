@@ -60,8 +60,13 @@ Platform.quit();
 `Platform.addEventWatchListener(listener)` receives every supported event directly
 on its SDL producer thread. Use `removeEventWatchListener(listener)` to unsubscribe.
 Listeners may run outside the main thread and should synchronize shared state.
-`pollEvent()` and `processEvents()` consume independent queued copies on the caller's
+`pollEvent()` and `processEvents()` consume independent queued copies on the SDL main
 thread. Keep polling to pump OS events and drain the queue even when using listeners.
+Polling delivers raw events by default. Call `Platform.setMouseMotionCoalescing(true)`
+after initialization to merge consecutive pending motions for the same window, mouse
+and button state. Event Watch continues to receive every supported event.
+Call `Platform.quit()` on the SDL main thread after Event Watch callbacks and
+native event producers have returned.
 In heaps-nmb, `hxd.Window.addEventWatchListener()` exposes native LIMEN events for
 that window, while existing event targets retain synchronous delivery.
 

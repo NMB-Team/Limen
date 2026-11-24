@@ -112,9 +112,12 @@ typedef struct {
 
 extern bool limen_hint_window_grab_keyboard;
 
-void limen_set_event_watch(vclosure* callback, limen_event* event);
+void limen_set_event_watch(vclosure* callback, limen_event* event, bool queued);
+bool limen_in_event_watch(void);
 bool limen_translate_event(const SDL_Event* source, limen_event* destination);
+int limen_take_queued_event(limen_event* target, limen_event* deferred, bool (*should_defer)(void));
 SDL_DisplayID limen_display_id_from_index(int index);
 SDL_DisplayID limen_display_for_window(SDL_Window* window);
 int limen_display_index_from_id(SDL_DisplayID display);
 void limen_tray_clear_callbacks(void);
+bool limen_tray_has_callbacks(void);

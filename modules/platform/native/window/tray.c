@@ -14,6 +14,10 @@ static limen_tray_callback* pending_head = nullptr;
 static limen_tray_callback* pending_tail = nullptr;
 static bool callback_allocation_failed = false;
 
+bool limen_tray_has_callbacks(void) {
+	return pending_head != nullptr || callback_allocation_failed;
+}
+
 // SDL callbacks only queue values
 // haxe dispatches after SDL has finished pumping events
 static void queue_callback(int id, bool checked) {
