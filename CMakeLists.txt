@@ -17,6 +17,7 @@ include(HashLink)
 include(SDL3)
 include(Hdll)
 include(NativeModules)
+find_package(Threads REQUIRED)
 
 limen_validate_options()
 limen_resolve_hashlink()

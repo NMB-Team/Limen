@@ -1,4 +1,5 @@
 #include "platform_internal.h"
+#include "jobs_bridge.h"
 #include "module_loader.h"
 #include <locale.h>
 
@@ -74,6 +75,7 @@ HL_PRIM void HL_NAME(quit)() {
 	limen_set_event_watch(nullptr, nullptr, false);
 	SDL_SetAtomicInt(&listener_error_pending, 0);
 	limen_tray_clear_callbacks(); // clean callbacks of tray
+	limen_jobs_shutdown();
 	limen_modules_unload();
 	SDL_Quit();
 #ifdef _WIN32

@@ -15,7 +15,7 @@ graphics/opengl/
 
 | Module | Native responsibilities | Binary |
 | --- | --- | --- |
-| `core` | HashLink primitives and dynamic module loading | `limen.hdll` |
+| `core` | HashLink primitives, dynamic module loading, and native CPU jobs | `limen.hdll` |
 | `platform` | SDL3 initialization, windows, input, events, displays, and system utilities | `limen.hdll` |
 | `graphics/common` | Graphics driver selection, native handles, and the Vulkan requirements contract | `limen.hdll` |
 | `graphics/opengl` | OpenGL contexts and rendering | `opengl.limen` |
@@ -53,6 +53,23 @@ with the corresponding FidelityFX SDKs. DLSS uses Streamline and only needs
 Vulkan SDK headers when its Vulkan support is enabled. Renderer binaries link
 independently, and a build with all optional modules disabled ships only
 `limen.hdll`.
+
+Core jobs run coarse native ranges on persistent workers. A caller can reuse
+batch storage when all its waiters have returned. Dependencies refer to
+batches already submitted to the same scheduler. Kernels can fork and join
+children through their job context. Cancellation skips queued ranges and can
+be polled by kernels already running. The scheduler drains and joins at
+shutdown. Worker code can borrow pinned pointer-free bytes for a synchronous
+call. HashLink objects and SDL events stay on their owning threads.
+
+Heaps builds can opt into DXT asset conversion with `-D heaps_native_jobs`.
+`NMB_JOB_WORKERS` controls the pool size. Limen limits it to the available
+logical CPUs minus the caller. The experimental rotated sprite kernel has
+a separate `-D heaps_native_sprite_jobs` build define.
+Large Heaps Worlds can opt into native frustum culling with
+`-D heaps_native_world_culling`. The same worker setting is shared
+with the other native workloads. Heaps owns the culling snapshot and
+applies visibility after the workers join.
 
 In Haxe, platform-only code uses `platform/src` and `graphics/common/src`.
 OpenGL adds its own classpath. Vulkan, D3D11, and D3D12 also use

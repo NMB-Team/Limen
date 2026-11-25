@@ -8,6 +8,12 @@ find_program(LIMEN_HASHLINK_EXECUTABLE NAMES hl
 
 add_subdirectory("${LIMEN_SOURCE_DIR}/modules/platform/tests" platform)
 
+add_executable(limen_jobs_test jobs.cpp "${LIMEN_SOURCE_DIR}/modules/core/native/jobs.cpp")
+target_include_directories(limen_jobs_test PRIVATE "${LIMEN_SOURCE_DIR}/modules/core/native")
+target_link_libraries(limen_jobs_test PRIVATE Threads::Threads)
+add_test(NAME limen_jobs COMMAND limen_jobs_test)
+set_tests_properties(limen_jobs PROPERTIES LABELS core TIMEOUT 30)
+
 if(LIMEN_BUILD_VULKAN OR LIMEN_BUILD_D3D12)
 	add_executable(limen_indexed_commands_test indexed_commands.c)
 	target_link_libraries(limen_indexed_commands_test PRIVATE libhl)
