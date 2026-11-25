@@ -519,15 +519,17 @@ static void ReportDxError(HRESULT err, int line) {
 	if (err == DXGI_ERROR_DEVICE_REMOVED || err == DXGI_ERROR_DEVICE_HUNG || err == DXGI_ERROR_DEVICE_RESET) {
 		if (GpuCrashTracker::instance)
 			GpuCrashTracker::instance->waitCrashDump();
-#ifndef HL_XBS
 		if (static_driver && static_driver->device) {
 			const HRESULT reason = static_driver->device->GetDeviceRemovedReason();
 			if (FAILED(reason)) {
 				dump_device_removed(err, reason, line);
-				hl_error("DXERROR %X line %d, removed reason %X", (DWORD)err, line, (DWORD)reason);
+				#ifndef HL_XBS
+					hl_error("DXERROR %X line %d, removed reason %X\n%s",(DWORD)err,line,(DWORD)reason,hl_to_utf16(report_buf));
+				#else
+					hl_error("DXERROR %X line %d, removed reason %X",(DWORD)err,line,(DWORD)reason);
+				#endif
 			}
 		}
-#endif
 	}
 
 	hl_error("DXERROR %X line %d", (DWORD)err, line);
