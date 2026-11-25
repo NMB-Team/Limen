@@ -71,6 +71,8 @@ abstract CommandList(Dx12Resource) {
 
 	public function copyBufferRegion(dst:GpuResource, dstOffset:Int64, src:GpuResource, srcOffset:Int64, size:Int64) {}
 
+	public function copyResource(dst:GpuResource, src:GpuResource) {}
+
 	public function copyTextureRegion(dst:TextureCopyLocation, dstX:Int, dstY:Int, dstZ:Int, src:TextureCopyLocation, srcBox:Box) {}
 
 	public function setGraphicsRootSignature(sign:RootSignature) {}

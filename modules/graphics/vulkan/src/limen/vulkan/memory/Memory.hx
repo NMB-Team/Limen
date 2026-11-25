@@ -58,6 +58,8 @@ class VkAccess2 {
 	public static final TRANSFER_WRITE:hl.I64 = (Int64.ofInt(0x1000) : hl.I64);
 	public static final HOST_READ:hl.I64 = (Int64.ofInt(0x2000) : hl.I64);
 	public static final HOST_WRITE:hl.I64 = (Int64.ofInt(0x4000) : hl.I64);
+	public static final MEMORY_READ:hl.I64 = (Int64.ofInt(0x8000) : hl.I64);
+	public static final MEMORY_WRITE:hl.I64 = (Int64.ofInt(0x10000) : hl.I64);
 }
 
 abstract VkBuffer(hl.Abstract<"vk_buffer">) {}

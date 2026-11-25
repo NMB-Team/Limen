@@ -1617,6 +1617,10 @@ HL_PRIM void HL_NAME(command_list_copy_buffer_region)(ID3D12GraphicsCommandList*
 	l->CopyBufferRegion(dst, dstOffset, src, srcOffset, numBytes);
 }
 
+HL_PRIM void HL_NAME(command_list_copy_resource)(ID3D12GraphicsCommandList* l, ID3D12Resource* dst, ID3D12Resource* src) {
+	l->CopyResource(dst, src);
+}
+
 HL_PRIM void HL_NAME(command_list_copy_texture_region)(ID3D12GraphicsCommandList* l, D3D12_TEXTURE_COPY_LOCATION* dst, int dstX, int dstY, int dstZ, D3D12_TEXTURE_COPY_LOCATION* src, D3D12_BOX* srcBox) {
 	l->CopyTextureRegion(dst, dstX, dstY, dstZ, src, srcBox);
 }
@@ -1747,6 +1751,7 @@ DEFINE_PRIM(_VOID, command_list_ia_set_vertex_buffers, _RES _I32 _I32 _STRUCT);
 DEFINE_PRIM(_VOID, command_list_ia_set_index_buffer, _RES _STRUCT);
 DEFINE_PRIM(_VOID, command_list_ia_set_primitive_topology, _RES _I32);
 DEFINE_PRIM(_VOID, command_list_copy_buffer_region, _RES _RES _I64 _RES _I64 _I64);
+DEFINE_PRIM(_VOID, command_list_copy_resource, _RES _RES _RES);
 DEFINE_PRIM(_VOID, command_list_copy_texture_region, _RES _STRUCT _I32 _I32 _I32 _STRUCT _STRUCT);
 DEFINE_PRIM(_VOID, command_list_om_set_render_targets, _RES _I32 _BYTES _I32 _BYTES);
 DEFINE_PRIM(_VOID, command_list_om_set_stencil_ref, _RES _I32);
