@@ -26,6 +26,7 @@
 
 #define HL_NAME(n) limen_vulkan_##n
 #include <hl.h>
+#include "../../common/native/indexed_commands.h"
 #include "postprocess_types.h"
 #include "vulkan_requirements.h"
 #include "native_window.h"
@@ -3713,8 +3714,42 @@ HL_PRIM void HL_NAME(vk_draw_indexed)(VkCommandBuffer out, int indexCount, int i
 	vkCmdDrawIndexed(out, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
+HL_PRIM bool HL_NAME(vk_submit_indexed_words)(VkCommandBuffer out, varray* stream, int used, VkPipelineLayout layout,
+	int set_count, varray* sets, int offset_count, varray* offsets, VkBuffer index, int index_type) {
+	const int32_t* draw = limen_validate_indexed_commands(stream, used);
+	if (!draw || !out || set_count < 0 || offset_count < 0 ||
+		(set_count == 0 && offset_count != 0) ||
+		(set_count > 0 && (!layout || !sets || sets->at->kind != HABSTRACT || set_count > sets->size ||
+			!offsets || offsets->at->kind != HI32 || offset_count > offsets->size)) ||
+		(index && index_type != VK_INDEX_TYPE_UINT16 && index_type != VK_INDEX_TYPE_UINT32))
+		return false;
+
+	if (set_count > 0) {
+		vkCmdBindDescriptorSets(out, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, set_count, hl_aptr(sets, VkDescriptorSet),
+			offset_count, hl_aptr(offsets, uint32_t));
+	}
+	if (index)
+		vkCmdBindIndexBuffer(out, index, 0, (VkIndexType)index_type);
+
+	for (int i = LIMEN_INDEXED_COMMANDS_HEADER; i < used; i += LIMEN_INDEXED_COMMANDS_STRIDE, draw += LIMEN_INDEXED_COMMANDS_STRIDE)
+		vkCmdDrawIndexed(out, draw[0], draw[1], draw[2], draw[3], draw[4]);
+
+	return true;
+}
+
 HL_PRIM void HL_NAME(vk_draw_indexed_indirect)(VkCommandBuffer out, VkBuffer buffer, int64_t offset, int drawCount, int stride) {
 	vkCmdDrawIndexedIndirect(out, buffer, (VkDeviceSize)offset, (uint32_t)drawCount, (uint32_t)stride);
+}
+
+HL_PRIM bool HL_NAME(vk_draw_indexed_ranges)(VkCommandBuffer out, varray* words, int count, int index_limit) {
+	const int32_t* range = limen_validate_indexed_ranges(words, count, index_limit);
+	if (!out || !range)
+		return false;
+
+	for (int i = 0; i < count; i++, range += LIMEN_INDEXED_RANGES_STRIDE)
+		vkCmdDrawIndexed(out, range[1], 1, range[0], 0, 0);
+
+	return true;
 }
 
 HL_PRIM void HL_NAME(vk_draw_indexed_indirect_count)(VkCommandBuffer out, VkBuffer buffer, int64_t offset, VkBuffer countBuffer, int64_t countOffset, int maxDrawCount, int stride) {
@@ -4088,7 +4123,9 @@ DEFINE_PRIM(_VOID, vk_clear_depth_stencil_image, _CMD _IMAGE _I32 _BYTES _I32 _S
 DEFINE_PRIM(_VOID, vk_clear_attachments, _CMD _I32 _BYTES _I32 _BYTES);
 DEFINE_PRIM(_VOID, vk_clear_attachments_native, _CMD _I32 _ARR _I32 _ARR);
 DEFINE_PRIM(_VOID, vk_draw_indexed, _CMD _I32 _I32 _I32 _I32 _I32);
+DEFINE_PRIM(_BOOL, vk_submit_indexed_words, _CMD _ARR _I32 _PIPELAYOUT _I32 _ARR _I32 _ARR _BUFFER _I32);
 DEFINE_PRIM(_VOID, vk_draw_indexed_indirect, _CMD _BUFFER _I64 _I32 _I32);
+DEFINE_PRIM(_BOOL, vk_draw_indexed_ranges, _CMD _ARR _I32 _I32);
 DEFINE_PRIM(_VOID, vk_draw_indexed_indirect_count, _CMD _BUFFER _I64 _BUFFER _I64 _I32 _I32);
 DEFINE_PRIM(_VOID, vk_bind_pipeline, _CMD _I32 _GPIPELINE);
 DEFINE_PRIM(_VOID, vk_bind_compute_pipeline, _CMD _GPIPELINE);

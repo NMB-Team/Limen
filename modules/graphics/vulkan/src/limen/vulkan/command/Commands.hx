@@ -116,6 +116,20 @@ abstract VkCommandBuffer(hl.Abstract<"vk_command_buffer">) {
 
 	public function drawIndexed(indexCount:Int, instanceCount:Int, firstIndex:Int, vertexOffset:Int, firstInstance:Int) {}
 
+	public function drawIndexedRanges(words:hl.NativeArray<Int>, count:Int, indexLimit:Int):Bool return false;
+
+	public inline function submitIndexed(stream:limen.IndexedCommandStream, layout:VkPipelineLayout,
+		setCount:Int, sets:hl.NativeArray<VkDescriptorSet>, offsetCount:Int, offsets:hl.NativeArray<Int>,
+		index:VkBuffer, indexType:VkIndexType) {
+		if (!submitIndexedWords(@:privateAccess stream.words, @:privateAccess stream.used, layout,
+			setCount, sets, offsetCount, offsets, index, indexType))
+			throw "Invalid Vulkan indexed command stream";
+	}
+
+	function submitIndexedWords(words:hl.NativeArray<Int>, used:Int, layout:VkPipelineLayout,
+		setCount:Int, sets:hl.NativeArray<VkDescriptorSet>, offsetCount:Int, offsets:hl.NativeArray<Int>,
+		index:VkBuffer, indexType:VkIndexType):Bool return false;
+
 	public function drawIndexedIndirect(buffer:VkBuffer, offset:hl.I64, drawCount:Int, stride:Int) {}
 
 	public function drawIndexedIndirectCount(buffer:VkBuffer, offset:hl.I64, countBuffer:VkBuffer, countOffset:hl.I64, maxDrawCount:Int, stride:Int) {}

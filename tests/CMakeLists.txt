@@ -8,6 +8,13 @@ find_program(LIMEN_HASHLINK_EXECUTABLE NAMES hl
 
 add_subdirectory("${LIMEN_SOURCE_DIR}/modules/platform/tests" platform)
 
+if(LIMEN_BUILD_VULKAN OR LIMEN_BUILD_D3D12)
+	add_executable(limen_indexed_commands_test indexed_commands.c)
+	target_link_libraries(limen_indexed_commands_test PRIVATE libhl)
+	add_test(NAME limen_indexed_commands COMMAND limen_indexed_commands_test)
+	set_tests_properties(limen_indexed_commands PROPERTIES LABELS graphics)
+endif()
+
 if(LIMEN_BUILD_OPENGL)
 	add_subdirectory("${LIMEN_SOURCE_DIR}/modules/graphics/opengl/tests" opengl)
 endif()

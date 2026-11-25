@@ -1,5 +1,6 @@
 #define HL_NAME(n) limen_d3d12_##n
 #include <hl.h>
+#include "../../common/native/indexed_commands.h"
 #undef _GUID
 #ifdef LIMEN_D3D12MA
 #include "memory_allocator.h"
@@ -522,12 +523,10 @@ static void ReportDxError(HRESULT err, int line) {
 		if (static_driver && static_driver->device) {
 			const HRESULT reason = static_driver->device->GetDeviceRemovedReason();
 			if (FAILED(reason)) {
-				dump_device_removed(err, reason, line);
 				#ifndef HL_XBS
-					hl_error("DXERROR %X line %d, removed reason %X\n%s",(DWORD)err,line,(DWORD)reason,hl_to_utf16(report_buf));
-				#else
-					hl_error("DXERROR %X line %d, removed reason %X",(DWORD)err,line,(DWORD)reason);
+				dump_device_removed(err, reason, line);
 				#endif
+				hl_error("DXERROR %X line %d, removed reason %X", (DWORD)err, line, (DWORD)reason);
 			}
 		}
 	}
@@ -1559,8 +1558,39 @@ HL_PRIM void HL_NAME(command_list_draw_indexed_instanced)(ID3D12GraphicsCommandL
 	l->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
 }
 
+HL_PRIM bool HL_NAME(command_list_submit_indexed_words)(ID3D12GraphicsCommandList* l, varray* stream, int used,
+	ID3D12PipelineState* pipeline, D3D12_INDEX_BUFFER_VIEW* index, D3D12_RESOURCE_BARRIER* barriers, int barrier_count) {
+	const int32_t* draw = limen_validate_indexed_commands(stream, used);
+	if (!draw || !l || barrier_count < 0 || (barrier_count > 0 && !barriers) ||
+		(index && index->Format != DXGI_FORMAT_R16_UINT && index->Format != DXGI_FORMAT_R32_UINT))
+		return false;
+
+	if (pipeline)
+		l->SetPipelineState(pipeline);
+	if (index)
+		l->IASetIndexBuffer(index);
+	if (barrier_count > 0)
+		l->ResourceBarrier(barrier_count, barriers);
+
+	for (int i = LIMEN_INDEXED_COMMANDS_HEADER; i < used; i += LIMEN_INDEXED_COMMANDS_STRIDE, draw += LIMEN_INDEXED_COMMANDS_STRIDE)
+		l->DrawIndexedInstanced(draw[0], draw[1], draw[2], draw[3], draw[4]);
+
+	return true;
+}
+
 HL_PRIM void HL_NAME(command_list_set_graphics_root_signature)(ID3D12GraphicsCommandList* l, ID3D12RootSignature* sign) {
 	l->SetGraphicsRootSignature(sign);
+}
+
+HL_PRIM bool HL_NAME(command_list_draw_indexed_ranges)(ID3D12GraphicsCommandList* l, varray* words, int count, int index_limit) {
+	const int32_t* range = limen_validate_indexed_ranges(words, count, index_limit);
+	if (!l || !range)
+		return false;
+
+	for (int i = 0; i < count; i++, range += LIMEN_INDEXED_RANGES_STRIDE)
+		l->DrawIndexedInstanced(range[1], 1, range[0], 0, 0);
+
+	return true;
 }
 
 HL_PRIM void HL_NAME(command_list_set_graphics_root32_bit_constants)(ID3D12GraphicsCommandList* l, int index, int numValues, void* data, int destOffset) {
@@ -1702,6 +1732,8 @@ DEFINE_PRIM(_VOID, command_list_clear_render_target_view, _RES _I64 _STRUCT);
 DEFINE_PRIM(_VOID, command_list_clear_depth_stencil_view, _RES _I64 _I32 _F32 _I32);
 DEFINE_PRIM(_VOID, command_list_draw_instanced, _RES _I32 _I32 _I32 _I32);
 DEFINE_PRIM(_VOID, command_list_draw_indexed_instanced, _RES _I32 _I32 _I32 _I32 _I32);
+DEFINE_PRIM(_BOOL, command_list_draw_indexed_ranges, _RES _ARR _I32 _I32);
+DEFINE_PRIM(_BOOL, command_list_submit_indexed_words, _RES _ARR _I32 _RES _STRUCT _ABSTRACT(hl_carray) _I32);
 DEFINE_PRIM(_VOID, command_list_set_graphics_root_signature, _RES _RES);
 DEFINE_PRIM(_VOID, command_list_set_graphics_root32_bit_constants, _RES _I32 _I32 _BYTES _I32);
 DEFINE_PRIM(_VOID, command_list_set_graphics_root_constant_buffer_view, _RES _I32 _I64);

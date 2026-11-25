@@ -98,6 +98,22 @@ abstract CommandList(Dx12Resource) {
 
 	public function drawIndexedInstanced(indexCountPerInstance:Int, instanceCount:Int, startIndexLocation:Int, baseVertexLocation:Int, startInstanceLocation:Int) {}
 
+	public function drawIndexedRanges(words:hl.NativeArray<Int>, count:Int, indexLimit:Int):Bool return false;
+
+	public inline function submitIndexed(stream:limen.IndexedCommandStream, pipeline:PipelineState, index:IndexBufferView,
+		barriers:hl.CArray<ResourceBarrier>, barrierCount:Int) {
+		if (barrierCount < 0 || (barrierCount > 0 && (barriers == null || barrierCount > indexedBarrierLength(barriers))))
+			throw "Invalid D3D12 indexed command barrier count";
+		if (!submitIndexedWords(@:privateAccess stream.words, @:privateAccess stream.used, pipeline, index, barriers, barrierCount))
+			throw "Invalid D3D12 indexed command stream";
+	}
+
+	function submitIndexedWords(words:hl.NativeArray<Int>, used:Int, pipeline:PipelineState, index:IndexBufferView,
+		barriers:hl.CArray<ResourceBarrier>, barrierCount:Int):Bool return false;
+
+	@:hlNative("?std", "carray_length")
+	static function indexedBarrierLength(barriers:hl.CArray<ResourceBarrier>):Int return 0;
+
 	public function executeIndirect(sign:CommandSignature, maxCommandCount:Int, args:Dx12Resource, argsOffset:Int64, count:Dx12Resource, countOffset:Int64) {}
 
 	public function omSetRenderTargets(count:Int, handles:hl.BytesAccess<Address>, flag:Bool32, depthStencils:hl.BytesAccess<Address>) {}
