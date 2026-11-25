@@ -529,8 +529,6 @@ typedef struct VkCompatDispatch {
 	PFN_vkCmdEndRendering vkCmdEndRendering;
 	PFN_vkCmdPipelineBarrier2 vkCmdPipelineBarrier2;
 	PFN_vkCmdWriteTimestamp2 vkCmdWriteTimestamp2;
-	PFN_vkCmdCopyBufferToImage2 vkCmdCopyBufferToImage2;
-	PFN_vkCmdCopyImageToBuffer2 vkCmdCopyImageToBuffer2;
 	PFN_vkCmdBlitImage2 vkCmdBlitImage2;
 	PFN_vkCmdCopyBuffer2 vkCmdCopyBuffer2;
 	PFN_vkCmdSetCullMode vkCmdSetCullMode;
@@ -749,16 +747,6 @@ static void compat_vkCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const Vk
 static void compat_vkCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkQueryPool queryPool, uint32_t query) {
 	VkCompatDispatch* dispatch = command_dispatch(commandBuffer);
 	(dispatch ? dispatch->vkCmdWriteTimestamp2 : vkCmdWriteTimestamp2)(commandBuffer, stage, queryPool, query);
-}
-
-static void compat_vkCmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo) {
-	VkCompatDispatch* dispatch = command_dispatch(commandBuffer);
-	(dispatch ? dispatch->vkCmdCopyBufferToImage2 : vkCmdCopyBufferToImage2)(commandBuffer, pCopyBufferToImageInfo);
-}
-
-static void compat_vkCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo) {
-	VkCompatDispatch* dispatch = command_dispatch(commandBuffer);
-	(dispatch ? dispatch->vkCmdCopyImageToBuffer2 : vkCmdCopyImageToBuffer2)(commandBuffer, pCopyImageToBufferInfo);
 }
 
 static void compat_vkCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo) {
@@ -1565,16 +1553,6 @@ HL_PRIM VkContext HL_NAME(vk_init_context)(VkSurfaceKHR surface, int* outQueue, 
 		ctx->compat.vkCmdWriteTimestamp2 = (PFN_vkCmdWriteTimestamp2)vkGetDeviceProcAddr(ctx->device, "vkCmdWriteTimestamp2KHR");
 
 		if (!ctx->compat.vkCmdWriteTimestamp2)
-			goto missing_compat_command;
-
-		ctx->compat.vkCmdCopyBufferToImage2 = (PFN_vkCmdCopyBufferToImage2)vkGetDeviceProcAddr(ctx->device, "vkCmdCopyBufferToImage2KHR");
-
-		if (!ctx->compat.vkCmdCopyBufferToImage2)
-			goto missing_compat_command;
-
-		ctx->compat.vkCmdCopyImageToBuffer2 = (PFN_vkCmdCopyImageToBuffer2)vkGetDeviceProcAddr(ctx->device, "vkCmdCopyImageToBuffer2KHR");
-
-		if (!ctx->compat.vkCmdCopyImageToBuffer2)
 			goto missing_compat_command;
 
 		ctx->compat.vkCmdBlitImage2 = (PFN_vkCmdBlitImage2)vkGetDeviceProcAddr(ctx->device, "vkCmdBlitImage2KHR");
@@ -2458,8 +2436,10 @@ HL_PRIM VkImageView HL_NAME(vk_create_image_view)(VkContext ctx, VkImageViewCrea
 	VkImageView i = nullptr;
 	VkResult result = vkCreateImageView(ctx->device, info, nullptr, &i);
 
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		vk_set_error("vkCreateImageView failed: %s (%d)", vk_result_name(result), result);
+		return nullptr;
+	}
 
 	return i;
 }
@@ -2485,9 +2465,10 @@ HL_PRIM VkBuffer HL_NAME(vk_create_buffer)(VkContext ctx, VkBufferCreateInfo* in
 	VkBuffer b = nullptr;
 	VkResult result = vkCreateBuffer(ctx->device, info, nullptr, &b);
 
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		vk_set_error("vkCreateBuffer failed: %s (%d)", vk_result_name(result), result);
-
+		return nullptr;
+	}
 
 	return b;
 }
@@ -2511,9 +2492,10 @@ HL_PRIM VkBuffer HL_NAME(vk_create_buffer64)(VkContext ctx, int64_t size, int us
 	VkBuffer buffer = nullptr;
 	VkResult result = vkCreateBuffer(ctx->device, &info, nullptr, &buffer);
 
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		vk_set_error("vkCreateBuffer failed for %llu bytes: %s (%d)", (unsigned long long)info.size, vk_result_name(result), result);
-
+		return nullptr;
+	}
 
 	return buffer;
 }
@@ -2681,9 +2663,10 @@ HL_PRIM VkImage HL_NAME(vk_create_image)(VkContext ctx, VkImageCreateInfo* info)
 	VkImage i = nullptr;
 	VkResult result = vkCreateImage(ctx->device, info, nullptr, &i);
 
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		vk_set_error("vkCreateImage failed: %s (%d)", vk_result_name(result), result);
-
+		return nullptr;
+	}
 
 	return i;
 }
@@ -2795,9 +2778,10 @@ HL_PRIM VkDescriptorPool HL_NAME(vk_create_descriptor_pool)(VkContext ctx, VkDes
 	VkDescriptorPool pool = nullptr;
 	VkResult result = vkCreateDescriptorPool(ctx->device, inf, nullptr, &pool);
 
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		vk_set_error("vkCreateDescriptorPool failed: %s (%d)", vk_result_name(result), result);
-
+		return nullptr;
+	}
 
 	return pool;
 }
@@ -3865,67 +3849,14 @@ HL_PRIM void HL_NAME(vk_copy_buffer_to_image)(VkCommandBuffer out, VkBuffer buf,
 	vkCmdCopyBufferToImage(out, buf, img, layout, count, regions);
 }
 
-static VkBufferImageCopy2* copy_buffer_image_regions(int count, const VkBufferImageCopy* regions, VkBufferImageCopy2* copies_stack) {
-	if (count <= 0 || !regions)
-		return nullptr;
-
-	VkBufferImageCopy2* copies = count <= 16 ? copies_stack : malloc(sizeof(VkBufferImageCopy2) * count);
-	if (copies == nullptr)
-		hl_error("Vulkan temporary allocation failed");
-
-	for (int index = 0; index < count; index++) {
-		copies[index] = (VkBufferImageCopy2){
-			.sType = VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2,
-			.bufferOffset = regions[index].bufferOffset,
-			.bufferRowLength = regions[index].bufferRowLength,
-			.bufferImageHeight = regions[index].bufferImageHeight,
-			.imageSubresource = regions[index].imageSubresource,
-			.imageOffset = regions[index].imageOffset,
-			.imageExtent = regions[index].imageExtent,
-		};
-	}
-
-	return copies;
-}
-
 HL_PRIM void HL_NAME(vk_copy_buffer_to_image2)(VkCommandBuffer command, VkBuffer buffer, VkImage image, int layout, int count, VkBufferImageCopy* regions) {
-	VkBufferImageCopy2 copies_stack[16];
-	VkBufferImageCopy2* copies = copy_buffer_image_regions(count, regions, copies_stack);
-
-	if (!copies)
-		return;
-
-	VkCopyBufferToImageInfo2 info = {
-		.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2,
-		.srcBuffer = buffer,
-		.dstImage = image,
-		.dstImageLayout = (VkImageLayout)layout,
-		.regionCount = (uint32_t)count,
-		.pRegions = copies,
-	};
-	compat_vkCmdCopyBufferToImage2(command, &info);
-	if (copies != copies_stack)
-		free(copies);
+	if (count > 0 && regions)
+		vkCmdCopyBufferToImage(command, buffer, image, (VkImageLayout)layout, count, regions);
 }
 
 HL_PRIM void HL_NAME(vk_copy_image_to_buffer2)(VkCommandBuffer command, VkImage image, int layout, VkBuffer buffer, int count, VkBufferImageCopy* regions) {
-	VkBufferImageCopy2 copies_stack[16];
-	VkBufferImageCopy2* copies = copy_buffer_image_regions(count, regions, copies_stack);
-
-	if (!copies)
-		return;
-
-	VkCopyImageToBufferInfo2 info = {
-		.sType = VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2,
-		.srcImage = image,
-		.srcImageLayout = (VkImageLayout)layout,
-		.dstBuffer = buffer,
-		.regionCount = (uint32_t)count,
-		.pRegions = copies,
-	};
-	compat_vkCmdCopyImageToBuffer2(command, &info);
-	if (copies != copies_stack)
-		free(copies);
+	if (count > 0 && regions)
+		vkCmdCopyImageToBuffer(command, image, (VkImageLayout)layout, buffer, count, regions);
 }
 
 typedef struct {

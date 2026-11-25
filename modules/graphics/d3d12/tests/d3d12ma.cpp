@@ -1,5 +1,4 @@
-#include <hl.h>
-#undef _GUID
+#include "../native/memory_allocator.cpp"
 #include <d3d12.h>
 #include <dxgi1_4.h>
 #include <cstdio>
@@ -7,21 +6,34 @@
 #include <d3d12sdklayers.h>
 #include <cstdlib>
 
-struct MemoryAllocator;
-struct MemoryAllocation;
+static bool check_allocation_failure(MemoryAllocator* allocator, D3D12_RESOURCE_DESC* desc) {
+	D3D12MA::ALLOCATION_DESC bounded = {};
+	bounded.HeapType = D3D12_HEAP_TYPE_DEFAULT;
+	bounded.Flags = D3D12MA::ALLOCATION_FLAG_NEVER_ALLOCATE;
+	int result;
 
-extern "C" {
-MemoryAllocator* limen_d3d12_memory_create(ID3D12Device*, IDXGIAdapter*, int*);
-void limen_d3d12_memory_destroy(MemoryAllocator*);
-MemoryAllocation* limen_d3d12_memory_allocate(MemoryAllocator*, int, D3D12_RESOURCE_DESC*, int, D3D12_CLEAR_VALUE*, int*);
-MemoryAllocation* limen_d3d12_memory_allocate_transient(MemoryAllocator*, D3D12_RESOURCE_DESC*, int, D3D12_CLEAR_VALUE*, int*);
-MemoryAllocation* limen_d3d12_memory_alias(MemoryAllocation*, D3D12_RESOURCE_DESC*, int, D3D12_CLEAR_VALUE*, int*);
-ID3D12Resource* limen_d3d12_memory_resource(MemoryAllocation*);
-void limen_d3d12_memory_release(MemoryAllocation*);
-void limen_d3d12_memory_statistics(MemoryAllocator*, int, int*, int*, int64*, int64*);
+	for (int attempt = 0; attempt < 32; ++attempt) {
+		auto allocation = allocate_resource(allocator, bounded, desc, D3D12_RESOURCE_STATE_COMMON, nullptr, &result);
+		if (allocation || result != E_OUTOFMEMORY) {
+			limen_d3d12_memory_release(allocation);
+			return false;
+		}
+	}
+
+	int blocks, allocations;
+	int64 blockBytes, allocationBytes;
+	limen_d3d12_memory_statistics(allocator, 0, &blocks, &allocations, &blockBytes, &allocationBytes);
+	if (allocator->allocations != 0 || allocations != 0 || blocks != 0 || blockBytes != 0 || allocationBytes != 0)
+		return false;
+
+	auto recovered = limen_d3d12_memory_allocate(allocator, D3D12_HEAP_TYPE_DEFAULT, desc, D3D12_RESOURCE_STATE_COMMON, nullptr, &result);
+	if (!recovered || FAILED(result))
+		return false;
+
+	limen_d3d12_memory_release(recovered);
+	std::printf("D3D12MA bounded pool: 32 out-of-memory results, zero allocations retained, normal request recovered\n");
+	return true;
 }
-
-void limen_d3d12ma_dispose_device(ID3D12Device*);
 
 static bool check_aliasing(ID3D12Device* device, MemoryAllocator* allocator) {
 	using Microsoft::WRL::ComPtr;
@@ -214,6 +226,9 @@ int main() {
 
 	allocator = limen_d3d12_memory_create(device, adapter, &result);
 	if (!allocator || FAILED(result))
+		goto cleanup;
+
+	if (!check_allocation_failure(allocator, &desc))
 		goto cleanup;
 
 	allocation = limen_d3d12_memory_allocate(allocator, D3D12_HEAP_TYPE_UPLOAD, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, &result);

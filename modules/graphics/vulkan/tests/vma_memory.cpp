@@ -27,6 +27,62 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL validation(VkDebugUtilsMessageSeverityFlag
 	return VK_FALSE;
 }
 
+static int check_allocation_failure(VkInstance instance, VkPhysicalDevice physical, VkDevice device, uint32_t apiVersion) {
+	VkDeviceSize limits[VK_MAX_MEMORY_HEAPS];
+
+	for (auto& limit : limits)
+		limit = 1024 * 1024;
+
+	int result;
+	auto allocator = create_allocator(instance, physical, device, apiVersion, false, limits, &result);
+	CHECK(allocator && result == VK_SUCCESS);
+
+	VkBufferCreateInfo bufferInfo = {};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size = 2 * 1024 * 1024;
+	bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+	VkBuffer largeBuffer;
+	CHECK(vkCreateBuffer(device, &bufferInfo, nullptr, &largeBuffer) == VK_SUCCESS);
+
+	VkImageCreateInfo imageInfo = {};
+	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageInfo.imageType = VK_IMAGE_TYPE_2D;
+	imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+	imageInfo.extent = {1024, 1024, 1};
+	imageInfo.mipLevels = imageInfo.arrayLayers = 1;
+	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	VkImage largeImage;
+	CHECK(vkCreateImage(device, &imageInfo, nullptr, &largeImage) == VK_SUCCESS);
+
+	for (int attempt = 0; attempt < 32; ++attempt) {
+		CHECK(!limen_vulkan_memory_allocate_buffer(allocator, largeBuffer, 0, 0, true, &result));
+		CHECK(result == VK_ERROR_OUT_OF_DEVICE_MEMORY);
+		CHECK(!limen_vulkan_memory_allocate_image(allocator, largeImage, 0, 0, true, &result));
+		CHECK(result == VK_ERROR_OUT_OF_DEVICE_MEMORY);
+	}
+	CHECK(allocator->allocations == 0);
+	int blocks, allocations;
+	int64 blockBytes, allocationBytes;
+	limen_vulkan_memory_statistics(allocator, &blocks, &allocations, &blockBytes, &allocationBytes);
+	CHECK(blocks == 0 && allocations == 0 && blockBytes == 0 && allocationBytes == 0);
+
+	bufferInfo.size = 64 * 1024;
+	VkBuffer smallBuffer;
+	CHECK(vkCreateBuffer(device, &bufferInfo, nullptr, &smallBuffer) == VK_SUCCESS);
+	auto recovery = limen_vulkan_memory_allocate_buffer(allocator, smallBuffer, 0, 0, true, &result);
+	CHECK(recovery && result == VK_SUCCESS);
+	CHECK(limen_vulkan_memory_bind_buffer(recovery, smallBuffer) == VK_SUCCESS);
+
+	vkDestroyBuffer(device, smallBuffer, nullptr);
+	limen_vulkan_memory_release(recovery);
+	vkDestroyImage(device, largeImage, nullptr);
+	vkDestroyBuffer(device, largeBuffer, nullptr);
+	limen_vulkan_memory_destroy(allocator);
+	std::printf("VMA heap cap: 64 device-memory failures, zero allocations retained, smaller request recovered\n");
+	return 0;
+}
+
 int main() {
 	int stack;
 	hl_global_init();
@@ -255,6 +311,8 @@ int main() {
 	CHECK(budget > 0);
 
 	limen_vulkan_memory_destroy(a);
+	CHECK(!limen_vma_has_allocators(device));
+	CHECK(check_allocation_failure(instance, physical, device, app.apiVersion) == 0);
 	CHECK(!limen_vma_has_allocators(device));
 
 	vkDestroyDevice(device, nullptr);

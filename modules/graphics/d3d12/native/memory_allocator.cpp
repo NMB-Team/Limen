@@ -88,16 +88,10 @@ void limen_d3d12ma_dispose_device(ID3D12Device* device) {
 	}
 }
 
-HL_PRIM MemoryAllocation* HL_NAME(memory_allocate)(MemoryAllocator* allocator, int heapType, D3D12_RESOURCE_DESC* desc, int state, D3D12_CLEAR_VALUE* clear, int* result) {
-	require_allocator(allocator);
-	*result = E_INVALIDARG;
-	if (!desc || heapType < D3D12_HEAP_TYPE_DEFAULT || heapType > D3D12_HEAP_TYPE_READBACK)
-		return nullptr;
-
+static MemoryAllocation* allocate_resource(MemoryAllocator* allocator, const D3D12MA::ALLOCATION_DESC& allocationDesc,
+	D3D12_RESOURCE_DESC* desc, int state, D3D12_CLEAR_VALUE* clear, int* result) {
 	auto handle = (MemoryAllocation*)hl_gc_alloc_raw(sizeof(MemoryAllocation));
 	*handle = {};
-	D3D12MA::ALLOCATION_DESC allocationDesc = {};
-	allocationDesc.HeapType = (D3D12_HEAP_TYPE)heapType;
 	*result = allocator->native->CreateResource(&allocationDesc, desc, (D3D12_RESOURCE_STATES)state, clear, &handle->native, IID_NULL, nullptr);
 	if (FAILED(*result))
 		return nullptr;
@@ -106,6 +100,17 @@ HL_PRIM MemoryAllocation* HL_NAME(memory_allocate)(MemoryAllocator* allocator, i
 	++allocator->allocations;
 
 	return handle;
+}
+
+HL_PRIM MemoryAllocation* HL_NAME(memory_allocate)(MemoryAllocator* allocator, int heapType, D3D12_RESOURCE_DESC* desc, int state, D3D12_CLEAR_VALUE* clear, int* result) {
+	require_allocator(allocator);
+	*result = E_INVALIDARG;
+	if (!desc || heapType < D3D12_HEAP_TYPE_DEFAULT || heapType > D3D12_HEAP_TYPE_READBACK)
+		return nullptr;
+
+	D3D12MA::ALLOCATION_DESC allocationDesc = {};
+	allocationDesc.HeapType = (D3D12_HEAP_TYPE)heapType;
+	return allocate_resource(allocator, allocationDesc, desc, state, clear, result);
 }
 
 HL_PRIM ID3D12Resource* HL_NAME(memory_resource)(MemoryAllocation* allocation) {

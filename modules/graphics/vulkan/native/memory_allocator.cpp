@@ -43,7 +43,8 @@ extern "C" bool limen_vma_has_allocators(VkDevice device) {
 	return false;
 }
 
-extern "C" void* limen_vma_create(VkInstance instance, VkPhysicalDevice physical, VkDevice device, uint32_t version, bool budget, int* result) {
+static Allocator* create_allocator(VkInstance instance, VkPhysicalDevice physical, VkDevice device, uint32_t version, bool budget,
+	const VkDeviceSize* heapLimits, int* result) {
 	if (!rooted) {
 		hl_add_root(&allocators);
 		rooted = true;
@@ -62,6 +63,7 @@ extern "C" void* limen_vma_create(VkInstance instance, VkPhysicalDevice physical
 	info.vulkanApiVersion = version;
 	info.flags = budget ? VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT : 0;
 	info.pVulkanFunctions = &functions;
+	info.pHeapSizeLimit = heapLimits;
 	info.preferredLargeHeapBlockSize = 64ull * 1024 * 1024;
 	*result = vmaCreateAllocator(&info, &a->native);
 	if (*result != VK_SUCCESS)
@@ -72,6 +74,10 @@ extern "C" void* limen_vma_create(VkInstance instance, VkPhysicalDevice physical
 	allocators = a;
 
 	return a;
+}
+
+extern "C" void* limen_vma_create(VkInstance instance, VkPhysicalDevice physical, VkDevice device, uint32_t version, bool budget, int* result) {
+	return create_allocator(instance, physical, device, version, budget, nullptr, result);
 }
 
 HL_PRIM void HL_NAME(memory_destroy)(Allocator* a) {
