@@ -5,6 +5,7 @@ enum abstract DriverFlags(Int) {
 	final DebugLayer = 1;
 	final GpuBasedValidation = 2;
 	final BreakOnError = 4;
+	final Dred = 8;
 
 	@:op(a | b)
 	static function or(a:DriverFlags, b:DriverFlags):DriverFlags;

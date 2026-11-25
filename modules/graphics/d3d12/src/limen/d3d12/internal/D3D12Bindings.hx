@@ -171,7 +171,10 @@ class D3D12Bindings {
 
 	public static function copyDescriptorsSimple(numDescriptors:Int, dstCpuAddress:Address, srcCpuAddress:Address, heapType:DescriptorHeapType) {}
 
-	public static function checkFeatureSupport(feature:Dx12Feature, data:hl.Bytes, dataSize:Int) {}
+	@:hlNative("limen", "d3d12_query_feature_support")
+	public static function checkFeatureSupport(feature:Dx12Feature, data:hl.Bytes, dataSize:Int):Bool {
+		return false;
+	}
 
 	public static function getDeviceName() {
 		return @:privateAccess String.fromUCS2(dxGetDeviceName());

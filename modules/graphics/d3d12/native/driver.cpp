@@ -10,6 +10,7 @@
 #include <dxcapi.h>
 #include <dxgi.h>
 #include <dxgi1_5.h>
+#include <cstdarg>
 #include "native_window.h"
 
 #ifdef LIMEN_AFTERMATH
@@ -79,6 +80,7 @@ enum DriverInitFlag {
 	DEBUG = 1 << 0,
 	GPU_BASED_VALIDATION = 1 << 1,
 	BREAK_ON_ERROR = 1 << 2,
+	DRED = 1 << 3,
 };
 
 class GpuCrashTracker {
@@ -120,15 +122,19 @@ class GpuCrashTracker {
 		}
 
 		GFSDK_Aftermath_GpuCrashDump_Decoder decoder;
-		GFSDK_Aftermath_GpuCrashDump_CreateDecoder(GFSDK_Aftermath_Version_API, gpuCrashDump, gpuCrashDumpSize, &decoder);
+		if (GFSDK_Aftermath_GpuCrashDump_CreateDecoder(GFSDK_Aftermath_Version_API, gpuCrashDump, gpuCrashDumpSize, &decoder) != GFSDK_Aftermath_Result_Success) {
+			if (!registeredThread)
+				hl_unregister_thread();
+			return;
+		}
 
-		GFSDK_Aftermath_GpuCrashDump_BaseInfo baseInfo;
+		GFSDK_Aftermath_GpuCrashDump_BaseInfo baseInfo{};
 		GFSDK_Aftermath_GpuCrashDump_GetBaseInfo(decoder, &baseInfo);
 
 		uint32_t shaderCount = 0;
 		GFSDK_Aftermath_GpuCrashDump_GetActiveShadersInfoCount(decoder, &shaderCount);
 
-		if (shaderCount == 0 && !hasFault(decoder)) {
+		if (shaderCount == 0 && !hasDiagnosticInfo(decoder)) {
 			GFSDK_Aftermath_GpuCrashDump_DestroyDecoder(decoder);
 
 			if (!registeredThread)
@@ -173,24 +179,13 @@ class GpuCrashTracker {
 			hl_unregister_thread();
 	}
 
-	static bool hasFault(GFSDK_Aftermath_GpuCrashDump_Decoder decoder) {
+	static bool hasDiagnosticInfo(GFSDK_Aftermath_GpuCrashDump_Decoder decoder) {
 		GFSDK_Aftermath_GpuCrashDump_PageFaultInfo pageFault;
-
 		if (GFSDK_Aftermath_GpuCrashDump_GetPageFaultInfo(decoder, &pageFault) == GFSDK_Aftermath_Result_Success)
 			return true;
 
-		GFSDK_Aftermath_GpuCrashDump_DeviceInfo device;
-
-		if (GFSDK_Aftermath_GpuCrashDump_GetDeviceInfo(decoder, &device) != GFSDK_Aftermath_Result_Success)
-			return false;
-		switch (device.status) {
-			case GFSDK_Aftermath_Device_Status_OutOfMemory:
-			case GFSDK_Aftermath_Device_Status_PageFault:
-			case GFSDK_Aftermath_Device_Status_DmaFault:
-				return true;
-			default:
-				return false;
-		}
+		uint32_t markerCount = 0;
+		return GFSDK_Aftermath_GpuCrashDump_GetEventMarkersInfoCount(decoder, &markerCount) == GFSDK_Aftermath_Result_Success && markerCount > 0;
 	}
 
 	void onCrashFile(const char* path, const void* data, uint32_t size, bool lastFile = false) {
@@ -293,6 +288,7 @@ typedef struct {
 	IDXGIAdapter3* adapter;
 	IDXGISwapChain4* swapchain;
 	bool allow_tearing;
+	volatile LONG removal_reported;
 	ID3D12Device* device;
 	ID3D12Debug1* debug;
 	ID3D12DebugDevice* debugDevice;
@@ -353,6 +349,10 @@ HL_PRIM void HL_NAME(set_device)(ID3D12Device2* device) {
 		limen_d3d12ma_dispose_device(drv->device);
 #endif
 
+	#ifndef HL_XBS
+	if (drv->device != device)
+		InterlockedExchange(&drv->removal_reported, 0);
+#endif
 	drv->device = device;
 }
 
@@ -381,18 +381,154 @@ HL_PRIM void HL_NAME(suppress_debug_messages)(D3D12_INFO_QUEUE_FILTER* filter) {
 #ifndef HL_XBS
 	dx_driver* drv = static_driver;
 
-	if (!drv->infoQueue)
+	if (!drv || !drv->infoQueue)
 		return;
 
 	drv->infoQueue->AddStorageFilterEntries(filter);
 #endif
 }
 
+#ifndef HL_XBS
+static const char* DRED_OPS[] = {
+	"SetMarker", "BeginEvent", "EndEvent", "DrawInstanced", "DrawIndexedInstanced", "ExecuteIndirect", "Dispatch",
+	"CopyBufferRegion", "CopyTextureRegion", "CopyResource", "CopyTiles", "ResolveSubresource", "ClearRenderTargetView",
+	"ClearUnorderedAccessView", "ClearDepthStencilView", "ResourceBarrier", "ExecuteBundle", "Present", "ResolveQueryData",
+	"BeginSubmission", "EndSubmission", "DecodeFrame", "ProcessFrames", "AtomicCopyBufferUint", "AtomicCopyBufferUint64",
+	"ResolveSubresourceRegion", "WriteBufferImmediate", "DecodeFrame1", "SetProtectedResourceSession", "DecodeFrame2",
+	"ProcessFrames1", "BuildRaytracingAccelerationStructure", "EmitRaytracingAccelerationStructurePostbuildInfo",
+	"CopyRaytracingAccelerationStructure", "DispatchRays", "InitializeMetaCommand", "ExecuteMetaCommand", "EstimateMotion",
+	"ResolveMotionVectorHeap", "SetPipelineState1", "InitializeExtensionCommand", "ExecuteExtensionCommand", "DispatchMesh",
+	"EncodeFrame", "ResolveEncoderOutputMetadata", "Barrier", "BeginCommandList", "DispatchGraph", "SetProgram",
+};
+
+static const wchar_t* dred_context(const D3D12_AUTO_BREADCRUMB_NODE1* n, UINT index) {
+	for (UINT i = 0; i < n->BreadcrumbContextsCount; i++)
+		if (n->pBreadcrumbContexts[i].BreadcrumbIndex == index)
+			return n->pBreadcrumbContexts[i].pContextString;
+	return nullptr;
+}
+
+struct DeviceRemovalReport {
+	char buffer[16384];
+	int length = 0;
+
+	void append(const char* fmt, ...) {
+		int max = sizeof(buffer) - length;
+		if (max <= 1)
+			return;
+
+		int n = snprintf(buffer + length, max, "[pid %u] ", GetCurrentProcessId());
+		if (n > 0)
+			length += n < max ? n : max - 1;
+		max = sizeof(buffer) - length;
+		va_list args;
+		va_start(args, fmt);
+		n = vsnprintf(buffer + length, max, fmt, args);
+		va_end(args);
+		if (n > 0)
+			length += n < max ? n : max - 1;
+	}
+};
+
+static void dump_device_removed(HRESULT err, HRESULT reason, int line) {
+	if (InterlockedExchange(&static_driver->removal_reported, 1))
+		return;
+
+	const char* rname =
+		reason == DXGI_ERROR_DEVICE_HUNG ? "DEVICE_HUNG: this process's GPU work timed out" :
+		reason == DXGI_ERROR_DEVICE_RESET ? "DEVICE_RESET: GPU reset caused by another process" :
+		reason == DXGI_ERROR_DEVICE_REMOVED ? "DEVICE_REMOVED" :
+		reason == DXGI_ERROR_DRIVER_INTERNAL_ERROR ? "DRIVER_INTERNAL_ERROR" :
+		reason == DXGI_ERROR_INVALID_CALL ? "INVALID_CALL" : "?";
+	DeviceRemovalReport report;
+	report.append("DX12 device lost: error %X at line %d, removed reason %X %s\n", (DWORD)err, line, (DWORD)reason, rname);
+
+	DXGI_QUERY_VIDEO_MEMORY_INFO mem;
+	if (static_driver->adapter && SUCCEEDED(static_driver->adapter->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &mem)))
+		report.append("Local video memory: usage %lluMB / budget %lluMB\n", mem.CurrentUsage >> 20, mem.Budget >> 20);
+	if (static_driver->adapter && SUCCEEDED(static_driver->adapter->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_NON_LOCAL, &mem)))
+		report.append("Non local video memory: usage %lluMB / budget %lluMB\n", mem.CurrentUsage >> 20, mem.Budget >> 20);
+
+	ID3D12DeviceRemovedExtendedData1* dred;
+	if (SUCCEEDED(static_driver->device->QueryInterface(IID_PPV_ARGS(&dred)))) {
+		D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT1 bc;
+		if (SUCCEEDED(dred->GetAutoBreadcrumbsOutput1(&bc))) {
+			bool any = false;
+			for (const D3D12_AUTO_BREADCRUMB_NODE1* n = bc.pHeadAutoBreadcrumbNode; n; n = n->pNext) {
+				UINT count = n->BreadcrumbCount;
+				UINT done = n->pLastBreadcrumbValue ? *n->pLastBreadcrumbValue : 0;
+				if (done >= count)
+					continue;
+
+				any = true;
+				report.append("Command list %ls on queue %ls: %u/%u ops completed\n", n->pCommandListDebugNameW ? n->pCommandListDebugNameW : L"(unnamed)",
+					n->pCommandQueueDebugNameW ? n->pCommandQueueDebugNameW : L"(unnamed)", done, count);
+				const wchar_t* stack[32];
+				int depth = 0;
+				for (UINT i = 0; i < done; i++) {
+					D3D12_AUTO_BREADCRUMB_OP op = n->pCommandHistory[i];
+					if (op == D3D12_AUTO_BREADCRUMB_OP_BEGINEVENT) {
+						if (depth < 32)
+							stack[depth] = dred_context(n, i);
+						depth++;
+					} else if (op == D3D12_AUTO_BREADCRUMB_OP_ENDEVENT && depth > 0) {
+						depth--;
+					}
+				}
+
+				for (int i = 0; i < depth && i < 32; i++)
+					report.append("  in event %ls\n", stack[i] ? stack[i] : L"(unnamed)");
+
+				UINT first = done > 20 ? done - 20 : 0;
+				UINT last = done + 5 < count ? done + 5 : count;
+				for (UINT i = first; i < last; i++) {
+					UINT op = n->pCommandHistory[i];
+					const wchar_t* ctx = dred_context(n, i);
+					const char* mark = i == done ? "->" : "  ";
+					if (op < sizeof(DRED_OPS) / sizeof(DRED_OPS[0]))
+						report.append("  %s %u %s %ls\n", mark, i, DRED_OPS[op], ctx ? ctx : L"");
+					else
+						report.append("  %s %u op#%u %ls\n", mark, i, op, ctx ? ctx : L"");
+				}
+			}
+			if (!any)
+				report.append("DRED: all command lists completed\n");
+		} else {
+			report.append("DRED breadcrumbs not available, enable DriverFlags.Dred at creation\n");
+		}
+
+		D3D12_DRED_PAGE_FAULT_OUTPUT1 pf;
+		if (SUCCEEDED(dred->GetPageFaultAllocationOutput1(&pf)) && pf.PageFaultVA) {
+			report.append("Page fault at GPU VA 0x%llX\n", pf.PageFaultVA);
+			for (const D3D12_DRED_ALLOCATION_NODE1* a = pf.pHeadExistingAllocationNode; a; a = a->pNext)
+				report.append("  live allocation %ls (type %d)\n", a->ObjectNameW ? a->ObjectNameW : L"(unnamed)", a->AllocationType);
+			for (const D3D12_DRED_ALLOCATION_NODE1* a = pf.pHeadRecentFreedAllocationNode; a; a = a->pNext)
+				report.append("  freed allocation %ls (type %d)\n", a->ObjectNameW ? a->ObjectNameW : L"(unnamed)", a->AllocationType);
+		}
+		dred->Release();
+	}
+
+	fwrite(report.buffer, 1, report.length, stderr);
+	fflush(stderr);
+}
+#endif
+
 static void ReportDxError(HRESULT err, int line) {
 	HL_NAME(flush_messages)();
 
-	if ((err == DXGI_ERROR_DEVICE_REMOVED || err == DXGI_ERROR_DEVICE_HUNG || err == DXGI_ERROR_DEVICE_RESET) && GpuCrashTracker::instance)
-		GpuCrashTracker::instance->waitCrashDump();
+	if (err == DXGI_ERROR_DEVICE_REMOVED || err == DXGI_ERROR_DEVICE_HUNG || err == DXGI_ERROR_DEVICE_RESET) {
+		if (GpuCrashTracker::instance)
+			GpuCrashTracker::instance->waitCrashDump();
+#ifndef HL_XBS
+		if (static_driver && static_driver->device) {
+			const HRESULT reason = static_driver->device->GetDeviceRemovedReason();
+			if (FAILED(reason)) {
+				dump_device_removed(err, reason, line);
+				hl_error("DXERROR %X line %d, removed reason %X", (DWORD)err, line, (DWORD)reason);
+			}
+		}
+#endif
+	}
 
 	hl_error("DXERROR %X line %d", (DWORD)err, line);
 }
@@ -470,6 +606,16 @@ HL_PRIM dx_driver* HL_NAME(create_sdl)(void* window, DriverInitFlag flags, uchar
 	}
 
 #ifndef HL_XBS
+	if (flags & DRED) {
+		ID3D12DeviceRemovedExtendedDataSettings1* dred;
+		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&dred)))) {
+			dred->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+			dred->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+			dred->SetBreadcrumbContextEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+			dred->Release();
+		}
+	}
+
 	CHKERR(CreateDXGIFactory2(dxgiFlags, IID_PPV_ARGS(&drv->factory)));
 
 	IDXGIFactory5* factory5 = nullptr;
@@ -733,7 +879,7 @@ HL_PRIM void HL_NAME(flush_messages)() {
 #ifndef HL_XBS
 	dx_driver* drv = static_driver;
 
-	if (!drv->infoQueue)
+	if (!drv || !drv->infoQueue)
 		return;
 
 	int count = (int)drv->infoQueue->GetNumStoredMessages();
@@ -1030,8 +1176,12 @@ HL_PRIM void HL_NAME(copy_descriptors_simple)(int numDescriptors, D3D12_CPU_DESC
 	static_driver->device->CopyDescriptorsSimple(numDescriptors, dstCpuAddress, srcCpuAddress, heapType);
 }
 
+HL_PRIM bool HL_NAME(query_feature_support)(D3D12_FEATURE feature, void* data, int dataSize) {
+	return SUCCEEDED(static_driver->device->CheckFeatureSupport(feature, data, dataSize));
+}
+
 HL_PRIM void HL_NAME(check_feature_support)(D3D12_FEATURE feature, void* data, int dataSize) {
-	static_driver->device->CheckFeatureSupport(feature, &data, dataSize);
+	HL_NAME(query_feature_support)(feature, data, dataSize);
 }
 
 DEFINE_PRIM(_VOID, create_render_target_view, _RES _STRUCT _I64);
@@ -1055,6 +1205,7 @@ DEFINE_PRIM(_BOOL, update_sub_resource, _RES _RES _RES _I64 _I32 _I32 _STRUCT);
 DEFINE_PRIM(_VOID, get_copyable_footprints, _STRUCT _I32 _I32 _I64 _STRUCT _BYTES _BYTES _BYTES);
 DEFINE_PRIM(_VOID, copy_descriptors_simple, _I32 _I64 _I64 _I32);
 DEFINE_PRIM(_VOID, check_feature_support, _I32 _BYTES _I32);
+DEFINE_PRIM(_BOOL, query_feature_support, _I32 _BYTES _I32);
 
 // ---- SHADERS
 
@@ -1466,6 +1617,12 @@ HL_PRIM void HL_NAME(command_list_set_graphics_root_descriptor_table)(ID3D12Grap
 	l->SetGraphicsRootDescriptorTable(index, handle);
 }
 
+HL_PRIM void HL_NAME(command_list_set_graphics_root_descriptor_tables)(ID3D12GraphicsCommandList* l,
+	int index, D3D12_GPU_DESCRIPTOR_HANDLE handle, int samplerIndex, D3D12_GPU_DESCRIPTOR_HANDLE samplers) {
+	l->SetGraphicsRootDescriptorTable(index, handle);
+	l->SetGraphicsRootDescriptorTable(samplerIndex, samplers);
+}
+
 HL_PRIM void HL_NAME(command_list_set_graphics_root_shader_resource_view)(ID3D12GraphicsCommandList* l, int index, D3D12_GPU_VIRTUAL_ADDRESS handle) {
 	l->SetGraphicsRootShaderResourceView(index, handle);
 }
@@ -1547,6 +1704,7 @@ DEFINE_PRIM(_VOID, command_list_set_graphics_root_signature, _RES _RES);
 DEFINE_PRIM(_VOID, command_list_set_graphics_root32_bit_constants, _RES _I32 _I32 _BYTES _I32);
 DEFINE_PRIM(_VOID, command_list_set_graphics_root_constant_buffer_view, _RES _I32 _I64);
 DEFINE_PRIM(_VOID, command_list_set_graphics_root_descriptor_table, _RES _I32 _I64);
+DEFINE_PRIM(_VOID, command_list_set_graphics_root_descriptor_tables, _RES _I32 _I64 _I32 _I64);
 DEFINE_PRIM(_VOID, command_list_set_graphics_root_shader_resource_view, _RES _I32 _I64);
 DEFINE_PRIM(_VOID, command_list_set_graphics_root_unordered_access_view, _RES _I32 _I64);
 DEFINE_PRIM(_VOID, command_list_set_descriptor_heaps, _RES _ARR);
@@ -1605,3 +1763,72 @@ HL_PRIM void HL_NAME(set_gpu_crash_handler)(vclosure* handler) {
 }
 
 DEFINE_PRIM(_VOID, set_gpu_crash_handler, _FUN(_VOID, _BYTES _BYTES _I32 _BOOL));
+
+struct AftermathContext {
+#ifdef LIMEN_AFTERMATH
+	GFSDK_Aftermath_ContextHandle handle;
+	ID3D12GraphicsCommandList* list;
+	std::string path;
+	std::vector<size_t> stack;
+#endif
+};
+
+HL_PRIM AftermathContext* HL_NAME(aftermath_create)(ID3D12GraphicsCommandList* list) {
+#ifdef LIMEN_AFTERMATH
+	if (!static_driver || !static_driver->gpuCrashTracker)
+		return nullptr;
+
+	GFSDK_Aftermath_ContextHandle handle;
+	if (GFSDK_Aftermath_DX12_CreateContextHandle(list, &handle) != GFSDK_Aftermath_Result_Success)
+		return nullptr;
+
+	list->AddRef();
+	return new AftermathContext{handle, list};
+#else
+	return nullptr;
+#endif
+}
+
+HL_PRIM void HL_NAME(aftermath_begin_event)(AftermathContext* context, const wchar_t* name) {
+#ifdef LIMEN_AFTERMATH
+	const int length = WideCharToMultiByte(CP_UTF8, 0, name, -1, nullptr, 0, nullptr, nullptr);
+	if (length <= 0)
+		return;
+
+	const size_t previous = context->path.size();
+	context->stack.push_back(previous);
+	if (previous)
+		context->path += '/';
+
+	const size_t offset = context->path.size();
+	context->path.resize(offset + length);
+	WideCharToMultiByte(CP_UTF8, 0, name, -1, &context->path[offset], length, nullptr, nullptr);
+	context->path.pop_back();
+	GFSDK_Aftermath_SetEventMarker(context->handle, context->path.c_str(), (uint32_t)context->path.size() + 1);
+#endif
+}
+
+HL_PRIM void HL_NAME(aftermath_end_event)(AftermathContext* context) {
+#ifdef LIMEN_AFTERMATH
+	if (context->stack.empty())
+		return;
+
+	context->path.resize(context->stack.back());
+	context->stack.pop_back();
+	GFSDK_Aftermath_SetEventMarker(context->handle, context->path.c_str(), (uint32_t)context->path.size() + 1);
+#endif
+}
+
+HL_PRIM void HL_NAME(aftermath_release)(AftermathContext* context) {
+#ifdef LIMEN_AFTERMATH
+	GFSDK_Aftermath_ReleaseContextHandle(context->handle);
+	context->list->Release();
+	delete context;
+#endif
+}
+
+#define _AFTERMATH_CONTEXT _ABSTRACT(limen_aftermath_context)
+DEFINE_PRIM(_AFTERMATH_CONTEXT, aftermath_create, _RES);
+DEFINE_PRIM(_VOID, aftermath_begin_event, _AFTERMATH_CONTEXT _BYTES);
+DEFINE_PRIM(_VOID, aftermath_end_event, _AFTERMATH_CONTEXT);
+DEFINE_PRIM(_VOID, aftermath_release, _AFTERMATH_CONTEXT);

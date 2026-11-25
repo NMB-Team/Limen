@@ -82,6 +82,15 @@ class ShaderResourceViewDesc {
 	public function new() {}
 }
 
+enum abstract DepthStencilViewFlags(Int) {
+	final None = 0;
+	final ReadOnlyDepth = 1;
+	final ReadOnlyStencil = 2;
+
+	@:op(a | b)
+	static function or(a:DepthStencilViewFlags, b:DepthStencilViewFlags):DepthStencilViewFlags;
+}
+
 abstract DepthStencilView(Pointer) {
 	public inline function release() {
 		Resources.releasePointer(this);
@@ -109,6 +118,10 @@ class ResourceViews {
 	}
 
 	public static function createDepthStencilView(texture:Resource, format:Format, readOnly:Bool):DepthStencilView {
+		return null;
+	}
+
+	public static function createDepthStencilViewWithFlags(texture:Resource, format:Format, flags:DepthStencilViewFlags):DepthStencilView {
 		return null;
 	}
 }

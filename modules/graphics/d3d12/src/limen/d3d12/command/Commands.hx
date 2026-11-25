@@ -81,6 +81,9 @@ abstract CommandList(Dx12Resource) {
 
 	public function setGraphicsRootDescriptorTable(index:Int, address:Address) {}
 
+	@:noCompletion
+	public function setGraphicsRootDescriptorTables(index:Int, address:Address, samplerIndex:Int, samplers:Address) {}
+
 	public function setGraphicsRootShaderResourceView(index:Int, address:Address) {}
 
 	public function setGraphicsRootUnorderedAccessView(index:Int, address:Address) {}
@@ -285,4 +288,23 @@ abstract WaitEvent(hl.Abstract<"dx_event">) {
 	static function create(state:Bool):WaitEvent {
 		return null;
 	}
+}
+
+@:hlNative("limen", "d3d12_aftermath_")
+abstract AftermathContext(hl.Abstract<"limen_aftermath_context">) {
+	// create the context while the command list is recording
+	public static function create(list:CommandList):AftermathContext {
+		return null;
+	}
+
+	public inline function beginEvent(name:String):Void {
+		beginEventNative(@:privateAccess name.bytes);
+	}
+
+	@:hlNative("limen", "d3d12_aftermath_begin_event")
+	function beginEventNative(name:hl.Bytes):Void {}
+
+	public function endEvent():Void {}
+
+	public function release():Void {}
 }
