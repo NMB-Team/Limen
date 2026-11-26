@@ -14,6 +14,10 @@ abstract DescriptorHeap(Dx12Resource) to Dx12Resource {
 		return cast null;
 	}
 
+	public static function try_create(desc:DescriptorHeapDesc):DescriptorHeap {
+		return null;
+	}
+
 	static function create(desc:DescriptorHeapDesc):Dx12Resource {
 		return null;
 	}

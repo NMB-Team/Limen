@@ -589,14 +589,12 @@ HL_PRIM dx_driver* HL_NAME(create_sdl)(void* window, DriverInitFlag flags, uchar
 	if (GpuCrashTracker::onGpuCrashFile && !GpuCrashTracker::instance)
 		GpuCrashTracker::instance = new GpuCrashTracker();
 
-	flags = (DriverInitFlag)(flags & ~(DEBUG | GPU_BASED_VALIDATION));
-
-	if (flags & DEBUG) {
+	if (flags & (DEBUG | GPU_BASED_VALIDATION)) {
 		ID3D12Debug* debugController;
-		D3D12GetDebugInterface(IID_PPV_ARGS(&debugController));
+		CHKERR(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)));
 		debugController->EnableDebugLayer();
 #ifndef HL_XBS
-		debugController->QueryInterface(&drv->debug);
+		CHKERR(debugController->QueryInterface(&drv->debug));
 		drv->debug->EnableDebugLayer();
 		drv->debug->SetEnableGPUBasedValidation(flags & GPU_BASED_VALIDATION);
 		dxgiFlags |= DXGI_CREATE_FACTORY_DEBUG;
@@ -1368,6 +1366,18 @@ HL_PRIM ID3D12DescriptorHeap* HL_NAME(descriptor_heap_create)(D3D12_DESCRIPTOR_H
 	return heap;
 }
 
+HL_PRIM ID3D12DescriptorHeap* HL_NAME(descriptor_heap_try_create)(D3D12_DESCRIPTOR_HEAP_DESC* desc) {
+	ID3D12DescriptorHeap* heap = nullptr;
+	const HRESULT result = static_driver->device->CreateDescriptorHeap(desc, IID_PPV_ARGS(&heap));
+	if (result == E_OUTOFMEMORY) {
+		const HRESULT removed = static_driver->device->GetDeviceRemovedReason();
+		CHKERR(removed);
+		return nullptr;
+	}
+	DXERR(result);
+	return heap;
+}
+
 HL_PRIM int HL_NAME(get_descriptor_handle_increment_size)(D3D12_DESCRIPTOR_HEAP_TYPE type) {
 	return static_driver->device->GetDescriptorHandleIncrementSize(type);
 }
@@ -1386,6 +1396,7 @@ HL_PRIM ID3D12QueryHeap* HL_NAME(create_query_heap)(D3D12_QUERY_HEAP_DESC* desc)
 }
 
 DEFINE_PRIM(_RES, descriptor_heap_create, _STRUCT);
+DEFINE_PRIM(_RES, descriptor_heap_try_create, _STRUCT);
 DEFINE_PRIM(_I32, get_descriptor_handle_increment_size, _I32);
 DEFINE_PRIM(_I64, descriptor_heap_get_handle, _RES _BOOL);
 DEFINE_PRIM(_RES, create_query_heap, _STRUCT);
