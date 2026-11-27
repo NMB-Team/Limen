@@ -14,6 +14,12 @@ target_link_libraries(limen_jobs_test PRIVATE Threads::Threads)
 add_test(NAME limen_jobs COMMAND limen_jobs_test)
 set_tests_properties(limen_jobs PROPERTIES LABELS core TIMEOUT 30)
 
+add_executable(limen_world_culling_test world_culling.cpp "${LIMEN_SOURCE_DIR}/modules/core/native/jobs.cpp")
+target_include_directories(limen_world_culling_test PRIVATE "${LIMEN_SOURCE_DIR}/modules/core/native")
+target_link_libraries(limen_world_culling_test PRIVATE limen_world_culling Threads::Threads)
+add_test(NAME limen_world_culling COMMAND limen_world_culling_test)
+set_tests_properties(limen_world_culling PROPERTIES LABELS core TIMEOUT 30)
+
 if(LIMEN_BUILD_VULKAN OR LIMEN_BUILD_D3D12)
 	add_executable(limen_indexed_commands_test indexed_commands.c)
 	target_link_libraries(limen_indexed_commands_test PRIVATE libhl)

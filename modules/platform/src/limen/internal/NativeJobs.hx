@@ -23,6 +23,15 @@ class NativeJobs {
 		return false;
 	}
 
+	@:hlNative("limen", "world_cull_kernels")
+	static function worldCullKernels():Int { return 1; }
+
+	@:hlNative("limen", "cull_world_boxes_soa")
+	static function cullWorldBoxesSoa(bytes:hl.Bytes, length:Int, count:Int, checkNearFar:Bool,
+		workers:Int, implementation:Int):Bool {
+		return false;
+	}
+
 	@:hlNative("limen", "build_sprite_geometry")
 	static function buildSpriteGeometry(buffer:hl.Bytes, size:Int, count:Int, workers:Int):Void {
 		throw "Limen was built without native sprite geometry";
