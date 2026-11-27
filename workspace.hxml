@@ -1,6 +1,7 @@
 -cp modules/platform/src
 -cp modules/graphics/common/src
 -cp modules/graphics/opengl/src
+-cp modules/graphics/metal/src
 -cp modules/graphics/vulkan/src
 -cp modules/graphics/d3d11/src
 -cp modules/graphics/d3d12/src
