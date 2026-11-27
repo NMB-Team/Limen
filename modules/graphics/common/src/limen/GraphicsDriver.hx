@@ -60,7 +60,6 @@ enum abstract GraphicsDriver(Int) from Int to Int {
 		It is intended for supported Apple platforms such as macOS, iOS,
 		iPadOS, and related operating systems.
 
-		This value is reserved for the future Metal backend.
 	**/
 	final Metal = 5;
 

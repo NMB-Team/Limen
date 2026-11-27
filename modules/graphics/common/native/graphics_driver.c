@@ -4,7 +4,7 @@
 #include <SDL3/SDL.h>
 
 static const char* limen_graphics_modules[LIMEN_GRAPHICS_DRIVER_COUNT] = {
-	nullptr, "opengl.limen", "vulkan.limen", "d3d11.limen", "d3d12.limen",
+	nullptr, "opengl.limen", "vulkan.limen", "d3d11.limen", "d3d12.limen", "metal.limen",
 };
 
 static limen_graphics_driver limen_selected_graphics_driver;
@@ -13,7 +13,16 @@ static bool limen_load_graphics_driver(limen_graphics_driver driver) {
 	if (driver <= LIMEN_GRAPHICS_NONE || driver >= LIMEN_GRAPHICS_DRIVER_COUNT)
 		return false;
 
-	return limen_module_load(limen_graphics_modules[driver]) != nullptr;
+	void* module = limen_module_load(limen_graphics_modules[driver]);
+	if (module == nullptr)
+		return false;
+
+	if (driver == LIMEN_GRAPHICS_METAL) {
+		typedef bool (*is_available_fn)(void);
+		is_available_fn is_available = (is_available_fn)SDL_LoadFunction(module, "limen_metal_is_available");
+		return is_available != nullptr && is_available();
+	}
+	return true;
 }
 
 HL_PRIM int HL_NAME(select_graphics_driver)(int preferred, int supported) {
@@ -22,9 +31,11 @@ HL_PRIM int HL_NAME(select_graphics_driver)(int preferred, int supported) {
 		LIMEN_GRAPHICS_VULKAN,
 		LIMEN_GRAPHICS_D3D11,
 		LIMEN_GRAPHICS_D3D12,
+		LIMEN_GRAPHICS_METAL,
 	};
 
-	if ((supported & (1 << preferred)) != 0 && limen_load_graphics_driver((limen_graphics_driver)preferred)) {
+	if (preferred > LIMEN_GRAPHICS_NONE && preferred < LIMEN_GRAPHICS_DRIVER_COUNT
+		&& (supported & (1 << preferred)) != 0 && limen_load_graphics_driver((limen_graphics_driver)preferred)) {
 		SDL_ClearError();
 		limen_selected_graphics_driver = (limen_graphics_driver)preferred;
 
@@ -52,7 +63,7 @@ HL_PRIM int HL_NAME(select_graphics_driver)(int preferred, int supported) {
 DEFINE_PRIM(_I32, select_graphics_driver, _I32 _I32);
 
 static bool limen_postprocess_available(const char* module_name) {
-	if (limen_selected_graphics_driver < LIMEN_GRAPHICS_VULKAN || limen_selected_graphics_driver >= LIMEN_GRAPHICS_DRIVER_COUNT)
+	if (limen_selected_graphics_driver < LIMEN_GRAPHICS_VULKAN || limen_selected_graphics_driver > LIMEN_GRAPHICS_D3D12)
 		return false;
 
 	void* module = limen_module_load(module_name);

@@ -6,6 +6,39 @@
 
 #include "native_window.h"
 
+#if defined(LIMEN_HAS_METAL)
+#include <SDL3/SDL_metal.h>
+
+bool limen_metal_create_view(void* window, void** view, void** layer) {
+	*view = SDL_Metal_CreateView(window);
+	if (*view == nullptr)
+		return false;
+	*layer = SDL_Metal_GetLayer(*view);
+	if (*layer == nullptr) {
+		SDL_Metal_DestroyView(*view);
+		*view = nullptr;
+		return false;
+	}
+	return true;
+}
+
+void limen_metal_destroy_view(void* view) {
+	SDL_Metal_DestroyView(view);
+}
+
+bool limen_metal_get_pixel_size(void* window, int* width, int* height) {
+	return SDL_GetWindowSizeInPixels(window, width, height);
+}
+
+int limen_metal_window_state(void* window) {
+	SDL_WindowFlags flags = SDL_GetWindowFlags(window);
+	return ((flags & SDL_WINDOW_INPUT_FOCUS) ? 1 : 0) |
+	       ((flags & SDL_WINDOW_OCCLUDED) ? 2 : 0) |
+	       ((flags & SDL_WINDOW_HIDDEN) ? 4 : 0) |
+	       ((flags & SDL_WINDOW_MINIMIZED) ? 8 : 0);
+}
+#endif
+
 void* limen_gl_create_context(void* window) {
 	int flags;
 	if (!SDL_GL_GetAttribute(SDL_GL_CONTEXT_FLAGS, &flags))

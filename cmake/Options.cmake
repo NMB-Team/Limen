@@ -7,6 +7,7 @@ if(WIN32
 	set(LIMEN_WINDOWS_X64 ON)
 endif()
 
+option(LIMEN_BUILD_METAL "Build metal.limen." OFF)
 option(LIMEN_BUILD_OPENGL "Build opengl.limen." ON)
 option(LIMEN_BUILD_VULKAN "Build vulkan.limen." ON)
 option(LIMEN_BUILD_VMA "Build Vulkan Memory Allocator support." ${LIMEN_BUILD_VULKAN})
@@ -35,6 +36,10 @@ set(LIMEN_AFTERMATH_RUNTIME_DLL "" CACHE FILEPATH "Path to the NVIDIA Nsight Aft
 set(LIMEN_FIDELITYFX_VULKAN_SOURCE_DIR "" CACHE PATH "Optional FidelityFX SDK 1.1.4 source tree for its Vulkan API and runtime.")
 
 function(limen_validate_options)
+	if(LIMEN_BUILD_METAL AND NOT APPLE)
+		message(FATAL_ERROR "LIMEN_BUILD_METAL requires an Apple target.")
+	endif()
+
 	if(LIMEN_BUILD_D3D11 AND NOT WIN32)
 		message(FATAL_ERROR "LIMEN_BUILD_D3D11 requires a Windows target.")
 	endif()

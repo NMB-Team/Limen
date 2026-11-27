@@ -65,6 +65,12 @@ LIMEN_PLATFORM_API void* limen_gl_get_proc_address(const char* name);
 
 LIMEN_PLATFORM_API bool limen_get_cache_directory(char* path, int capacity);
 
+LIMEN_PLATFORM_API bool limen_metal_create_view(void* window, void** view, void** layer);
+LIMEN_PLATFORM_API void limen_metal_destroy_view(void* view);
+LIMEN_PLATFORM_API bool limen_metal_get_pixel_size(void* window, int* width, int* height);
+// Diagnostic bits: focused=1, occluded=2, hidden=4, minimized=8.
+LIMEN_PLATFORM_API int limen_metal_window_state(void* window);
+
 LIMEN_PLATFORM_API bool limen_vulkan_create_surface(void* window, void* instance, uint64_t* surface);
 
 #ifdef __cplusplus
