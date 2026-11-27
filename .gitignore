@@ -6,3 +6,4 @@
 *.VC.db
 backend/include/sdl
 *.hl
+.DS_Store
